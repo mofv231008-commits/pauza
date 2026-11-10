@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Башня</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<style>
+.stage{background:var(--shoulder)}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <canvas id="game" aria-label="Башня. Тапни, чтобы уронить блок"></canvas>
+</div>
+
+<script src="../shared/pauza.js?v=2"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  /* Мир шириной 100 условных единиц: так игра одинакова на любом экране */
+  var WORLD = 100, BLOCK_H = 8, START_W = 46, PERFECT = 1.5, LO = -12;
+  var FLOORS = ['этаж', 'этажа', 'этажей'];
+
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
+  var W = 1, H = 1, dpr = 1, scale = 1, groundY = 0;
+
+  var blocks = [], cur = null, debris = [], floats = [], cam = 0, camTarget = 0, streak = 0, perfects = 0;
+  var stars = [];
+  for (var s = 0; s < 46; s++) stars.push({ x: Math.random(), y: Math.random(), r: 0.6 + Math.random() * 1.2, a: 0.25 + Math.random() * 0.5 });
+
+  var shell = P.shell({
+    id: 'tower',
+    title: 'Башня',
+    tagline: 'Роняй блоки точно друг на друга.',
+    rulesHtml: '<p>Тапни, когда блок окажется над башней. Всё, что свесилось, отрезается. Три точных попадания подряд делают блок шире.</p>',
+    startLabel: 'Строить',
+    overEyebrow: 'Мимо',
+    countdown: true,
+    formatScore: function (n) { return String(n); },
+    unit: function (n) { return P.plural(n, FLOORS); },
+    pauseKeys: ['KeyP', 'Escape'],
+    kbdHint: 'На компьютере: пробел — уронить блок, P — пауза',
+    onReset: reset
+  });
+
+  function colorOf(i) { return 'hsl(' + ((160 + i * 11) % 360) + ', 80%, 62%)'; }
+  function speedOf(n) { return 40 + Math.min(n, 45) * 1.5; }
+  function score() { return blocks.length - 1; }
+
+  function spawn() {
+    var top = blocks[blocks.length - 1], n = blocks.length;
+    var hi = WORLD - LO - top.w;
+    var fromLeft = n % 2 === 1;
+    cur = { x: fromLeft ? LO : hi, w: top.w, dir: fromLeft ? 1 : -1, hi: hi };
+  }
+  function reset() {
+    blocks = [{ x: (WORLD - START_W) / 2, w: START_W, flash: 0 }];
+    debris = []; floats = []; cam = 0; camTarget = 0; streak = 0; perfects = 0;
+    spawn();
+    shell.setScore('0');
+  }
+  function demo() {
+    blocks = [
+      { x: 27, w: 46, flash: 0 }, { x: 30, w: 43, flash: 0 }, { x: 30, w: 40, flash: 0 },
+      { x: 34, w: 36, flash: 0 }, { x: 34, w: 36, flash: 0 }
+    ];
+    cur = { x: 52, w: 36, dir: 1, hi: 76 };
+  }
+
+  function place(x, w, perfect) {
+    blocks.push({ x: x, w: w, flash: perfect ? 1 : 0 });
+    shell.setScore(String(score()));
+    P.haptic(perfect ? 'coin' : 'tap');
+    if (perfect) {
+      perfects++;
+      floats.push({ text: streak >= 2 ? 'Идеально ×' + streak : 'Идеально', level: blocks.length, x: x + w / 2, life: 0.9 });
+    }
+    aim();
+    spawn();
+  }
+  /* Камера держит летящий блок чуть выше середины экрана */
+  function aim() {
+    camTarget = Math.max(0, (blocks.length + 1) * BLOCK_H - (groundY - H * 0.42) / scale);
+  }
+  function drop() {
+    if (!shell.running || !cur) return;
+    var top = blocks[blocks.length - 1], level = blocks.length;
+    var shift = cur.x - top.x;
+    if (Math.abs(shift) <= PERFECT) {
+      streak++;
+      var w = top.w, x = top.x;
+      if (streak >= 3 && w < START_W) {
+        var grow = Math.min(3, START_W - w);
+        w += grow; x = P.clamp(x - grow / 2, 0, WORLD - w);
+      }
+      place(x, w, true);
+      return;
+    }
+    streak = 0;
+    var left = Math.max(cur.x, top.x), right = Math.min(cur.x + cur.w, top.x + top.w);
+    var overlap = right - left;
+    if (overlap <= 0.5) {
+      /* Промах: блок падает целиком */
+      debris.push({ x: cur.x, w: cur.w, level: level, drop: 0, vy: 0, rot: 0, vr: shift > 0 ? 1.6 : -1.6, color: colorOf(level) });
+      cur = null;
+      var n = score();
+      shell.end({
+        score: n,
+        delay: 800,
+        haptic: 'crash',
+        stats: 'точных попаданий: ' + perfects,
+        phrase: 'Моя башня — ' + n + ' ' + P.plural(n, FLOORS) + '.'
+      });
+      return;
+    }
+    debris.push({
+      x: shift > 0 ? right : cur.x, w: cur.w - overlap, level: level, drop: 0, vy: 0, rot: 0,
+      vr: shift > 0 ? 1.8 : -1.8, color: colorOf(level)
+    });
+    place(left, overlap, false);
+  }
+
+  function update(dt) {
+    if (shell.running && cur) {
+      cur.x += cur.dir * speedOf(blocks.length) * dt;
+      if (cur.x > cur.hi) { cur.x = cur.hi; cur.dir = -1; }
+      else if (cur.x < LO) { cur.x = LO; cur.dir = 1; }
+    }
+    if (shell.state === 'paused') return;
+    cam += (camTarget - cam) * Math.min(1, dt * 5);
+    for (var i = 0; i < debris.length; i++) {
+      var d = debris[i];
+      d.vy += 260 * dt; d.drop += d.vy * dt; d.rot += d.vr * dt;
+    }
+    debris = debris.filter(function (d) { return d.drop < 160; });
+    for (var f = 0; f < floats.length; f++) floats[f].life -= dt;
+    floats = floats.filter(function (fl) { return fl.life > 0; });
+    for (var b = Math.max(0, blocks.length - 3); b < blocks.length; b++) {
+      if (blocks[b].flash > 0) blocks[b].flash = Math.max(0, blocks[b].flash - dt * 2.5);
+    }
+  }
+
+  function resize() {
+    var r = stage.getBoundingClientRect();
+    W = Math.max(1, r.width); H = Math.max(1, r.height);
+    dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    scale = W / WORLD;
+    groundY = H - Math.max(H * 0.2, 120);
+    if (shell.state !== 'start') aim();
+    draw();
+  }
+  function topOf(level) { return groundY - (level + 1) * BLOCK_H * scale + cam * scale; }
+  function rr(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function drawBlock(x, y, w, color, flash) {
+    var bh = BLOCK_H * scale;
+    ctx.fillStyle = color;
+    rr(x * scale, y, Math.max(2, w * scale), bh - 2, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(18,6,48,0.22)';
+    ctx.fillRect(x * scale + 2, y + bh - 6, Math.max(0, w * scale - 4), 3);
+    if (flash > 0) {
+      ctx.fillStyle = 'rgba(244,241,255,' + (flash * 0.8).toFixed(3) + ')';
+      rr(x * scale, y, w * scale, bh - 2, 4); ctx.fill();
+    }
+  }
+  function draw() {
+    var grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#140734'); grad.addColorStop(1, '#2A1470');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = '#F4F1FF';
+    for (var i = 0; i < stars.length; i++) {
+      var st = stars[i];
+      var sy = (st.y * H + cam * scale * 0.25) % H;
+      ctx.globalAlpha = st.a;
+      ctx.beginPath(); ctx.arc(st.x * W, sy, st.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    var gy = groundY + cam * scale;
+    if (gy < H) {
+      ctx.fillStyle = '#140734'; ctx.fillRect(0, gy, W, H - gy);
+      ctx.fillStyle = '#3DF5B0'; ctx.fillRect(0, gy, W, 3);
+    }
+
+    for (var b = 0; b < blocks.length; b++) {
+      var y = topOf(b);
+      if (y > H) continue;
+      drawBlock(blocks[b].x, y, blocks[b].w, colorOf(b), blocks[b].flash);
+    }
+    if (cur) drawBlock(cur.x, topOf(blocks.length), cur.w, colorOf(blocks.length), 0);
+
+    for (var d = 0; d < debris.length; d++) {
+      var p = debris[d], bh = BLOCK_H * scale;
+      ctx.save();
+      ctx.translate((p.x + p.w / 2) * scale, topOf(p.level) + p.drop * scale + bh / 2);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = P.clamp(1 - p.drop / 160, 0, 1);
+      ctx.fillStyle = p.color;
+      rr(-p.w * scale / 2, -bh / 2, Math.max(2, p.w * scale), bh - 2, 4); ctx.fill();
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+
+    if (floats.length) {
+      ctx.font = '700 15px Unbounded, "Arial Black", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#FFD84D';
+      for (var f = 0; f < floats.length; f++) {
+        var fl = floats[f];
+        ctx.globalAlpha = P.clamp(fl.life / 0.5, 0, 1);
+        ctx.fillText(fl.text, P.clamp(fl.x * scale, 70, W - 70), topOf(fl.level) - 12 - (0.9 - fl.life) * 26);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+    last = now;
+    update(dt); draw();
+    requestAnimationFrame(frame);
+  }
+
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); drop(); });
+  window.addEventListener('keydown', function (e) {
+    if ((e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowDown') && !e.repeat && shell.running) { e.preventDefault(); drop(); }
+  });
+
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
+  window.addEventListener('resize', resize);
+
+  demo();
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

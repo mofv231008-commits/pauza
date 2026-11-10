@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Реакция</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<style>
+/* Весь экран — одна большая кнопка. Цвет фона и есть сигнал. */
+.pad{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+  padding-block:88px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background:var(--road);color:var(--paper);text-align:center;cursor:pointer;
+}
+.pad[data-phase="go"]{background:var(--mint);color:var(--ink)}
+.pad[data-phase="early"]{background:var(--coral);color:var(--ink)}
+.pad[data-phase="result"]{background:var(--shoulder)}
+.ring{width:132px;height:132px;border-radius:50%;border:6px solid var(--coral);display:grid;place-items:center;flex:none}
+.ring i{display:block;width:76px;height:76px;border-radius:50%;background:var(--coral)}
+.pad[data-phase="go"] .ring{border-color:var(--ink)}
+.pad[data-phase="go"] .ring i{background:var(--ink)}
+.pad[data-phase="early"] .ring{border-color:var(--ink)}
+.pad[data-phase="early"] .ring i{background:transparent}
+.pad[data-phase="result"] .ring{border-color:var(--mint)}
+.pad[data-phase="result"] .ring i{background:var(--mint)}
+.pad-title{margin:0;font-family:var(--font-display);font-weight:800;font-size:40px;line-height:1.05;font-variant-numeric:tabular-nums}
+.pad-sub{margin:-14px 0 0;min-height:1.45em;font-size:16px;opacity:.8}
+.tries{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.tries li{
+  min-width:56px;padding:6px 8px;border-radius:10px;border:1px solid currentColor;opacity:.45;
+  font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;text-align:center;
+}
+.tries li.done{opacity:1}
+.stage[data-phase="go"] .score,.stage[data-phase="early"] .score,.stage[data-phase="go"] .best,.stage[data-phase="early"] .best{color:var(--ink);text-shadow:none}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="pad" id="pad" data-phase="wait">
+    <div class="ring" aria-hidden="true"><i></i></div>
+    <p class="pad-title" id="padTitle">Жди зелёный</p>
+    <p class="pad-sub" id="padSub">Не нажимай раньше времени</p>
+    <ol class="tries" id="tries" aria-label="Попытки"><li>—</li><li>—</li><li>—</li><li>—</li><li>—</li></ol>
+  </div>
+</div>
+
+<script src="../shared/pauza.js?v=2"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var ROUNDS = 5;
+  var stage = document.getElementById('stage'), pad = document.getElementById('pad');
+  var titleEl = document.getElementById('padTitle'), subEl = document.getElementById('padSub');
+  var tryEls = document.getElementById('tries').children;
+
+  var times = [], phase = 'idle', timer = 0, greenAt = 0;
+
+  var shell = P.shell({
+    id: 'reaction',
+    title: 'Реакция',
+    tagline: 'Жми, как только экран станет зелёным.',
+    rulesHtml: '<p>Пять попыток. В зачёт идёт среднее время: чем меньше миллисекунд, тем лучше.</p>',
+    startLabel: 'Начать',
+    overEyebrow: 'Среднее время',
+    overTone: 'good',
+    lowerIsBetter: true,
+    formatScore: function (n) { return String(n); },
+    unit: function () { return 'мс'; },
+    pauseKeys: ['KeyP', 'Escape'],
+    kbdHint: 'На компьютере: пробел или клик, P — пауза',
+    onReset: function () { times = []; renderTries(); shell.setScore('—'); shell.setSide('1 / ' + ROUNDS); },
+    onRun: function () { if (times.length >= ROUNDS) finish(); else arm(); },
+    onPause: function () { clearTimeout(timer); setPhase('wait', 'Жди зелёный', 'Не нажимай раньше времени'); phase = 'idle'; }
+  });
+
+  function setPhase(p, title, sub) {
+    phase = p;
+    pad.setAttribute('data-phase', p);
+    stage.setAttribute('data-phase', p);
+    titleEl.textContent = title;
+    subEl.textContent = sub;
+  }
+  function average() {
+    var sum = 0;
+    for (var i = 0; i < times.length; i++) sum += times[i];
+    return Math.round(sum / times.length);
+  }
+  function renderTries() {
+    for (var i = 0; i < tryEls.length; i++) {
+      var done = i < times.length;
+      tryEls[i].textContent = done ? times[i] + ' мс' : '—';
+      tryEls[i].className = done ? 'done' : '';
+    }
+  }
+  function arm() {
+    clearTimeout(timer);
+    shell.setSide(Math.min(times.length + 1, ROUNDS) + ' / ' + ROUNDS);
+    setPhase('wait', 'Жди зелёный', 'Не нажимай раньше времени');
+    timer = setTimeout(go, 1200 + Math.random() * 2300);
+  }
+  function go() {
+    if (!shell.running || phase !== 'wait') return;
+    greenAt = 0;
+    setPhase('go', 'Жми!', '');
+    /* Время считаем от кадра, в котором экран реально позеленел */
+    requestAnimationFrame(function () { if (phase === 'go') greenAt = performance.now(); });
+  }
+  function early() {
+    clearTimeout(timer);
+    setPhase('early', 'Рано!', 'Дождись зелёного, попытка начнётся заново');
+    P.haptic('crash');
+    timer = setTimeout(arm, 1100);
+  }
+  function verdict(ms) {
+    if (ms < 200) return 'Молния';
+    if (ms < 260) return 'Быстро';
+    if (ms < 340) return 'Неплохо';
+    return 'Можно быстрее';
+  }
+  function record(ms) {
+    times.push(ms);
+    renderTries();
+    P.haptic('coin');
+    shell.setScore(average() + ' мс');
+    setPhase('result', ms + ' мс', verdict(ms));
+    timer = setTimeout(function () { if (times.length >= ROUNDS) finish(); else arm(); }, 900);
+  }
+  function finish() {
+    var avg = average(), bestOne = Math.min.apply(null, times);
+    shell.end({
+      score: avg,
+      stats: 'лучшая попытка: ' + bestOne + ' мс',
+      phrase: 'Моя реакция — ' + avg + ' мс.'
+    });
+  }
+
+  function tap() {
+    if (!shell.running) return;
+    if (phase === 'wait') { early(); return; }
+    if (phase !== 'go') return;
+    var ms = greenAt ? Math.round(performance.now() - greenAt) : 0;
+    /* Быстрее 80 мс человек не реагирует: это угаданный тап */
+    if (ms < 80) early(); else record(ms);
+  }
+  pad.addEventListener('pointerdown', function (e) { e.preventDefault(); tap(); });
+  window.addEventListener('keydown', function (e) {
+    if ((e.code !== 'Space' && e.code !== 'Enter') || e.repeat || !shell.running) return;
+    e.preventDefault();
+    tap();
+  });
+})();
+</script>
+</body>
+</html>

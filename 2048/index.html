@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · 2048 за минуту</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<style>
+/* Поле 4×4. Размер клетки считает скрипт и кладёт в --cell и --gap. */
+.board{
+  --cell:72px;--gap:8px;--step:calc(var(--cell) + var(--gap));
+  position:relative;flex:none;width:calc(var(--cell) * 4 + var(--gap) * 5);height:calc(var(--cell) * 4 + var(--gap) * 5);
+  border-radius:18px;background:var(--night);
+}
+.cells,.tiles{position:absolute;inset:var(--gap)}
+.cells{display:grid;grid-template-columns:repeat(4,var(--cell));grid-auto-rows:var(--cell);gap:var(--gap)}
+.cells i{display:block;border-radius:12px;background:rgba(185,168,240,.09)}
+.tile{
+  position:absolute;left:0;top:0;width:var(--cell);height:var(--cell);
+  transform:translate(calc(var(--c) * var(--step)),calc(var(--r) * var(--step)));
+  transition:transform .11s ease-out;
+}
+.tile b{
+  display:grid;place-items:center;width:100%;height:100%;border-radius:12px;
+  font-family:var(--font-display);font-weight:800;font-size:calc(var(--cell) * .42);line-height:1;font-variant-numeric:tabular-nums;
+  background:#2E1A78;color:var(--paper);
+}
+.tile[data-len="3"] b{font-size:calc(var(--cell) * .32)}
+.tile[data-len="4"] b{font-size:calc(var(--cell) * .25)}
+.tile.new b{animation:tile-in .14s ease-out both}
+.tile.pop b{animation:tile-pop .16s ease-out both}
+@keyframes tile-in{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes tile-pop{0%{transform:scale(1)}50%{transform:scale(1.14)}100%{transform:scale(1)}}
+.tile[data-v="4"] b{background:#4B2FB8}
+.tile[data-v="8"] b{background:var(--lilac);color:var(--ink)}
+.tile[data-v="16"] b{background:var(--mint);color:var(--ink)}
+.tile[data-v="32"] b{background:var(--sun);color:var(--ink)}
+.tile[data-v="64"] b{background:var(--coral-2);color:var(--ink)}
+.tile[data-v="128"] b{background:var(--coral);color:var(--ink)}
+.tile[data-v="256"] b{background:var(--pink);color:var(--ink)}
+.tile[data-v="512"] b{background:var(--sky);color:var(--ink)}
+.tile[data-v="1024"] b,.tile[data-v="2048"] b,.tile[data-v="big"] b{background:var(--paper);color:var(--ink);box-shadow:0 0 0 3px var(--mint) inset}
+.swipe-hint{margin:0;font-size:14px;color:var(--lilac)}
+/* На паузе плитки не видны, чтобы нельзя было думать с остановленным таймером */
+.stage[data-state="paused"] .tiles{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play" id="play">
+    <div class="timebar" id="timebar"><i id="timeFill"></i></div>
+    <div class="board" id="board">
+      <div class="cells" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="tiles" id="tiles"></div>
+    </div>
+    <p class="swipe-hint">Свайпай в любую сторону</p>
+  </div>
+</div>
+
+<script src="../shared/pauza.js?v=2"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var DURATION = 60;
+  var POINTS = ['очко', 'очка', 'очков'];
+
+  var stage = document.getElementById('stage'), play = document.getElementById('play');
+  var board = document.getElementById('board'), tilesEl = document.getElementById('tiles');
+  var timebar = document.getElementById('timebar'), timeFill = document.getElementById('timeFill');
+
+  var grid = [], score = 0, left = DURATION, maxTile = 0;
+
+  var shell = P.shell({
+    id: '2048',
+    title: '2048 за минуту',
+    tagline: 'Складывай одинаковые плитки, пока идёт время.',
+    rulesHtml: '<p>Свайпни, и все плитки сдвинутся в эту сторону. Две одинаковые сливаются в одну, а её число идёт в счёт. На всё 60 секунд.</p>',
+    overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, POINTS); },
+    kbdHint: 'На компьютере: стрелки и пробел для паузы',
+    onReset: reset
+  });
+
+  function emptyGrid() { grid = [[null, null, null, null], [null, null, null, null], [null, null, null, null], [null, null, null, null]]; }
+  function paint(t) {
+    t.el.style.setProperty('--r', t.r);
+    t.el.style.setProperty('--c', t.c);
+  }
+  function label(t) {
+    t.el.setAttribute('data-v', t.value > 2048 ? 'big' : String(t.value));
+    t.el.setAttribute('data-len', String(String(t.value).length));
+    t.face.textContent = String(t.value);
+  }
+  function addTile(r, c, value) {
+    var node = document.createElement('div');
+    node.className = 'tile new';
+    var face = document.createElement('b');
+    node.appendChild(face);
+    var t = { r: r, c: c, value: value, el: node, face: face, merged: false };
+    paint(t); label(t);
+    tilesEl.appendChild(node);
+    grid[r][c] = t;
+    if (value > maxTile) maxTile = value;
+    return t;
+  }
+  function spawn() {
+    var free = [];
+    for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) if (!grid[r][c]) free.push([r, c]);
+    if (!free.length) return;
+    var spot = free[(Math.random() * free.length) | 0];
+    addTile(spot[0], spot[1], Math.random() < 0.9 ? 2 : 4);
+  }
+  function clearBoard() { tilesEl.textContent = ''; emptyGrid(); }
+  function reset() {
+    clearBoard();
+    score = 0; left = DURATION; maxTile = 0;
+    spawn(); spawn();
+    showTime();
+    shell.setScore('0');
+  }
+  function demo() {
+    clearBoard();
+    [[0, 0, 2], [0, 1, 4], [1, 1, 8], [2, 0, 16], [2, 2, 32], [3, 1, 2], [3, 3, 64]].forEach(function (d) { addTile(d[0], d[1], d[2]); });
+  }
+
+  /* dir: 0 влево, 1 вверх, 2 вправо, 3 вниз. k — номер клетки, считая от стороны, куда едут плитки */
+  function cellAt(dir, line, k) {
+    if (dir === 0) return [line, k];
+    if (dir === 2) return [line, 3 - k];
+    if (dir === 1) return [k, line];
+    return [3 - k, line];
+  }
+  function move(dir) {
+    if (!shell.running) return;
+    var moved = false, gained = 0, popped = [];
+    for (var line = 0; line < 4; line++) {
+      var tiles = [], k;
+      for (k = 0; k < 4; k++) {
+        var pos = cellAt(dir, line, k), t = grid[pos[0]][pos[1]];
+        if (t) { tiles.push(t); grid[pos[0]][pos[1]] = null; }
+      }
+      var kept = [];
+      for (k = 0; k < tiles.length; k++) {
+        var tile = tiles[k], prev = kept[kept.length - 1];
+        if (prev && prev.value === tile.value && !prev.merged) {
+          prev.value *= 2; prev.merged = true;
+          gained += prev.value;
+          if (prev.value > maxTile) maxTile = prev.value;
+          tile.into = prev;
+          popped.push(prev);
+          moved = true;
+        } else {
+          kept.push(tile);
+        }
+      }
+      for (k = 0; k < kept.length; k++) {
+        var to = cellAt(dir, line, k), keep = kept[k];
+        if (keep.r !== to[0] || keep.c !== to[1]) moved = true;
+        keep.r = to[0]; keep.c = to[1];
+        grid[to[0]][to[1]] = keep;
+        keep.el.classList.remove('new');
+        paint(keep);
+      }
+      for (k = 0; k < tiles.length; k++) {
+        var gone = tiles[k];
+        if (!gone.into) continue;
+        gone.r = gone.into.r; gone.c = gone.into.c;
+        paint(gone);
+        removeLater(gone.el);
+      }
+    }
+    if (!moved) return;
+    popped.forEach(function (t) {
+      t.merged = false;
+      setTimeout(function () {
+        label(t);
+        t.el.classList.remove('pop');
+        void t.el.offsetWidth;
+        t.el.classList.add('pop');
+      }, 90);
+    });
+    if (gained) { score += gained; shell.setScore(P.fmt(score)); P.haptic('coin'); } else { P.haptic('tap'); }
+    spawn();
+    if (!canMove()) finish('Ходов нет');
+  }
+  function removeLater(node) {
+    setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 120);
+  }
+  function canMove() {
+    for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
+      var t = grid[r][c];
+      if (!t) return true;
+      if (c < 3 && grid[r][c + 1] && grid[r][c + 1].value === t.value) return true;
+      if (r < 3 && grid[r + 1][c] && grid[r + 1][c].value === t.value) return true;
+    }
+    return false;
+  }
+  function finish(reason) {
+    shell.end({
+      score: score,
+      eyebrow: reason,
+      delay: 350,
+      stats: 'лучшая плитка: ' + maxTile,
+      phrase: 'У меня ' + P.fmt(score) + ' ' + P.plural(score, POINTS) + ' в «2048 за минуту».'
+    });
+  }
+
+  function showTime() {
+    var warn = left <= 10;
+    shell.setSide(P.clock(Math.ceil(left)), warn);
+    timeFill.style.transform = 'scaleX(' + P.clamp(left / DURATION, 0, 1).toFixed(4) + ')';
+    timebar.classList.toggle('warn', warn);
+  }
+  var last = performance.now();
+  function tick(now) {
+    var dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+    last = now;
+    if (shell.running) {
+      left -= dt;
+      if (left <= 0) { left = 0; showTime(); finish('Время вышло'); }
+      else showTime();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function layout() {
+    var r = stage.getBoundingClientRect();
+    var size = Math.max(200, Math.min(r.width - 32, r.height - 250, 400));
+    var gap = Math.max(6, Math.round(size * 0.025));
+    var cell = Math.floor((size - gap * 5) / 4);
+    board.style.setProperty('--gap', gap + 'px');
+    board.style.setProperty('--cell', cell + 'px');
+  }
+
+  /* Свайп срабатывает прямо во время движения пальца, не дожидаясь отрыва */
+  var sx = 0, sy = 0, tracking = false;
+  play.addEventListener('pointerdown', function (e) { sx = e.clientX; sy = e.clientY; tracking = true; });
+  play.addEventListener('pointermove', function (e) {
+    if (!tracking) return;
+    var dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 26) return;
+    tracking = false;
+    if (Math.abs(dx) > Math.abs(dy)) move(dx < 0 ? 0 : 2); else move(dy < 0 ? 1 : 3);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (type) {
+    play.addEventListener(type, function () { tracking = false; });
+  });
+  window.addEventListener('keydown', function (e) {
+    var dir = { ArrowLeft: 0, KeyA: 0, ArrowUp: 1, KeyW: 1, ArrowRight: 2, KeyD: 2, ArrowDown: 3, KeyS: 3 }[e.code];
+    if (dir === undefined) return;
+    e.preventDefault();
+    move(dir);
+  });
+
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  window.addEventListener('resize', layout);
+
+  layout();
+  demo();
+  showTime();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
