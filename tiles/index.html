@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Плитки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#F4F1FF}.stage .score{color:var(--ink);text-shadow:none}.stage .best{color:#3B1E8C}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Плитки. Жми на тёмные плитки снизу вверх"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['плитка', 'плитки', 'плиток'];
+  var COLS = 4;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var rows, offset, speed, score, failCol = -1, failRow = null, t, flashT = 0;
+
+  var shell = P.shell({
+    id: 'tiles', title: 'Плитки', tagline: 'Жми только на тёмные плитки.',
+    rulesHtml: '<p>Плитки едут вниз. Нажимай на тёмную плитку в каждом ряду, снизу вверх. Пропустишь плитку или нажмёшь на светлую — игра окончена. Скорость растёт.</p>',
+    overEyebrow: 'Сбился с ритма', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши D F J K — колонки, P — пауза', pauseKeys: ['KeyP', 'Escape', 'Space'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { draw(); });
+  function rowH() { return Math.max(90, view.H / 4.4); }
+  function newRow(prev) { var c; do { c = P.rand(COLS); } while (prev && c === prev.col && Math.random() < 0.6); return { col: c, done: false }; }
+  function reset() {
+    rows = []; var prev = null;
+    for (var i = 0; i < 8; i++) { prev = newRow(prev); rows.push(prev); }
+    offset = 0; speed = 2.4; score = 0; failCol = -1; failRow = null; t = 0; flashT = 0;
+    shell.setScore('0');
+  }
+  /* Ряд i стоит на высоте: низ экрана минус (i+1) высот ряда плюс прокрутка. Нижний ряд стартует чуть выше края. */
+  function rowY(i) { return view.H - rowH() * (i + 1.6) + offset; }
+  function fail(col, row) {
+    failCol = col; failRow = row; flashT = 1;
+    shell.end({ score: score, delay: 700, haptic: 'crash', stats: 'скорость: ' + speed.toFixed(1) + ' ряда в секунду',
+      phrase: 'В «Плитках» у меня ' + score + ' ' + P.plural(score, U) + ' подряд.' });
+  }
+  function press(col, y) {
+    if (!shell.running) return;
+    var target = -1;
+    for (var i = 0; i < rows.length; i++) if (!rows[i].done) { target = i; break; }
+    if (target === -1) return;
+    var r = rows[target];
+    if (col === r.col) {
+      r.done = true; score++; shell.setScore(String(score)); P.haptic('tap');
+      return;
+    }
+    /* Тап по светлой клетке нижнего ряда — ошибка. Тап выше по тёмной плитке следующих рядов прощаем. */
+    var yi = y == null ? target : Math.floor((view.H + offset - y) / rowH() - 0.6);
+    var hitRow = rows[yi];
+    if (hitRow && hitRow.col === col && yi > target) return;
+    fail(col, r);
+  }
+  P.loop(function (dt) {
+    if (flashT > 0) flashT -= dt;
+    if (shell.running && rows) {
+      t += dt;
+      speed = 2.4 + Math.min(4.2, t * 0.09);
+      offset += rowH() * speed * dt;
+      while (offset >= rowH()) {
+        var first = rows[0];
+        if (!first.done && rowY(0) > view.H) { offset = rowH() * 0.9; fail(first.col, first); break; }
+        if (rowY(0) > view.H) { rows.shift(); rows.push(newRow(rows[rows.length - 1])); offset -= rowH(); }
+        else break;
+      }
+    }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, h = rowH(), cw = W / COLS;
+    ctx.fillStyle = '#F4F1FF'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(59,30,140,0.12)';
+    for (var c = 1; c < COLS; c++) ctx.fillRect(c * cw - 0.5, 0, 1, H);
+    if (!rows) return;
+    rows.forEach(function (r, i) {
+      var y = rowY(i);
+      if (y > H || y + h < 0) return;
+      var failed = r === failRow && flashT > 0 && Math.floor(flashT * 8) % 2 === 0;
+      ctx.fillStyle = r.done ? 'rgba(59,30,140,0.18)' : (failed ? '#FF6B4A' : '#22105A');
+      ctx.beginPath(); ctx.roundRect(r.col * cw + 3, y + 3, cw - 6, h - 6, 10); ctx.fill();
+      if (!r.done && i === rows.findIndex(function (x) { return !x.done; }) && shell.state === 'running') {
+        ctx.fillStyle = '#3DF5B0'; ctx.fillRect(r.col * cw + cw * 0.3, y + h - 14, cw * 0.4, 4);
+      }
+      if (r === failRow && failCol !== r.col && flashT > 0) { ctx.fillStyle = 'rgba(255,107,74,0.85)'; ctx.fillRect(failCol * cw + 3, y + 3, cw - 6, h - 6); }
+    });
+    ctx.fillStyle = 'rgba(255,107,74,0.5)'; ctx.fillRect(0, H - 3, W, 3);
+  }
+  canvas.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    var r = canvas.getBoundingClientRect();
+    press(Math.floor((e.clientX - r.left) / r.width * COLS), e.clientY - r.top);
+  });
+  var KEYS = { KeyD: 0, KeyF: 1, KeyJ: 2, KeyK: 3, Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3 };
+  window.addEventListener('keydown', function (e) { if (KEYS[e.code] != null && !e.repeat) { e.preventDefault(); press(KEYS[e.code], null); } });
+  reset();
+  shell.setSide(null);
+})();
+</script>
+</body>
+</html>

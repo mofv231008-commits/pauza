@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Мостик</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#3B1E8C}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Мостик. Держи палец, чтобы палка росла, отпусти, чтобы она упала"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var pillars, stickLen, stickAng, phase, hero, camX, camTarget, score, perfects, perfectT, holding;
+
+  var shell = P.shell({
+    id: 'stick', title: 'Мостик', tagline: 'Вырасти палку точно до следующей колонны.',
+    rulesHtml: '<p>Держи палец на экране, палка растёт. Отпусти, и она упадёт мостиком. Слишком короткая или длинная — герой сорвётся. Попадёшь в красную точку в центре колонны — получишь ещё очко.</p>',
+    overEyebrow: 'Мимо колонны', countdown: false,
+    unit: function (n) { return P.plural(n, ['очко', 'очка', 'очков']); },
+    kbdHint: 'На компьютере: держи пробел, P — пауза', pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset, onPause: function () { holding = false; }
+  });
+  var view = P.canvas(canvas, stage, function () { if (!pillars) reset(); draw(); });
+  function base() { return view.H * 0.68; }
+  function makePillar(prev) {
+    var W = view.W, w = W * (0.07 + Math.random() * 0.17);
+    var gap = W * (0.12 + Math.random() * 0.42);
+    return { x: prev.x + prev.w + gap, w: w };
+  }
+  function reset() {
+    var W = view.W;
+    pillars = [{ x: W * 0.06, w: W * 0.2 }];
+    pillars.push(makePillar(pillars[0]));
+    pillars.push(makePillar(pillars[1]));
+    stickLen = 0; stickAng = -Math.PI / 2; phase = 'idle'; holding = false;
+    hero = { x: pillars[0].x + pillars[0].w - 14, y: 0, fall: 0 };
+    camX = 0; camTarget = 0; score = 0; perfects = 0; perfectT = 0;
+    if (shell) shell.setScore('0');
+  }
+  function down() { if (shell.running && phase === 'idle') { holding = true; phase = 'grow'; } }
+  function up() { if (holding && phase === 'grow') { holding = false; phase = 'turn'; P.haptic('tap'); } }
+  function end() {
+    shell.end({ score: score, delay: 500, haptic: 'crash', stats: 'точных попаданий: ' + perfects,
+      phrase: 'В «Мостике» у меня ' + score + ' ' + P.plural(score, ['очко', 'очка', 'очков']) + '.' });
+  }
+  P.loop(function (dt) {
+    var W = view.W, H = view.H;
+    if (perfectT > 0) perfectT -= dt;
+    camX += (camTarget - camX) * Math.min(1, dt * 7);
+    if (shell.running) {
+      var cur = pillars[0], next = pillars[1];
+      var stickX = cur.x + cur.w;
+      if (phase === 'grow') { stickLen = Math.min(H * 0.95, stickLen + H * 0.62 * dt); }
+      else if (phase === 'turn') {
+        stickAng += dt * 6;
+        if (stickAng >= 0) {
+          stickAng = 0;
+          var tip = stickX + stickLen;
+          phase = tip >= next.x && tip <= next.x + next.w ? 'walk' : 'walkfail';
+          if (phase === 'walk') {
+            var mid = next.x + next.w / 2;
+            if (Math.abs(tip - mid) <= W * 0.016) { perfects++; score++; perfectT = 1; P.haptic('coin'); }
+          }
+        }
+      } else if (phase === 'walk' || phase === 'walkfail') {
+        var goal = phase === 'walk' ? next.x + next.w - 14 : stickX + stickLen + 6;
+        hero.x = Math.min(goal, hero.x + W * 0.7 * dt);
+        if (hero.x >= goal) {
+          if (phase === 'walk') {
+            score++; shell.setScore(String(score));
+            pillars.shift(); pillars.push(makePillar(pillars[pillars.length - 1]));
+            camTarget = pillars[0].x + pillars[0].w - W * 0.26;
+            stickLen = 0; stickAng = -Math.PI / 2; phase = 'idle';
+            if (holding) phase = 'grow';
+          } else { phase = 'fall'; }
+        }
+      } else if (phase === 'fall') {
+        hero.fall += H * 1.6 * dt;
+        stickAng = Math.min(Math.PI / 2, stickAng + dt * 5);
+        if (hero.fall > H) { phase = 'dead'; end(); }
+      }
+    }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, b = base();
+    var sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#22105A'); sky.addColorStop(1, '#3B1E8C');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    if (!pillars) return;
+    ctx.save(); ctx.translate(-camX, 0);
+    pillars.forEach(function (p) {
+      ctx.fillStyle = '#140734'; ctx.fillRect(p.x, b, p.w, H - b);
+      ctx.fillStyle = '#FF6B4A'; ctx.fillRect(p.x + p.w / 2 - W * 0.012, b, W * 0.024, 5);
+    });
+    var cur = pillars[0];
+    ctx.save(); ctx.translate(cur.x + cur.w, b); ctx.rotate(stickAng);
+    ctx.fillStyle = '#FFD84D'; ctx.fillRect(0, -2, stickLen, 4);
+    ctx.restore();
+    var gold = P.gold(), s = W * 0.05;
+    var hy = b + hero.fall;
+    ctx.fillStyle = gold ? '#FFD84D' : '#3DF5B0';
+    ctx.beginPath(); ctx.roundRect(hero.x - s * 0.5, hy - s * 1.3, s, s * 1.3, s * 0.3); ctx.fill();
+    ctx.fillStyle = '#120630'; ctx.fillRect(hero.x - s * 0.5, hy - s * 1.05, s, s * 0.18);
+    ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(hero.x + s * 0.22, hy - s * 0.82, s * 0.09, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    if (perfectT > 0) {
+      ctx.globalAlpha = Math.min(1, perfectT * 2); ctx.fillStyle = '#FF6B4A';
+      ctx.font = '800 22px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Точно! +1', W / 2, H * 0.3); ctx.globalAlpha = 1;
+    }
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); down(); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) { canvas.addEventListener(t, up); });
+  window.addEventListener('keydown', function (e) { if (e.code === 'Space' && !e.repeat) { e.preventDefault(); down(); } });
+  window.addEventListener('keyup', function (e) { if (e.code === 'Space') up(); });
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

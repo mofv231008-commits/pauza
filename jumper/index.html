@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Прыгун</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Прыгун. Держи палец слева или справа, чтобы смещаться"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var M = ['метр', 'метра', 'метров'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var hero, plats, cam, best, dead, hold = 0, sparks = [], stars = [];
+  for (var i = 0; i < 40; i++) stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.4 + 0.3 });
+
+  var shell = P.shell({
+    id: 'jumper', title: 'Прыгун', tagline: 'Прыгай по платформам всё выше.',
+    rulesHtml: '<p>Прыгун скачет сам. Держи палец на левой или правой половине экрана, чтобы смещаться. Голубые платформы ездят, красные ломаются, жёлтые пружины подбрасывают выше. Уйдёшь за край — появишься с другой стороны.</p>',
+    startLabel: 'Прыгать', overEyebrow: 'Сорвался', countdown: true,
+    unit: function (n) { return P.plural(n, M); },
+    kbdHint: 'На компьютере: стрелки влево и вправо, P — пауза',
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { if (!hero) reset(); });
+  function U() { return Math.max(16, Math.min(view.W, 460) * 0.065); }
+  function plat(y, kind) {
+    var w = U() * 3.2;
+    return { x: Math.random() * (view.W - w), y: y, w: w, kind: kind || 'n', dir: Math.random() < 0.5 ? -1 : 1, broken: false, vy: 0 };
+  }
+  function reset() {
+    var H = view.H, u = U();
+    hero = { x: view.W / 2, y: H * 0.8, vx: 0, vy: -H * 1.1 };
+    plats = [{ x: view.W / 2 - u * 1.6, y: H * 0.86, w: u * 3.2, kind: 'n' }];
+    var y = H * 0.86;
+    while (y > -H) { y -= H * (0.1 + Math.random() * 0.05); plats.push(plat(y)); }
+    cam = 0; best = 0; dead = false; sparks = [];
+    if (shell) shell.setScore('0');
+  }
+  function kindFor(h) {
+    var r = Math.random(), lvl = Math.min(1, h / 3000);
+    if (r < 0.08) return 's';
+    if (r < 0.08 + 0.25 * lvl) return 'm';
+    if (r < 0.08 + 0.25 * lvl + 0.18 * lvl) return 'b';
+    return 'n';
+  }
+  P.loop(function (dt) {
+    var W = view.W, H = view.H, u = U();
+    if (shell.running && !dead) {
+      var target = hold * W * 0.95;
+      hero.vx += (target - hero.vx) * Math.min(1, dt * 10);
+      hero.x += hero.vx * dt;
+      if (hero.x < -u) hero.x += W + u * 2; if (hero.x > W + u) hero.x -= W + u * 2;
+      var prevY = hero.y;
+      hero.vy += H * 2.2 * dt;
+      hero.y += hero.vy * dt;
+      if (hero.vy > 0) {
+        plats.forEach(function (p) {
+          if (p.broken) return;
+          var top = p.y;
+          if (prevY <= top && hero.y >= top && hero.x > p.x - u * 0.4 && hero.x < p.x + p.w + u * 0.4) {
+            if (p.kind === 'b') { p.broken = true; P.haptic('tap'); return; }
+            hero.y = top;
+            hero.vy = p.kind === 's' ? -H * 1.75 : -H * 1.1;
+            P.haptic(p.kind === 's' ? 'coin' : null);
+            if (p.kind === 's') for (var k = 0; k < 8; k++) sparks.push({ x: hero.x, y: top, vx: (Math.random() - 0.5) * 200, vy: -Math.random() * 200, life: 0.4 });
+          }
+        });
+      }
+      plats.forEach(function (p) {
+        if (p.kind === 'm') { p.x += p.dir * W * 0.25 * dt; if (p.x < 0 || p.x + p.w > W) { p.dir = -p.dir; p.x = P.clamp(p.x, 0, W - p.w); } }
+        if (p.broken) { p.vy += H * 2 * dt; p.y += p.vy * dt; }
+      });
+      var line = H * 0.42;
+      if (hero.y < line) {
+        var shift = line - hero.y;
+        hero.y = line; cam += shift;
+        plats.forEach(function (p) { p.y += shift; });
+        sparks.forEach(function (s) { s.y += shift; });
+      }
+      plats = plats.filter(function (p) { return p.y < H + 40; });
+      var top = Math.min.apply(null, plats.map(function (p) { return p.y; }));
+      var gap = H * (0.1 + Math.min(0.09, cam / 40000) + Math.random() * 0.04);
+      while (top > -40) { top -= gap; plats.push(plat(top, kindFor(cam))); }
+      var m = Math.floor(cam / u / 2);
+      if (m > best) { best = m; shell.setScore(P.fmt(best)); }
+      if (hero.y > H + u * 2) {
+        dead = true;
+        shell.end({ score: best, haptic: 'crash', stats: 'высота: ' + P.fmt(best) + ' ' + P.plural(best, M),
+          phrase: 'В «Прыгуне» у меня ' + P.fmt(best) + ' ' + P.plural(best, M) + ' высоты.' });
+      }
+    }
+    sparks.forEach(function (s) { s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt; });
+    sparks = sparks.filter(function (s) { return s.life > 0; });
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, u = U();
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#F4F1FF';
+    stars.forEach(function (s) { var y = ((s.y * H + (cam || 0) * 0.2 * s.r) % H + H) % H; ctx.globalAlpha = 0.25 + s.r * 0.3; ctx.fillRect(s.x * W, y, s.r, s.r); });
+    ctx.globalAlpha = 1;
+    if (!hero) return;
+    var COL = { n: '#3DF5B0', m: '#6FD3FF', b: '#FF6B4A', s: '#3DF5B0' };
+    plats.forEach(function (p) {
+      ctx.globalAlpha = p.broken ? 0.4 : 1;
+      ctx.fillStyle = COL[p.kind];
+      ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, u * 0.55, u * 0.27); ctx.fill();
+      if (p.kind === 'b') { ctx.fillStyle = '#140734'; ctx.fillRect(p.x + p.w * 0.48, p.y, 3, u * 0.55); }
+      if (p.kind === 's') { ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.roundRect(p.x + p.w / 2 - u * 0.5, p.y - u * 0.45, u, u * 0.5, 4); ctx.fill(); }
+    });
+    ctx.globalAlpha = 1;
+    if (!dead || hero.y < H) {
+      var gold = P.gold(), s = u * 1.1, stretch = P.clamp(-hero.vy / H * 0.25, -0.15, 0.25);
+      ctx.save(); ctx.translate(hero.x, hero.y);
+      ctx.fillStyle = gold ? '#FFD84D' : '#FF8AD8';
+      ctx.beginPath(); ctx.ellipse(0, -s * 0.55, s * 0.5 * (1 - stretch * 0.5), s * 0.55 * (1 + stretch), 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#120630';
+      var look = P.clamp(hero.vx / view.W, -0.5, 0.5) * s * 0.3;
+      ctx.beginPath(); ctx.arc(-s * 0.16 + look, -s * 0.7, s * 0.08, 0, Math.PI * 2); ctx.arc(s * 0.16 + look, -s * 0.7, s * 0.08, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = '#FFD84D';
+    sparks.forEach(function (sp) { ctx.globalAlpha = sp.life * 2; ctx.fillRect(sp.x - 2, sp.y - 2, 4, 4); });
+    ctx.globalAlpha = 1;
+  }
+  var pointers = {};
+  function updateHold() {
+    var sum = 0; Object.keys(pointers).forEach(function (k) { sum += pointers[k]; });
+    hold = P.clamp(sum, -1, 1);
+  }
+  canvas.addEventListener('pointerdown', function (e) { var r = canvas.getBoundingClientRect(); pointers[e.pointerId] = e.clientX - r.left < r.width / 2 ? -1 : 1; updateHold(); });
+  canvas.addEventListener('pointermove', function (e) { if (pointers[e.pointerId] == null) return; var r = canvas.getBoundingClientRect(); pointers[e.pointerId] = e.clientX - r.left < r.width / 2 ? -1 : 1; updateHold(); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) { canvas.addEventListener(t, function (e) { delete pointers[e.pointerId]; updateHold(); }); });
+  var keys = {};
+  window.addEventListener('keydown', function (e) { if (/Arrow(Left|Right)|Key[AD]/.test(e.code)) { keys[e.code] = 1; e.preventDefault(); hold = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0); } });
+  window.addEventListener('keyup', function (e) { if (keys[e.code]) { keys[e.code] = 0; hold = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0); } });
+  reset();
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

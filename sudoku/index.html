@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Судоку</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:14px}
+.board{--size:340px;display:grid;grid-template-columns:repeat(6,1fr);width:var(--size);height:var(--size);flex:none;border-radius:14px;overflow:hidden;background:var(--night);gap:2px;padding:2px}
+.c{border:0;padding:0;background:var(--road);color:var(--mint);font-family:var(--font-display);font-weight:600;font-size:calc(var(--size) / 10);cursor:pointer;touch-action:manipulation}
+.c.given{color:var(--paper);background:#2E167A}
+.c.same{background:#4B2FB8}
+.c.sel{background:#5A3FD0;box-shadow:inset 0 0 0 3px var(--sun)}
+.c.bad{color:var(--coral)}
+.c.col2{margin-right:3px}.c.row1{margin-bottom:3px}
+.pad{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;width:var(--size)}
+.pad button{border:0;border-radius:12px;min-height:50px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:20px;cursor:pointer;touch-action:manipulation;padding:0}
+.pad button.erase{font-size:13px;color:var(--lilac)}
+.pad button.full{opacity:.35}
+.stage[data-state="paused"] .board,.stage[data-state="countdown"] .board{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="board" id="board"></div>
+    <div class="pad" id="pad"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 6, GIVENS = 14;
+  var stage = document.getElementById('stage'), boardEl = document.getElementById('board'), padEl = document.getElementById('pad');
+  var sol, cells, given, sel = -1, time = 0, mistakes = 0, els = [], padBtns = [];
+
+  var shell = P.shell({
+    id: 'sudoku', title: 'Судоку', tagline: 'Маленькое судоку 6 на 6 на скорость.',
+    rulesHtml: '<p>В каждой строке, столбце и прямоугольнике 2×3 должны стоять числа от 1 до 6 без повторов. Выбери клетку и нажми число внизу. Повторы подсвечиваются красным.</p>',
+    overEyebrow: 'Решено', overTone: 'good', countdown: false, lowerIsBetter: true,
+    formatScore: function (v) { return P.clock(v); },
+    kbdHint: 'На компьютере: стрелки, цифры 1–6, Backspace стирает',
+    onReset: reset
+  });
+
+  /* Готовое решение: шаблон плюс перестановки цифр, строк внутри полос и полос, столбцов внутри блоков и блоков */
+  function solved() {
+    var d = P.shuffle([0, 1, 2, 3, 4, 5]);
+    var rows = [], cols = [];
+    P.shuffle([0, 1, 2]).forEach(function (b) { P.shuffle([0, 1]).forEach(function (x) { rows.push(b * 2 + x); }); });
+    P.shuffle([0, 1]).forEach(function (s) { P.shuffle([0, 1, 2]).forEach(function (x) { cols.push(s * 3 + x); }); });
+    var g = [];
+    for (var r = 0; r < N; r++) for (var c = 0; c < N; c++) {
+      var rr = rows[r], cc = cols[c];
+      g.push(d[(3 * (rr % 2) + Math.floor(rr / 2) + cc) % 6] + 1);
+    }
+    return g;
+  }
+  function ok(g, i, v) {
+    var r = Math.floor(i / N), c = i % N, br = r - r % 2, bc = c - c % 3;
+    for (var k = 0; k < N; k++) {
+      if (k !== c && g[r * N + k] === v) return false;
+      if (k !== r && g[k * N + c] === v) return false;
+    }
+    for (var y = br; y < br + 2; y++) for (var x = bc; x < bc + 3; x++) if ((y !== r || x !== c) && g[y * N + x] === v) return false;
+    return true;
+  }
+  function count(g, limit) {
+    var i = g.indexOf(0);
+    if (i === -1) return 1;
+    var n = 0;
+    for (var v = 1; v <= N && n < limit; v++) if (ok(g, i, v)) { g[i] = v; n += count(g, limit - n); g[i] = 0; }
+    return n;
+  }
+  function puzzle(s) {
+    var g = s.slice(), order = P.shuffle(Array.from({ length: N * N }, function (_, i) { return i; }));
+    var left = N * N;
+    for (var k = 0; k < order.length && left > GIVENS; k++) {
+      var i = order[k], keep = g[i];
+      g[i] = 0;
+      if (count(g.slice(), 2) !== 1) g[i] = keep; else left--;
+    }
+    return g;
+  }
+  function build() {
+    boardEl.textContent = ''; els = [];
+    for (var i = 0; i < N * N; i++) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      (function (k) { b.addEventListener('pointerdown', function (e) { e.preventDefault(); select(k); }); })(i);
+      boardEl.appendChild(b); els.push(b);
+    }
+  }
+  function render() {
+    var sv = sel >= 0 ? cells[sel] : 0;
+    var counts = [0, 0, 0, 0, 0, 0, 0];
+    for (var i = 0; i < N * N; i++) {
+      var v = cells[i], r = Math.floor(i / N), c = i % N, e = els[i];
+      if (v) counts[v]++;
+      var cls = 'c';
+      if (given[i]) cls += ' given';
+      if (c === 2) cls += ' col2';
+      if (r === 1 || r === 3) cls += ' row1';
+      if (v && !given[i] && !ok(cells, i, v)) cls += ' bad';
+      if (i === sel) cls += ' sel'; else if (sv && v === sv) cls += ' same';
+      e.className = cls;
+      e.textContent = v || '';
+      e.setAttribute('aria-label', 'Строка ' + (r + 1) + ', столбец ' + (c + 1) + (v ? ', число ' + v : ', пусто'));
+    }
+    padBtns.forEach(function (b, k) { if (k < N) b.classList.toggle('full', counts[k + 1] >= N); });
+  }
+  function select(i) { if (!shell.running) return; sel = i; render(); }
+  function put(v) {
+    if (!shell.running || sel < 0 || given[sel]) return;
+    cells[sel] = v;
+    if (v && !ok(cells, sel, v)) { mistakes++; P.haptic('crash'); } else P.haptic('tap');
+    render();
+    if (cells.every(function (x, i) { return x === sol[i]; })) {
+      var s = Math.max(1, Math.round(time));
+      shell.end({ score: s, haptic: 'win', delay: 300, stats: 'повторов по ходу: ' + mistakes,
+        phrase: 'Судоку 6×6 у меня решается за ' + P.clock(s) + '.' });
+    }
+  }
+  for (var k = 1; k <= N + 1; k++) {
+    var pb = document.createElement('button');
+    pb.type = 'button';
+    pb.textContent = k <= N ? k : 'Стереть';
+    if (k > N) pb.className = 'erase';
+    (function (v) { pb.addEventListener('click', function () { put(v); }); })(k <= N ? k : 0);
+    padEl.appendChild(pb); padBtns.push(pb);
+  }
+  function reset() {
+    sol = solved(); cells = puzzle(sol); given = cells.map(Boolean);
+    sel = cells.indexOf(0); time = 0; mistakes = 0;
+    render(); shell.setScore('0:00');
+  }
+  P.loop(function (dt) { if (shell.running) { time += dt; shell.setScore(P.clock(time)); } });
+  window.addEventListener('keydown', function (e) {
+    if (!shell.running) return;
+    var m = /^Digit([1-6])$|^Numpad([1-6])$/.exec(e.code);
+    if (m) { put(Number(m[1] || m[2])); return; }
+    if (e.code === 'Backspace' || e.code === 'Delete' || e.code === 'Digit0') { put(0); return; }
+  });
+  P.arrows(function (d) {
+    if (!shell.running) return;
+    var r = Math.floor(Math.max(0, sel) / N), c = Math.max(0, sel) % N;
+    if (d === 'left') c = (c + N - 1) % N; if (d === 'right') c = (c + 1) % N;
+    if (d === 'up') r = (r + N - 1) % N; if (d === 'down') r = (r + 1) % N;
+    select(r * N + c);
+  });
+  function layout() {
+    var r = stage.getBoundingClientRect();
+    var size = Math.floor(Math.min(r.width - 32, r.height - 230, 440));
+    boardEl.style.setProperty('--size', size + 'px'); padEl.style.setProperty('--size', size + 'px'); padEl.style.width = size + 'px';
+  }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); build(); reset();
+})();
+</script>
+</body>
+</html>

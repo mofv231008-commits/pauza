@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Бегун</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#22105A}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Бегун. Тап — прыжок, второй тап в воздухе — ещё прыжок"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var M = ['метр', 'метра', 'метров'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var hero, obs, coins, sparks, speed, dist, nextGap, coinsGot, jumps, dead, t, hills = [];
+  for (var i = 0; i < 6; i++) hills.push({ x: i * 0.28, h: 0.08 + Math.random() * 0.1 });
+
+  var shell = P.shell({
+    id: 'runner', title: 'Бегун', tagline: 'Беги и перепрыгивай препятствия.',
+    rulesHtml: '<p>Тап — прыжок. Пока летишь, можно прыгнуть ещё раз. Собирай монеты, каждая даёт 10 метров. Чем дальше, тем быстрее бег.</p>',
+    startLabel: 'Бежать', overEyebrow: 'Споткнулся', countdown: true,
+    unit: function (n) { return P.plural(n, M); },
+    kbdHint: 'На компьютере: пробел или стрелка вверх — прыжок, P — пауза', pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { if (!hero) reset(); draw(); });
+  function ground() { return view.H * 0.74; }
+  function U() { return Math.max(18, Math.min(view.W, view.H * 0.6) * 0.07); }
+  function reset() {
+    var u = U();
+    hero = { x: view.W * 0.2, y: ground(), vy: 0, air: false, jumps: 0, squash: 0 };
+    obs = []; coins = []; sparks = []; speed = view.W * 0.62; dist = 0; nextGap = view.W * 0.9; coinsGot = 0; jumps = 0; dead = false; t = 0;
+    if (shell) { shell.setScore('0'); }
+    void u;
+  }
+  function jump() {
+    if (!shell.running || dead) return;
+    if (!hero.air || hero.jumps < 2) {
+      hero.vy = -view.H * (hero.air ? 1.05 : 1.25);
+      hero.air = true; hero.jumps++; jumps++;
+      P.haptic('tap');
+    }
+  }
+  function spawn() {
+    var u = U(), kind = Math.random();
+    var o;
+    if (kind < 0.5) o = { x: view.W + 20, w: u * (0.8 + Math.random() * 0.5), h: u * (1 + Math.random() * 0.9) };
+    else if (kind < 0.8) o = { x: view.W + 20, w: u * (1.8 + Math.random() * 1.2), h: u * (0.7 + Math.random() * 0.4) };
+    else o = { x: view.W + 20, w: u * 0.8, h: u * 2.3 };
+    obs.push(o);
+    if (Math.random() < 0.6) coins.push({ x: o.x + o.w / 2, y: ground() - o.h - u * 1.6, got: false });
+    nextGap = view.W * (0.55 + Math.random() * 0.6) + speed * 0.25;
+  }
+  function crash() {
+    dead = true;
+    for (var k = 0; k < 18; k++) { var a = Math.random() * Math.PI * 2; sparks.push({ x: hero.x, y: hero.y - U() * 0.6, vx: Math.cos(a) * 200, vy: Math.sin(a) * 200 - 80, life: 0.7 }); }
+    var m = Math.floor(dist);
+    shell.end({ score: m, delay: 700, haptic: 'crash', stats: 'монет: ' + coinsGot + ' · прыжков: ' + jumps,
+      phrase: 'В «Бегуне» у меня ' + P.fmt(m) + ' ' + P.plural(m, M) + '.' });
+  }
+  P.loop(function (dt) {
+    var u = U(), g = ground();
+    if (shell.running && !dead) {
+      t += dt;
+      speed = view.W * (0.62 + Math.min(0.9, t * 0.012));
+      var dx = speed * dt;
+      dist += dx / u * 0.5;
+      hero.vy += view.H * 3.6 * dt;
+      hero.y += hero.vy * dt;
+      if (hero.y >= g) { if (hero.air) hero.squash = 0.12; hero.y = g; hero.vy = 0; hero.air = false; hero.jumps = 0; }
+      obs.forEach(function (o) { o.x -= dx; });
+      coins.forEach(function (c) { c.x -= dx; });
+      obs = obs.filter(function (o) { return o.x + o.w > -20; });
+      coins = coins.filter(function (c) { return c.x > -20 && !c.got; });
+      nextGap -= dx;
+      if (nextGap <= 0) spawn();
+      var hw = u * 0.42, hh = u * 1.1;
+      obs.forEach(function (o) {
+        if (hero.x + hw > o.x + 3 && hero.x - hw < o.x + o.w - 3 && hero.y > g - o.h + 3) crash();
+      });
+      coins.forEach(function (c) {
+        if (!c.got && Math.abs(c.x - hero.x) < u * 0.8 && Math.abs(c.y - (hero.y - hh / 2)) < u * 1.1) {
+          c.got = true; coinsGot++; dist += 10; P.haptic('coin');
+          for (var k = 0; k < 6; k++) sparks.push({ x: c.x, y: c.y, vx: (Math.random() - 0.5) * 160, vy: -Math.random() * 160, life: 0.4, gold: true });
+        }
+      });
+      hills.forEach(function (h) { h.x -= dx / view.W * 0.15; if (h.x < -0.3) { h.x += 1.68; h.h = 0.08 + Math.random() * 0.1; } });
+      shell.setScore(P.fmt(Math.floor(dist)));
+    }
+    if (hero.squash > 0) hero.squash -= dt;
+    sparks.forEach(function (s) { s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 400 * dt; s.life -= dt; });
+    sparks = sparks.filter(function (s) { return s.life > 0; });
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, g = ground(), u = U();
+    var sky = ctx.createLinearGradient(0, 0, 0, g); sky.addColorStop(0, '#140734'); sky.addColorStop(1, '#3B1E8C');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, g);
+    ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(W * 0.78, g * 0.32, u * 1.4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#2A1470';
+    hills.forEach(function (h) { ctx.beginPath(); ctx.ellipse(h.x * W, g, W * 0.22, H * h.h * 1.6, 0, Math.PI, 0); ctx.fill(); });
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, g, W, H - g);
+    ctx.fillStyle = '#FF6B4A'; ctx.fillRect(0, g, W, 3);
+    if (!hero) return;
+    obs.forEach(function (o) {
+      ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.roundRect(o.x, g - o.h, o.w, o.h + 2, Math.min(8, o.w / 3)); ctx.fill();
+      ctx.fillStyle = 'rgba(18,6,48,0.25)'; ctx.fillRect(o.x + o.w * 0.62, g - o.h + 4, o.w * 0.2, o.h - 4);
+    });
+    coins.forEach(function (c) {
+      ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(c.x, c.y, u * 0.38, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(18,6,48,0.45)'; ctx.fillRect(c.x - u * 0.06, c.y - u * 0.2, u * 0.12, u * 0.4);
+    });
+    if (!dead) {
+      var sq = hero.squash > 0 ? 0.2 : 0, w = u * 0.9 * (1 + sq), h = u * 1.25 * (1 - sq);
+      var gold = P.gold();
+      ctx.fillStyle = gold ? '#FFD84D' : '#3DF5B0';
+      ctx.beginPath(); ctx.roundRect(hero.x - w / 2, hero.y - h, w, h, w * 0.4); ctx.fill();
+      ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(hero.x + w * 0.18, hero.y - h * 0.68, u * 0.1, 0, Math.PI * 2); ctx.fill();
+      var run = hero.air ? 0 : Math.sin(t * 22) * u * 0.18;
+      ctx.fillStyle = gold ? '#FF9A6B' : '#2FD99B';
+      ctx.fillRect(hero.x - w * 0.3 + run, hero.y - 2, w * 0.22, 5); ctx.fillRect(hero.x + w * 0.1 - run, hero.y - 2, w * 0.22, 5);
+    }
+    sparks.forEach(function (s) { ctx.globalAlpha = Math.min(1, s.life * 2); ctx.fillStyle = s.gold ? '#FFD84D' : '#3DF5B0'; ctx.fillRect(s.x - 3, s.y - 3, 6, 6); });
+    ctx.globalAlpha = 1;
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); jump(); });
+  window.addEventListener('keydown', function (e) { if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); jump(); } });
+  reset();
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

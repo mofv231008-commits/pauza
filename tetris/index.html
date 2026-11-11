@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Блоки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:var(--night)}.next{display:block}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Блоки. Веди пальцем вбок, тап поворачивает, свайп вниз роняет"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var COLS = 10, ROWS = 20;
+  var SHAPES = {
+    I: [[0, 1], [1, 1], [2, 1], [3, 1]], O: [[1, 0], [2, 0], [1, 1], [2, 1]], T: [[1, 0], [0, 1], [1, 1], [2, 1]],
+    S: [[1, 0], [2, 0], [0, 1], [1, 1]], Z: [[0, 0], [1, 0], [1, 1], [2, 1]], J: [[0, 0], [0, 1], [1, 1], [2, 1]], L: [[2, 0], [0, 1], [1, 1], [2, 1]]
+  };
+  var COLOR = { I: '#6FD3FF', O: '#FFD84D', T: '#B9A8F0', S: '#3DF5B0', Z: '#FF6B4A', J: '#FF8AD8', L: '#FF9A6B' };
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var board, piece, next, bag = [], score, lines, level, fall, cell = 20, ox = 0, oy = 0, flash = [], dead;
+
+  var shell = P.shell({
+    id: 'tetris', title: 'Блоки', tagline: 'Собирай полные линии из падающих фигур.',
+    rulesHtml: '<p>Веди пальцем влево и вправо, фигура едет следом. Короткий тап поворачивает, быстрый свайп вниз роняет фигуру. Полная линия исчезает, а с каждыми 8 линиями фигуры падают быстрее.</p>',
+    startLabel: 'Играть', overEyebrow: 'Места не осталось', countdown: true,
+    unit: function (n) { return P.plural(n, ['очко', 'очка', 'очков']); },
+    kbdHint: 'На компьютере: стрелки, пробел роняет, P — пауза', pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+
+  function take() {
+    if (!bag.length) bag = P.shuffle(Object.keys(SHAPES));
+    var k = bag.pop();
+    return { k: k, cells: SHAPES[k].map(function (c) { return c.slice(); }), x: 3, y: 0 };
+  }
+  function fits(cells, x, y) {
+    for (var i = 0; i < 4; i++) {
+      var cx = cells[i][0] + x, cy = cells[i][1] + y;
+      if (cx < 0 || cx >= COLS || cy >= ROWS) return false;
+      if (cy >= 0 && board[cy][cx]) return false;
+    }
+    return true;
+  }
+  function move(dx) { if (piece && fits(piece.cells, piece.x + dx, piece.y)) { piece.x += dx; return true; } return false; }
+  function rotate() {
+    if (!piece || piece.k === 'O') return;
+    var rot = piece.cells.map(function (c) { return [2 - c[1], c[0]]; });
+    if (piece.k === 'I') rot = piece.cells.map(function (c) { return [3 - c[1], c[0]]; });
+    var kicks = [0, -1, 1, -2, 2];
+    for (var i = 0; i < kicks.length; i++) {
+      if (fits(rot, piece.x + kicks[i], piece.y)) { piece.cells = rot; piece.x += kicks[i]; P.haptic('tap'); return; }
+    }
+  }
+  function ghostY() { var y = piece.y; while (fits(piece.cells, piece.x, y + 1)) y++; return y; }
+  function drop() {
+    if (!piece || !shell.running) return;
+    var g = ghostY();
+    score += (g - piece.y) * 2;
+    piece.y = g;
+    lock();
+  }
+  function lock() {
+    piece.cells.forEach(function (c) { var y = c[1] + piece.y; if (y >= 0) board[y][c[0] + piece.x] = piece.k; });
+    var full = [];
+    for (var y = 0; y < ROWS; y++) if (board[y].every(Boolean)) full.push(y);
+    if (full.length) {
+      full.forEach(function (y) { board.splice(y, 1); board.unshift(new Array(COLS).fill(0)); flash.push({ y: y, t: 0.3 }); });
+      lines += full.length;
+      score += [0, 100, 300, 500, 800][full.length] * (level + 1);
+      level = Math.floor(lines / 8);
+      P.haptic(full.length >= 3 ? 'win' : 'coin');
+    } else P.haptic('tap');
+    shell.setScore(P.fmt(score));
+    spawn();
+  }
+  function spawn() {
+    piece = next; next = take();
+    piece.x = piece.k === 'O' ? 3 : 3; piece.y = piece.k === 'I' ? -1 : 0;
+    showSide();
+    if (!fits(piece.cells, piece.x, piece.y)) {
+      dead = true;
+      shell.end({ score: score, delay: 500, haptic: 'crash', stats: 'линий: ' + lines + ' · уровень: ' + (level + 1),
+        phrase: 'В «Блоках» у меня ' + P.fmt(score) + ' ' + P.plural(score, ['очко', 'очка', 'очков']) + '.' });
+    }
+  }
+  function showSide() {
+    var s = '<svg class="next" width="34" height="18" viewBox="0 0 4 2" aria-label="Следующая фигура">';
+    SHAPES[next.k].forEach(function (c) { s += '<rect x="' + c[0] + '" y="' + c[1] + '" width=".9" height=".9" rx=".2" fill="' + COLOR[next.k] + '"/>'; });
+    shell.setSide(s + '</svg>' + '<span>' + lines + '</span>');
+  }
+  function reset() {
+    board = []; for (var y = 0; y < ROWS; y++) board.push(new Array(COLS).fill(0));
+    bag = []; next = take(); score = 0; lines = 0; level = 0; fall = 0; flash = []; dead = false;
+    shell.setScore('0');
+    spawn();
+  }
+
+  var view = P.canvas(canvas, stage, function (v) {
+    cell = Math.floor(Math.min((v.W - 24) / COLS, (v.H - 110) / ROWS));
+    ox = Math.round((v.W - cell * COLS) / 2); oy = Math.max(84, Math.round(v.H - cell * ROWS - 18));
+    draw();
+  });
+  function block(ctx, x, y, color, alpha) {
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.roundRect(ox + x * cell + 1.5, oy + y * cell + 1.5, cell - 3, cell - 3, cell * 0.22); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  function draw() {
+    var ctx = view.ctx;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, view.W, view.H);
+    ctx.fillStyle = '#22105A'; ctx.beginPath(); ctx.roundRect(ox - 4, oy - 4, cell * COLS + 8, cell * ROWS + 8, 12); ctx.fill();
+    ctx.fillStyle = 'rgba(185,168,240,0.06)';
+    for (var y = 0; y < ROWS; y++) for (var x = 0; x < COLS; x++) if ((x + y) % 2) ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
+    if (!board) return;
+    for (y = 0; y < ROWS; y++) for (x = 0; x < COLS; x++) if (board[y][x]) block(ctx, x, y, COLOR[board[y][x]]);
+    flash.forEach(function (f) { ctx.fillStyle = 'rgba(244,241,255,' + (f.t * 2).toFixed(2) + ')'; ctx.fillRect(ox, oy + f.y * cell, cell * COLS, cell); });
+    if (piece && !dead && shell.state !== 'start') {
+      var g = ghostY();
+      piece.cells.forEach(function (c) {
+        if (c[1] + g >= 0) { ctx.strokeStyle = COLOR[piece.k]; ctx.globalAlpha = 0.45; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(ox + (c[0] + piece.x) * cell + 3, oy + (c[1] + g) * cell + 3, cell - 6, cell - 6, cell * 0.2); ctx.stroke(); ctx.globalAlpha = 1; }
+      });
+      piece.cells.forEach(function (c) { if (c[1] + piece.y >= 0) block(ctx, c[0] + piece.x, c[1] + piece.y, COLOR[piece.k]); });
+    }
+  }
+  P.loop(function (dt) {
+    flash.forEach(function (f) { f.t -= dt; }); flash = flash.filter(function (f) { return f.t > 0; });
+    if (shell.running && piece && !dead) {
+      fall += dt;
+      var step = Math.max(0.07, 0.75 - level * 0.07);
+      if (soft) step = Math.min(step, 0.05);
+      while (fall >= step && !dead) {
+        fall -= step;
+        if (fits(piece.cells, piece.x, piece.y + 1)) { piece.y++; if (soft) score++; }
+        else { lock(); fall = 0; break; }
+      }
+    }
+    draw();
+  });
+
+  /* Управление пальцем: фигура едет за пальцем по клеткам, тап поворачивает, рывок вниз роняет */
+  var drag = null, soft = false;
+  canvas.addEventListener('pointerdown', function (e) {
+    if (!shell.running) return;
+    drag = { x: e.clientX, y: e.clientY, t: performance.now(), px: piece ? piece.x : 0, moved: false, dropped: false };
+  });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!drag || !shell.running || !piece) return;
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    var want = drag.px + Math.round(dx / (cell * 0.9));
+    while (piece.x < want && move(1)) drag.moved = true;
+    while (piece.x > want && move(-1)) drag.moved = true;
+    if (Math.abs(dx) > cell * 0.6) drag.moved = true;
+    var speed = dy / Math.max(1, performance.now() - drag.t);
+    if (!drag.dropped && dy > cell * 2.2 && speed > 0.9) { drag.dropped = true; drop(); }
+    else if (!drag.dropped && dy > cell * 1.2 && Math.abs(dy) > Math.abs(dx)) { soft = true; drag.moved = true; }
+  });
+  function up() {
+    if (drag && !drag.moved && !drag.dropped && performance.now() - drag.t < 350) rotate();
+    drag = null; soft = false;
+  }
+  canvas.addEventListener('pointerup', up);
+  canvas.addEventListener('pointercancel', function () { drag = null; soft = false; });
+  P.arrows(function (d) {
+    if (!shell.running) return;
+    if (d === 'left') move(-1); else if (d === 'right') move(1); else if (d === 'up') rotate();
+    else if (d === 'down' && piece && fits(piece.cells, piece.x, piece.y + 1)) { piece.y++; score++; shell.setScore(P.fmt(score)); }
+  });
+  window.addEventListener('keydown', function (e) { if (e.code === 'Space' && shell.running) { e.preventDefault(); drop(); } });
+
+  reset(); piece = null;
+  draw();
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

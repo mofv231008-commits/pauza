@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Шульте</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.grid{--size:340px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:var(--size);height:var(--size);flex:none}
+.n{border:0;padding:0;border-radius:12px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:800;font-size:calc(var(--size) / 12);cursor:pointer;touch-action:manipulation;font-variant-numeric:tabular-nums}
+.n.done{background:transparent;color:rgba(185,168,240,.35)}
+.n.miss{background:var(--coral);color:var(--ink)}
+.find{margin:0;font-family:var(--font-display);font-weight:600;font-size:18px;color:var(--lilac)}
+.find b{color:var(--mint);font-size:24px}
+.stage[data-state="paused"] .grid,.stage[data-state="countdown"] .grid{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="find" id="find">Найди <b>1</b></p>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var stage = document.getElementById('stage'), grid = document.getElementById('grid'), findEl = document.getElementById('find');
+  var want = 1, time = 0, misses = 0;
+  function fmtT(v) { return (v / 10).toFixed(1).replace('.', ',') + ' с'; }
+  var shell = P.shell({
+    id: 'schulte', title: 'Шульте', tagline: 'Найди числа от 1 до 25 по порядку.',
+    rulesHtml: '<p>Таблица Шульте тренирует внимание и периферийное зрение. Нажимай числа по порядку от 1 до 25 как можно быстрее. Ошибка добавляет секунду.</p>',
+    overEyebrow: 'Готово', overTone: 'good', countdown: true, lowerIsBetter: true,
+    formatScore: fmtT,
+    onReset: reset
+  });
+  function build() {
+    var nums = P.shuffle(Array.from({ length: 25 }, function (_, i) { return i + 1; }));
+    grid.textContent = '';
+    nums.forEach(function (n) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'n'; b.textContent = n;
+      b.addEventListener('pointerdown', function (e) { e.preventDefault(); press(n, b); });
+      grid.appendChild(b);
+    });
+  }
+  function press(n, b) {
+    if (!shell.running) return;
+    if (n === want) {
+      b.classList.add('done'); P.haptic('tap');
+      want++;
+      if (want > 25) {
+        var score = Math.round(time * 10);
+        shell.end({ score: score, haptic: 'win', stats: 'ошибок: ' + misses,
+          phrase: 'Таблицу Шульте я прохожу за ' + fmtT(score) + '.' });
+        return;
+      }
+      findEl.innerHTML = 'Найди <b>' + want + '</b>';
+    } else if (!b.classList.contains('done')) {
+      misses++; time += 1; P.haptic('crash');
+      b.classList.remove('miss'); void b.offsetWidth; b.classList.add('miss');
+      setTimeout(function () { b.classList.remove('miss'); }, 250);
+    }
+  }
+  function reset() { want = 1; time = 0; misses = 0; build(); findEl.innerHTML = 'Найди <b>1</b>'; shell.setScore('0,0 с'); }
+  P.loop(function (dt) { if (shell.running && want <= 25) { time += dt; shell.setScore(fmtT(Math.round(time * 10))); } });
+  function layout() { var r = stage.getBoundingClientRect(); grid.style.setProperty('--size', Math.floor(Math.min(r.width - 32, r.height - 200, 440)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); build();
+})();
+</script>
+</body>
+</html>

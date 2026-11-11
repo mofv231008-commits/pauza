@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Виселица</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:16px;justify-content:flex-start;padding-top:84px}
+.pic{width:min(150px,22vh);height:min(150px,22vh);flex:none}
+.pic .p{opacity:0;transition:opacity .2s}
+.pic .p.on{opacity:1}
+.word{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:100%}
+.word span{display:grid;place-items:center;width:clamp(26px,8.4vw,38px);height:clamp(34px,10vw,46px);border-bottom:3px solid var(--lilac);font-family:var(--font-display);font-weight:800;font-size:clamp(18px,6vw,26px);text-transform:uppercase}
+.word span.open{border-color:var(--mint)}
+.word span.miss{color:var(--coral);border-color:var(--coral)}
+.info{margin:0;font-size:14px;color:var(--lilac);min-height:1.4em;text-align:center}
+.kb{display:flex;flex-direction:column;gap:6px;width:100%;max-width:440px;margin-top:auto}
+.kb div{display:flex;gap:4px;justify-content:center}
+.kb button{flex:1;max-width:36px;min-height:46px;border:0;border-radius:8px;padding:0;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:15px;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+.kb button.yes{background:var(--mint);color:var(--ink)}
+.kb button.no{background:transparent;color:rgba(185,168,240,.35)}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <svg class="pic" viewBox="0 0 100 100" aria-hidden="true" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <g stroke="#B9A8F0" stroke-width="4"><path d="M12 94 H62 M26 94 V8 H66 V20 M26 26 L44 8"/></g>
+      <g stroke="#F4F1FF" stroke-width="4">
+        <circle class="p" cx="66" cy="30" r="10"/>
+        <path class="p" d="M66 40 V66"/>
+        <path class="p" d="M66 46 L54 58"/>
+        <path class="p" d="M66 46 L78 58"/>
+        <path class="p" d="M66 66 L56 82"/>
+        <path class="p" d="M66 66 L76 82"/>
+      </g>
+    </svg>
+    <div class="word" id="word" aria-live="polite"></div>
+    <p class="info" id="info"></p>
+    <div class="kb" id="kb"></div>
+  </div>
+</div>
+<script src="../shared/nouns.js"></script>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['слово', 'слова', 'слов'], LIVES = 6;
+  var ROWS = ['йцукенгшщзхъ', 'фывапролджэ', 'ячсмитьбю'];
+  var wordEl = document.getElementById('word'), infoEl = document.getElementById('info'), kb = document.getElementById('kb');
+  var parts = document.querySelectorAll('.pic .p');
+  var word, open, wrong, score, keys = {}, used = [], busy = false, totalWrong = 0;
+
+  ROWS.forEach(function (row) {
+    var d = document.createElement('div');
+    row.split('').forEach(function (ch) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = ch; b.setAttribute('aria-label', 'Буква ' + ch.toUpperCase());
+      b.addEventListener('click', function () { guess(ch); });
+      d.appendChild(b); keys[ch] = b;
+    });
+    kb.appendChild(d);
+  });
+  var shell = P.shell({
+    id: 'hangman', title: 'Виселица', tagline: 'Угадай слово по буквам.',
+    rulesHtml: '<p>Загадано существительное, первая и последняя буквы открыты. Выбирай буквы на клавиатуре. На каждое слово 6 ошибок. Угадал — следующее слово, ошибся 6 раз — игра окончена.</p>',
+    overEyebrow: 'Слово не угадано', countdown: false,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере можно печатать буквы', pauseKeys: ['Escape'],
+    onReset: reset
+  });
+  function newWord() {
+    var list = window.PauzaNouns, w;
+    do { w = P.pick(list); } while (used.indexOf(w) !== -1 && used.length < list.length);
+    used.push(w);
+    word = w; open = {}; wrong = 0; busy = false;
+    open[w[0]] = true; open[w[w.length - 1]] = true;
+    Object.keys(keys).forEach(function (k) { keys[k].className = ''; keys[k].disabled = false; });
+    Object.keys(open).forEach(function (ch) { if (keys[ch]) keys[ch].className = 'yes'; });
+    infoEl.textContent = w.length + ' ' + P.plural(w.length, ['буква', 'буквы', 'букв']);
+    render(false);
+  }
+  function render(reveal) {
+    wordEl.textContent = '';
+    for (var i = 0; i < word.length; i++) {
+      var s = document.createElement('span'), ch = word[i];
+      if (open[ch]) { s.textContent = ch; s.className = 'open'; }
+      else if (reveal) { s.textContent = ch; s.className = 'miss'; }
+      wordEl.appendChild(s);
+    }
+    parts.forEach(function (p, k) { p.classList.toggle('on', k < wrong); });
+  }
+  function guess(ch) {
+    if (!shell.running || busy || !keys[ch] || keys[ch].disabled) return;
+    keys[ch].disabled = true;
+    if (word.indexOf(ch) !== -1) {
+      open[ch] = true; keys[ch].className = 'yes'; P.haptic('coin');
+      render(false);
+      if (word.split('').every(function (c) { return open[c]; })) {
+        score++; shell.setScore(String(score)); busy = true; P.haptic('win');
+        infoEl.textContent = 'Угадано!';
+        setTimeout(function () { if (shell.running) newWord(); }, 700);
+      }
+    } else {
+      wrong++; totalWrong++; keys[ch].className = 'no'; P.haptic('crash');
+      render(false);
+      shell.setSide(hearts());
+      if (wrong >= LIVES) {
+        busy = true; render(true);
+        infoEl.textContent = 'Было слово «' + word + '»';
+        shell.end({ score: score, delay: 1400, stats: 'последнее слово: ' + word,
+          phrase: 'В «Виселице» у меня ' + score + ' ' + P.plural(score, U) + ' подряд.' });
+      }
+    }
+    if (!busy) shell.setSide(hearts());
+  }
+  function hearts() { return (LIVES - wrong) + ' / ' + LIVES; }
+  function reset() { score = 0; used = []; totalWrong = 0; shell.setScore('0'); newWord(); shell.setSide(hearts()); }
+  window.addEventListener('keydown', function (e) {
+    var ch = (e.key || '').toLowerCase().replace('ё', 'е');
+    if (keys[ch]) { e.preventDefault(); guess(ch); }
+  });
+  word = 'пауза'; open = { п: true, а: true, у: true }; wrong = 2; render(false);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Кроты</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:#22105A}
+.field{--size:340px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:var(--size);flex:none}
+.hole{position:relative;aspect-ratio:1;border:0;padding:0;background:none;cursor:pointer;touch-action:manipulation;overflow:hidden;border-radius:0 0 40% 40%}
+.hole::after{content:"";position:absolute;left:4%;right:4%;bottom:6%;height:30%;border-radius:50%;background:#140734;border:3px solid #4B2FB8;box-sizing:border-box}
+.mole{position:absolute;left:18%;right:18%;bottom:12%;height:70%;border-radius:45% 45% 20% 20%;background:#FF9A6B;transform:translateY(105%);transition:transform .12s ease-out;z-index:1}
+.mole::before,.mole::after{content:"";position:absolute;top:28%;width:12%;height:12%;border-radius:50%;background:#120630}
+.mole::before{left:28%}.mole::after{right:28%}
+.mole i{position:absolute;left:38%;right:38%;top:46%;height:14%;border-radius:50%;background:#FF6B4A}
+.hole.up .mole{transform:translateY(0)}
+.hole.gold .mole{background:#FFD84D}
+.hole.bomb .mole{background:#120630;border:3px solid #B9A8F0;box-sizing:border-box;border-radius:50%;left:22%;right:22%;height:56%}
+.hole.bomb .mole::before,.hole.bomb .mole::after{display:none}
+.hole.bomb .mole i{left:44%;right:auto;width:12%;top:-14%;height:22%;border-radius:2px;background:#FF6B4A}
+.hole.hit .mole{background:#3DF5B0;transform:translateY(30%) scaleY(.8)}
+.hole::before{content:"";position:absolute;inset:auto 0 0;height:21%;background:#22105A;z-index:2}
+.status{margin:0;min-height:1.5em;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac);text-align:center}
+.status.bad{color:var(--coral)}.status.good{color:var(--mint)}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <div class="field" id="field"></div>
+    <p class="status" id="status">Жми на кротов, бомбы не трогай</p>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['крот', 'крота', 'кротов'];
+  var stage = document.getElementById('stage'), field = document.getElementById('field'), statusEl = document.getElementById('status');
+  var holes = [], score = 0, hits = 0, bombs = 0, spawnT = 0, elapsed = 0, sayT = 0;
+  for (var i = 0; i < 9; i++) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'hole'; b.setAttribute('aria-label', 'Нора ' + (i + 1));
+    b.innerHTML = '<span class="mole"><i></i></span>';
+    field.appendChild(b);
+    holes.push({ el: b, kind: null, left: 0 });
+    (function (k) { b.addEventListener('pointerdown', function (e) { e.preventDefault(); whack(k); }); })(i);
+  }
+  var shell = P.shell({
+    id: 'moles', title: 'Кроты', tagline: 'Жми на кротов, пока они не спрятались.',
+    rulesHtml: '<p>Кроты выглядывают из нор. Успей нажать: обычный крот — 1 очко, золотой — 3. Тёмные бомбы не трогай, каждая отнимает 3 секунды. На всё 30 секунд.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 30, finish, document.getElementById('timebar'));
+  function say(t, tone) { statusEl.textContent = t; statusEl.className = 'status' + (tone ? ' ' + tone : ''); sayT = 0.8; }
+  function hide(h) { h.kind = null; h.el.className = 'hole'; }
+  function show(h, kind, life) { h.kind = kind; h.left = life; h.el.className = 'hole up' + (kind === 'mole' ? '' : ' ' + kind); }
+  function whack(k) {
+    if (!shell.running) return;
+    var h = holes[k];
+    if (!h.kind || h.kind === 'hit') return;
+    if (h.kind === 'bomb') { bombs++; timer.add(-3); P.haptic('crash'); say('Бомба: −3 секунды', 'bad'); hide(h); return; }
+    var pts = h.kind === 'gold' ? 3 : 1;
+    score += pts; hits++;
+    shell.setScore(String(score));
+    P.haptic('coin');
+    if (pts === 3) say('Золотой: +3', 'good');
+    h.kind = 'hit'; h.left = 0.18; h.el.className = 'hole up hit';
+  }
+  function reset() {
+    score = 0; hits = 0; bombs = 0; spawnT = 0.3; elapsed = 0;
+    holes.forEach(hide);
+    shell.setScore('0'); timer.reset();
+    statusEl.textContent = 'Жми на кротов, бомбы не трогай'; statusEl.className = 'status';
+  }
+  function finish() {
+    holes.forEach(hide);
+    shell.end({ score: score, delay: 400, stats: 'попаданий: ' + hits + ' · задето бомб: ' + bombs,
+      phrase: 'В «Кротах» у меня ' + score + ' ' + P.plural(score, U) + ' за 30 секунд.' });
+  }
+  P.loop(function (dt) {
+    if (sayT > 0) { sayT -= dt; if (sayT <= 0) { statusEl.textContent = ''; statusEl.className = 'status'; } }
+    if (!shell.running) return;
+    elapsed += dt;
+    holes.forEach(function (h) { if (h.kind) { h.left -= dt; if (h.left <= 0) hide(h); } });
+    spawnT -= dt;
+    if (spawnT <= 0) {
+      var free = holes.filter(function (h) { return !h.kind; });
+      if (free.length) {
+        var r = Math.random(), kind = r < 0.1 ? 'gold' : r < 0.1 + Math.min(0.22, 0.08 + elapsed * 0.006) ? 'bomb' : 'mole';
+        var life = Math.max(0.55, 1.15 - elapsed * 0.02) * (kind === 'gold' ? 0.75 : 1);
+        show(P.pick(free), kind, life);
+      }
+      spawnT = Math.max(0.28, 0.75 - elapsed * 0.015) * (0.6 + Math.random() * 0.6);
+    }
+  });
+  function layout() { var r = stage.getBoundingClientRect(); field.style.setProperty('--size', Math.floor(Math.min(r.width - 32, r.height - 230, 420)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout();
+  show(holes[1], 'mole', 99); show(holes[5], 'gold', 99); show(holes[6], 'bomb', 99);
+  timer.show();
+})();
+</script>
+</body>
+</html>

@@ -197,6 +197,121 @@
     });
   }
 
+  /* ---------- Помощники для игр ---------- */
+
+  /* Скруглённые прямоугольники на старых телефонах (iOS 15 и раньше) */
+  if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      r = Math.max(0, Math.min(typeof r === 'number' ? r : (r && r[0]) || 0, Math.abs(w) / 2, Math.abs(h) / 2));
+      this.moveTo(x + r, y);
+      this.arcTo(x + w, y, x + w, y + h, r);
+      this.arcTo(x + w, y + h, x, y + h, r);
+      this.arcTo(x, y + h, x, y, r);
+      this.arcTo(x, y, x + w, y, r);
+      this.closePath();
+      return this;
+    };
+  }
+
+  /* Холст во всю сцену с учётом плотности пикселей. onResize(view) зовётся при каждом изменении размера. */
+  function canvas2d(canvas, stage, onResize) {
+    var ctx = canvas.getContext('2d');
+    var view = { ctx: ctx, W: 1, H: 1, dpr: 1 };
+    var ready = false;
+    function fit() {
+      var r = stage.getBoundingClientRect();
+      var w = Math.max(1, r.width), h = Math.max(1, r.height);
+      view.dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+      canvas.width = Math.round(w * view.dpr); canvas.height = Math.round(h * view.dpr);
+      ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
+      var oldW = view.W, oldH = view.H;
+      view.W = w; view.H = h;
+      if (onResize && ready) onResize(view, oldW, oldH);
+    }
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(stage);
+    window.addEventListener('resize', fit);
+    fit();
+    /* Первый вызов onResize — после того, как игра получила view */
+    Promise.resolve().then(function () { ready = true; if (onResize) onResize(view, 1, 1); });
+    return view;
+  }
+
+  /* Игровой цикл: fn(dt) каждый кадр, dt в секундах, не больше 0,05 */
+  function loop(fn) {
+    var last = performance.now();
+    function frame(now) {
+      var dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+      last = now;
+      fn(dt);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* Ограничение по времени: секунды справа вверху и полоска .timebar, если она есть */
+  function timeLimit(game, total, onEnd, bar) {
+    var fill = bar ? bar.querySelector('i') : null;
+    var t = { left: total, total: total };
+    function show() {
+      var warn = t.left <= Math.min(10, total / 4);
+      game.setSide(Math.ceil(t.left) + ' с', warn);
+      if (fill) {
+        fill.style.transform = 'scaleX(' + clamp(t.left / total, 0, 1).toFixed(4) + ')';
+        bar.classList.toggle('warn', warn);
+      }
+    }
+    t.reset = function () { t.left = total; show(); };
+    t.add = function (sec) {
+      t.left = clamp(t.left + sec, 0, total * 2); show();
+      if (t.left <= 0 && game.running) onEnd();
+    };
+    t.show = show;
+    loop(function (dt) {
+      if (!game.running || t.left <= 0) return;
+      t.left -= dt;
+      if (t.left <= 0) { t.left = 0; show(); onEnd(); } else show();
+    });
+    return t;
+  }
+
+  /* Тап и свайп по элементу. h.tap(x, y, e) в координатах элемента, h.swipe('left'|'right'|'up'|'down') */
+  function gestures(el, h) {
+    var start = null;
+    el.addEventListener('pointerdown', function (e) {
+      if (e.button > 0) return;
+      start = { x: e.clientX, y: e.clientY, t: Date.now() };
+      if (h.down) { var r = el.getBoundingClientRect(); h.down(e.clientX - r.left, e.clientY - r.top, e); }
+    });
+    el.addEventListener('pointerup', function (e) {
+      if (!start) return;
+      var dx = e.clientX - start.x, dy = e.clientY - start.y;
+      start = null;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) > 24) {
+        if (h.swipe) h.swipe(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+      } else if (h.tap) {
+        var r = el.getBoundingClientRect();
+        h.tap(e.clientX - r.left, e.clientY - r.top, e);
+      }
+    });
+    el.addEventListener('pointercancel', function () { start = null; });
+  }
+
+  /* Стрелки и WASD на компьютере */
+  function arrows(fn) {
+    var map = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down' };
+    window.addEventListener('keydown', function (e) {
+      var d = map[e.code];
+      if (d) { e.preventDefault(); fn(d, e); }
+    });
+  }
+
+  function rand(n) { return Math.floor(Math.random() * n); }
+  function pick(list) { return list[rand(list.length)]; }
+  function shuffle(list) {
+    for (var i = list.length - 1; i > 0; i--) { var j = rand(i + 1), t = list[i]; list[i] = list[j]; list[j] = t; }
+    return list;
+  }
+
   /* ---------- Мелочи ---------- */
   function fmt(n) { return Math.floor(n).toLocaleString('ru-RU'); }
   function plural(n, forms) {
@@ -463,6 +578,14 @@
     plural: plural,
     clamp: clamp,
     clock: clock,
+    canvas: canvas2d,
+    loop: loop,
+    timeLimit: timeLimit,
+    gestures: gestures,
+    arrows: arrows,
+    rand: rand,
+    pick: pick,
+    shuffle: shuffle,
     shell: shell
   };
 })();
