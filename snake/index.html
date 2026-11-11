@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<link rel="stylesheet" href="../shared/pauza.css?v=3">
 <style>
 .stage{background:var(--shoulder)}
 .field{flex:none;display:block;border-radius:16px;background:var(--night);touch-action:none}
@@ -25,7 +25,7 @@
   </div>
 </div>
 
-<script src="../shared/pauza.js?v=2"></script>
+<script src="../shared/pauza.js?v=3"></script>
 <script>
 (function () {
   'use strict';
@@ -147,11 +147,11 @@
     }
 
     var lerp = alive ? P.clamp(t, 0, 1) : 1;
-    var pad = Math.max(1.5, cell * 0.1);
+    var pad = Math.max(1.5, cell * 0.1), gold = P.gold();
     for (var i = snake.length - 1; i >= 0; i--) {
       var a = prev[i] || snake[i], b = snake[i];
       var px = (a[0] + (b[0] - a[0]) * lerp) * cell, py = (a[1] + (b[1] - a[1]) * lerp) * cell;
-      var shade = i === 0 ? '#3DF5B0' : (i % 2 ? '#2FD99B' : '#36E7A6');
+      var shade = gold ? (i === 0 ? '#FFD84D' : (i % 2 ? '#F2C23A' : '#FFCB45')) : (i === 0 ? '#3DF5B0' : (i % 2 ? '#2FD99B' : '#36E7A6'));
       if (!alive && deathFlash > 0.5) shade = '#FF6B4A';
       ctx.fillStyle = shade;
       rr(px + pad, py + pad, cell - pad * 2, cell - pad * 2, cell * 0.3); ctx.fill();
@@ -204,6 +204,7 @@
   demo();
   layout();
   requestAnimationFrame(frame);
+  P.syncPerks();
 })();
 </script>
 </body>

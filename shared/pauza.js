@@ -88,6 +88,115 @@
     return Promise.reject(text);
   }
 
+  /* ---------- События от Telegram ----------
+     Мобильные клиенты вызывают Telegram.WebView.receiveEvent, веб-версия присылает postMessage */
+  var listeners = {};
+  function on(type, fn) { (listeners[type] = listeners[type] || []).push(fn); }
+  function off(type, fn) {
+    var list = listeners[type];
+    if (list) listeners[type] = list.filter(function (f) { return f !== fn; });
+  }
+  function receiveEvent(type, data) {
+    (listeners[type] || []).slice().forEach(function (fn) { safe(function () { fn(data || {}); }); });
+  }
+  window.Telegram = window.Telegram || {};
+  if (!window.Telegram.WebView) window.Telegram.WebView = { receiveEvent: receiveEvent };
+  if (!window.TelegramGameProxy) window.TelegramGameProxy = { receiveEvent: receiveEvent };
+  if (!window.TelegramGameProxy_receiveEvent) window.TelegramGameProxy_receiveEvent = receiveEvent;
+  window.addEventListener('message', function (e) {
+    if (e.source !== window.parent || window.parent === window) return;
+    var d = safe(function () { return typeof e.data === 'string' ? JSON.parse(e.data) : e.data; }, null);
+    if (d && d.eventType) receiveEvent(d.eventType, d.eventData);
+  });
+
+  /* Облачное хранилище Telegram: одно на пользователя и бота, видно со всех его устройств */
+  var reqSeq = 0, pending = {};
+  on('custom_method_invoked', function (d) {
+    var p = pending[d.req_id];
+    if (!p) return;
+    delete pending[d.req_id];
+    if (d.error) p.reject(new Error(d.error)); else p.resolve(d.result);
+  });
+  function invoke(method, params, timeoutMs) {
+    return new Promise(function (resolve, reject) {
+      var id = 'pz' + (++reqSeq) + '_' + Date.now();
+      pending[id] = { resolve: resolve, reject: reject };
+      if (!postEvent('web_app_invoke_custom_method', { req_id: id, method: method, params: params })) {
+        delete pending[id];
+        reject(new Error('no telegram'));
+        return;
+      }
+      setTimeout(function () { if (pending[id]) { delete pending[id]; reject(new Error('timeout')); } }, timeoutMs || 4000);
+    });
+  }
+  var cloud = {
+    get: function (keys) { return invoke('getStorageValues', { keys: keys }); },
+    set: function (key, value) { return invoke('saveStorageValue', { key: key, value: value }); }
+  };
+
+  /* ---------- Звёзды ----------
+     Покупки только для красоты: на очки и рекорды они не влияют. */
+  var BOT_API = 'https://pauza-bot.mofv231008.workers.dev';
+  var PRODUCTS = {
+    thanks: { stars: 15, title: 'Спасибо', perk: 'Значок ⭐ на экране выбора' },
+    gold: { stars: 75, title: 'Золотой набор', perk: 'Золотые машинка, самолётик, змейка и звездолёт, плюс значок ⭐' }
+  };
+  var perkCache = null;
+  function perks() {
+    if (!perkCache) {
+      var p = store.get('pz_perks', {});
+      perkCache = p && typeof p === 'object' ? p : {};
+    }
+    return perkCache;
+  }
+  function grant(id) {
+    var p = perks();
+    if (!p[id]) p[id] = Date.now();
+    store.set('pz_perks', p);
+    cloud.set('pz_perks', JSON.stringify(p)).catch(function () {});
+  }
+  function gold() { return !!perks().gold; }
+  function supporter() { var p = perks(); return !!(p.gold || p.thanks); }
+  /* Подтягиваем покупки из облака: так они появляются на новом телефоне */
+  function syncPerks() {
+    if (!inTelegram) return Promise.resolve(perks());
+    return cloud.get(['pz_perks']).then(function (res) {
+      var remote = safe(function () { return JSON.parse((res && res.pz_perks) || '{}') || {}; }, {});
+      var local = perks(), changed = false;
+      Object.keys(remote).forEach(function (k) { if (PRODUCTS[k] && !local[k]) { local[k] = remote[k]; changed = true; } });
+      if (changed) store.set('pz_perks', local);
+      return local;
+    }, function () { return perks(); });
+  }
+  /* Окно оплаты Telegram. Ответ: 'paid', 'cancelled', 'failed' или 'pending' */
+  function buy(id) {
+    if (!PRODUCTS[id]) return Promise.reject(new Error('Такого набора нет.'));
+    if (!inTelegram) return Promise.reject(new Error('Оплата звёздами работает только внутри Telegram. Открой игру через @' + BOT + '.'));
+    return fetch(BOT_API + '/invoice?product=' + encodeURIComponent(id)).then(function (r) {
+      if (!r.ok) throw new Error('Сервер оплаты не ответил. Попробуй ещё раз через минуту.');
+      return r.json();
+    }, function () {
+      throw new Error('Нет связи с сервером оплаты. Проверь интернет и попробуй ещё раз.');
+    }).then(function (data) {
+      var m = /^https:\/\/t\.me\/(?:\$|invoice\/)([A-Za-z0-9_\-=]+)$/.exec((data && data.link) || '');
+      if (!m) throw new Error('Не получилось создать счёт. Попробуй ещё раз через минуту.');
+      var slug = m[1];
+      return new Promise(function (resolve, reject) {
+        function closed(d) {
+          if (d.slug && d.slug !== slug) return;
+          off('invoice_closed', closed);
+          if (d.status === 'paid') { grant(id); haptic('win'); }
+          resolve(d.status || 'cancelled');
+        }
+        on('invoice_closed', closed);
+        if (!postEvent('web_app_open_invoice', { slug: slug })) {
+          off('invoice_closed', closed);
+          reject(new Error('Не получилось открыть окно оплаты.'));
+        }
+      });
+    });
+  }
+
   /* ---------- Мелочи ---------- */
   function fmt(n) { return Math.floor(n).toLocaleString('ru-RU'); }
   function plural(n, forms) {
@@ -339,6 +448,16 @@
     startParam: startParam,
     haptic: haptic,
     share: share,
+    on: on,
+    off: off,
+    postEvent: postEvent,
+    cloud: cloud,
+    products: PRODUCTS,
+    perks: perks,
+    gold: gold,
+    supporter: supporter,
+    syncPerks: syncPerks,
+    buy: buy,
     store: store,
     fmt: fmt,
     plural: plural,

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<link rel="stylesheet" href="../shared/pauza.css?v=3">
 <style>
 .stage{background:var(--night)}
 </style>
@@ -19,7 +19,7 @@
   <canvas id="game" aria-label="Полёт. Тапай, чтобы самолётик поднимался"></canvas>
 </div>
 
-<script src="../shared/pauza.js?v=2"></script>
+<script src="../shared/pauza.js?v=3"></script>
 <script>
 (function () {
   'use strict';
@@ -174,14 +174,15 @@
     ctx.save();
     ctx.translate(plane.x, plane.y);
     ctx.rotate(ang);
-    ctx.fillStyle = '#F4F1FF';
+    var gold = P.gold();
+    ctx.fillStyle = gold ? '#FFD84D' : '#F4F1FF';
     ctx.beginPath();
     ctx.moveTo(s * 0.75, 0);
     ctx.lineTo(-s * 0.6, -s * 0.5);
     ctx.lineTo(-s * 0.32, 0);
     ctx.lineTo(-s * 0.6, s * 0.5);
     ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#B9A8F0';
+    ctx.fillStyle = gold ? '#FF9A6B' : '#B9A8F0';
     ctx.beginPath();
     ctx.moveTo(s * 0.75, 0);
     ctx.lineTo(-s * 0.32, 0);
@@ -225,6 +226,7 @@
   window.addEventListener('resize', resize);
   resize();
   requestAnimationFrame(frame);
+  P.syncPerks();
 })();
 </script>
 </body>

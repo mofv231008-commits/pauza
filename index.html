@@ -6,11 +6,11 @@
 <meta name="theme-color" content="#140734">
 <meta name="color-scheme" content="dark">
 <title>Пауза</title>
-<script src="shared/pauza.js?v=2"></script>
+<script src="shared/pauza.js?v=3"></script>
 <script>
 /* Ссылка вида t.me/Pauzagame_bot/play?startapp=race сразу открывает нужную игру */
 (function () {
-  var known = { 'race': 1, 'flight': 1, 'snake': 1, 'bounce': 1, 'tower': 1, 'reaction': 1, '2048': 1, 'match3': 1, 'fifteen': 1, 'mines': 1, 'pairs': 1, 'simon': 1, 'shade': 1, 'arrows': 1, 'word': 1, 'math': 1 };
+  var known = { 'space': 1, 'race': 1, 'flight': 1, 'snake': 1, 'bounce': 1, 'tower': 1, 'reaction': 1, '2048': 1, 'match3': 1, 'fifteen': 1, 'mines': 1, 'pairs': 1, 'simon': 1, 'shade': 1, 'arrows': 1, 'word': 1, 'math': 1 };
   var wanted = window.Pauza.startParam();
   if (wanted && known[wanted]) location.replace(wanted + '/' + location.hash);
 })();
@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="shared/pauza.css?v=2">
+<link rel="stylesheet" href="shared/pauza.css?v=3">
 <style>
 /* Экран выбора: шапка, затем разделы по типу игры, в каждом сетка карточек в две колонки */
 body.hub{overflow-y:auto;height:auto;min-height:100%}
@@ -29,11 +29,15 @@ body.hub{overflow-y:auto;height:auto;min-height:100%}
 .hub-head{display:flex;align-items:center;gap:16px}
 .hub-head .mark{height:46px}
 .hub-head .mark i{width:16px;height:46px;border-radius:8px}
-.hub-head h1{font-size:34px}
+.hub-head h1{font-size:34px;display:flex;align-items:center;gap:10px}
 .hub-head .tag{margin:4px 0 0;font-size:15px}
+.badge{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--road);border:1px solid rgba(255,216,77,.5)}
+.badge .star{width:17px;height:17px;fill:var(--sun)}
+body.gold .hub-head .mark i{background:var(--sun)}
 .group{display:flex;flex-direction:column;gap:10px}
 .group-title{margin:0;font-family:var(--font-display);font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--lilac)}
 .cards{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cards .wide{grid-column:1/-1}
 .card{
   display:flex;flex-direction:column;height:100%;min-width:0;overflow:hidden;
   border-radius:18px;background:var(--shoulder);border:1px solid var(--line);
@@ -46,8 +50,35 @@ body.hub{overflow-y:auto;height:auto;min-height:100%}
 .card-title{font-family:var(--font-display);font-weight:600;font-size:15px;line-height:1.2}
 .card-desc{font-size:13px;line-height:1.3;color:var(--lilac)}
 .card-best{margin-top:4px;font-size:12px;color:var(--mint);font-variant-numeric:tabular-nums}
+.card-wide{flex-direction:row;align-items:stretch;border-color:rgba(61,245,176,.45)}
+.card-wide .art{width:52%;flex:none}
+.card-wide .card-body{justify-content:center;padding:12px 14px}
+.card-wide .card-title{font-size:17px}
+.card-new{align-self:flex-start;margin-bottom:4px;padding:3px 8px;border-radius:999px;background:var(--mint);color:var(--ink);font-family:var(--font-display);font-weight:600;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
 .hub-foot{margin:0;font-size:13px;color:var(--lilac);text-align:center}
 .art text{font-family:"Unbounded","Arial Black",system-ui,sans-serif;font-weight:800}
+/* Поддержка звёздами */
+.support-box{display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:18px;background:var(--shoulder);border:1px solid var(--line)}
+.support-lead{margin:0;font-size:14px;line-height:1.45;color:var(--paper)}
+.offers{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.offer{display:flex;align-items:center;gap:12px}
+.offer-icon{flex:none;width:44px;height:44px}
+.offer-icon svg{display:block;width:100%;height:100%}
+.offer-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.offer-title{font-family:var(--font-display);font-weight:600;font-size:15px;line-height:1.2}
+.offer-perk{font-size:13px;line-height:1.3;color:var(--lilac)}
+.offer-buy{
+  flex:none;appearance:none;border:0;border-radius:14px;min-width:84px;min-height:44px;padding:0 14px;
+  background:var(--sun);color:var(--ink);font-family:var(--font-display);font-weight:600;font-size:15px;cursor:pointer;
+}
+.offer-buy{display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.offer-buy .star{width:16px;height:16px;fill:var(--ink);flex:none}
+.offer-buy:disabled{opacity:.55;cursor:default}
+.offer.owned .offer-buy{background:transparent;color:var(--mint);border:1px solid rgba(61,245,176,.45);opacity:1}
+.buy-msg{margin:0;padding:10px 12px;border-radius:12px;background:rgba(244,241,255,.08);font-size:14px;line-height:1.4}
+.buy-msg.good{background:rgba(61,245,176,.14);color:var(--mint)}
+.support-terms{margin:0;font-size:12px;line-height:1.45;color:var(--lilac)}
+.support-terms a{color:var(--paper)}
 </style>
 </head>
 <body class="hub">
@@ -55,14 +86,27 @@ body.hub{overflow-y:auto;height:auto;min-height:100%}
   <header class="hub-head">
     <div class="mark" aria-hidden="true"><i></i><i></i></div>
     <div>
-      <h1>Пауза</h1>
-      <p class="tag">16 игр на минуту, пока ждёшь ответа.</p>
+      <h1>Пауза <span class="badge" id="badge" title="Спасибо за поддержку" hidden><svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></span></h1>
+      <p class="tag">17 игр на минуту, пока ждёшь ответа.</p>
     </div>
   </header>
 
   <section class="group" aria-labelledby="g0">
     <h2 class="group-title" id="g0">Ловкость</h2>
     <ul class="cards">
+      <li class="wide"><a class="card card-wide" href="space/" data-id="space">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#0B0420"/>
+        <g fill="#F4F1FF"><circle cx="14" cy="12" r="1" opacity=".7"/><circle cx="52" cy="30" r=".8" opacity=".5"/><circle cx="128" cy="16" r="1" opacity=".6"/><circle cx="148" cy="58" r=".8" opacity=".5"/><circle cx="22" cy="66" r=".9" opacity=".5"/><circle cx="104" cy="72" r=".8" opacity=".4"/></g>
+        <path d="M46 14 L56 24 L46 32 L36 24 Z" fill="#FF6B4A"/><circle cx="46" cy="24.5" r="3" fill="#120630"/>
+        <path d="M118 20 L128 12 L124 22 L128 32 L118 26 L108 32 L112 22 L108 12 Z" fill="#FF8AD8" transform="rotate(180 118 22)"/>
+        <path d="M96 4 L106 9.5 V20.5 L96 26 L86 20.5 V9.5 Z" fill="#FFD84D" transform="translate(-6 0)"/>
+        <g fill="#3DF5B0"><rect x="79" y="34" width="2.5" height="8" rx="1"/><rect x="79" y="48" width="2.5" height="8" rx="1"/></g>
+        <path d="M80 58 L84 69 L92 75 L84 74 L80 77 L76 74 L68 75 L76 69 Z" fill="#3DF5B0"/>
+        <path d="M78 77 L80 84 L82 77 Z" fill="#FF6B4A"/>
+      </svg></span>
+        <span class="card-body"><span class="card-new">Новая игра</span><span class="card-title">Звездолёт</span><span class="card-desc">Сбивай врагов и уворачивайся от выстрелов</span><span class="card-best" hidden></span></span>
+      </a></li>
       <li><a class="card" href="race/" data-id="race">
         <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="160" height="90" fill="#22105A"/><rect x="30" width="100" height="90" fill="#3B1E8C"/>
@@ -227,6 +271,27 @@ body.hub{overflow-y:auto;height:auto;min-height:100%}
     </ul>
   </section>
 
+  <section class="group support" id="support" aria-labelledby="g-support">
+    <h2 class="group-title" id="g-support">Поддержать «Паузу»</h2>
+    <div class="support-box">
+      <p class="support-lead">Игры бесплатные и без рекламы. Если нравится, можно поддержать звёздами Telegram. Покупки только для красоты: на очки и рекорды они не влияют.</p>
+      <ul class="offers">
+        <li class="offer" data-product="thanks">
+          <span class="offer-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><rect width="40" height="40" rx="12" fill="#3B1E8C"/><path d="M20 8.5l3.4 7.2 7.8.9-5.8 5.4 1.6 7.7L20 25.8l-7 3.9 1.6-7.7-5.8-5.4 7.8-.9z" fill="#FFD84D"/></svg></span>
+          <span class="offer-text"><span class="offer-title">Спасибо</span><span class="offer-perk">Значок ⭐ рядом с названием</span></span>
+          <button class="offer-buy" type="button"><span class="price">15</span><svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></button>
+        </li>
+        <li class="offer" data-product="gold">
+          <span class="offer-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><rect width="40" height="40" rx="12" fill="#3B1E8C"/><rect x="13" y="9" width="14" height="22" rx="5" fill="#FFD84D"/><rect x="15.5" y="13" width="9" height="5" rx="2" fill="#22105A"/><rect x="15.5" y="23" width="9" height="4" rx="2" fill="#22105A"/><path d="M20 31.5l1.2 2.5 2.8.3-2 1.9.5 2.7-2.5-1.4-2.5 1.4.5-2.7-2-1.9 2.8-.3z" fill="#FF9A6B"/></svg></span>
+          <span class="offer-text"><span class="offer-title">Золотой набор</span><span class="offer-perk">Золотые машинка, самолётик, змейка и звездолёт, плюс значок ⭐</span></span>
+          <button class="offer-buy" type="button"><span class="price">75</span><svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></button>
+        </li>
+      </ul>
+      <p class="buy-msg" id="buy-msg" role="status" hidden></p>
+      <p class="support-terms">Нажимая на цену, ты соглашаешься с <a href="terms/">условиями покупок</a>. Помощь с оплатой: команда /paysupport в боте.</p>
+    </div>
+  </section>
+
   <p class="hub-foot">Набери @Pauzagame_bot в любом чате, чтобы позвать друга.</p>
 </main>
 
@@ -237,7 +302,7 @@ body.hub{overflow-y:auto;height:auto;min-height:100%}
   var points = ['очко', 'очка', 'очков'];
   /* Как подписать рекорд на карточке: слово после числа или своя функция */
   var units = {
-    race: points, '2048': points, match3: points,
+    race: points, '2048': points, match3: points, space: points,
     flight: ['арка', 'арки', 'арок'],
     snake: ['яблоко', 'яблока', 'яблок'],
     bounce: ['кирпич', 'кирпича', 'кирпичей'],
@@ -266,6 +331,54 @@ body.hub{overflow-y:auto;height:auto;min-height:100%}
     line.textContent = 'Рекорд: ' + (typeof u === 'function' ? u(best) : P.fmt(best) + ' ' + P.plural(best, u));
     line.hidden = false;
   });
+
+  /* ---------- Поддержка звёздами ---------- */
+  var msg = document.getElementById('buy-msg');
+  var offers = Array.prototype.slice.call(document.querySelectorAll('.offer'));
+  var busy = false;
+  var STAR = '<svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>';
+  function say(text, good) {
+    msg.textContent = text || '';
+    msg.className = 'buy-msg' + (good ? ' good' : '');
+    msg.hidden = !text;
+  }
+  function render() {
+    var p = P.perks();
+    document.getElementById('badge').hidden = !P.supporter();
+    document.body.classList.toggle('gold', P.gold());
+    offers.forEach(function (li) {
+      var id = li.getAttribute('data-product'), btn = li.querySelector('.offer-buy');
+      /* Золотой набор уже включает значок, поэтому «Спасибо» после него можно купить ещё раз как чаевые */
+      var owned = !!p[id];
+      li.classList.toggle('owned', owned && id === 'gold');
+      if (owned && id === 'gold') { btn.textContent = 'Есть ✓'; btn.disabled = true; }
+      else if (!btn.querySelector('.price')) btn.innerHTML = '<span class="price"></span>' + STAR;
+      else { btn.querySelector('.price').textContent = P.products[id].stars; btn.disabled = busy; }
+      btn.setAttribute('aria-label', P.products[id].title + ': ' + (owned && id === 'gold' ? 'уже куплено' : P.products[id].stars + ' звёзд'));
+    });
+  }
+  offers.forEach(function (li) {
+    var id = li.getAttribute('data-product');
+    li.querySelector('.offer-buy').addEventListener('click', function () {
+      if (busy) return;
+      if (!P.inTelegram) { say('Оплата звёздами работает только внутри Telegram. Открой «Паузу» через @' + P.bot + '.'); return; }
+      busy = true; render(); say('Открываю оплату…');
+      P.buy(id).then(function (status) {
+        if (status === 'paid') say(id === 'gold' ? 'Спасибо! Золотой набор включён: загляни в «Гонку» или «Звездолёт».' : 'Спасибо за поддержку! Значок ⭐ уже рядом с названием.', true);
+        else if (status === 'pending') say('Оплата обрабатывается. Если покупка не появится через пару минут, напиши /paysupport в боте.');
+        else if (status === 'failed') say('Оплата не прошла. Можно попробовать ещё раз.');
+        else say('');
+      }, function (err) {
+        say(err && err.message ? err.message : 'Что-то пошло не так. Попробуй ещё раз.');
+      }).then(function () { busy = false; render(); });
+    });
+  });
+  render();
+  P.syncPerks().then(render);
+  var open = new URLSearchParams(location.search).get('open');
+  if (open === 'support' || P.startParam() === 'support') {
+    setTimeout(function () { document.getElementById('support').scrollIntoView({ block: 'start', behavior: P.reduceMotion ? 'auto' : 'smooth' }); }, 60);
+  }
 })();
 </script>
 </body>
