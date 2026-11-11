@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Пятнашки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<style>
+/* Поле 4×4, фишки ездят через transform, размер клетки задаёт скрипт */
+.board{
+  --cell:76px;--gap:8px;--step:calc(var(--cell) + var(--gap));
+  position:relative;flex:none;width:calc(var(--cell) * 4 + var(--gap) * 5);height:calc(var(--cell) * 4 + var(--gap) * 5);
+  border-radius:18px;background:var(--night);
+}
+.tiles{position:absolute;inset:var(--gap)}
+.tile{
+  position:absolute;left:0;top:0;width:var(--cell);height:var(--cell);padding:0;border:0;border-radius:14px;cursor:pointer;
+  transform:translate(calc(var(--c) * var(--step)),calc(var(--r) * var(--step)));transition:transform .1s ease-out;
+  display:grid;place-items:center;background:#4B2FB8;color:var(--paper);
+  font-family:var(--font-display);font-weight:800;font-size:calc(var(--cell) * .4);font-variant-numeric:tabular-nums;
+}
+.tile.home{background:var(--mint);color:var(--ink)}
+.board.solved .tile{background:var(--mint);color:var(--ink)}
+.hint{margin:0;font-size:14px;color:var(--lilac)}
+.stage[data-state="paused"] .tiles{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="board" id="board"><div class="tiles" id="tiles"></div></div>
+    <p class="hint">Фишки на своём месте подсвечиваются зелёным</p>
+  </div>
+</div>
+
+<script src="../shared/pauza.js?v=2"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 4;
+  var MOVES = ['ход', 'хода', 'ходов'];
+
+  var stage = document.getElementById('stage'), board = document.getElementById('board'), tilesEl = document.getElementById('tiles');
+  var grid = [], tiles = [], moves = 0, elapsed = 0, done = false, started = false;
+
+  var shell = P.shell({
+    id: 'fifteen',
+    title: 'Пятнашки',
+    tagline: 'Расставь фишки от 1 до 15 по порядку.',
+    rulesHtml: '<p>Тапни по фишке рядом с пустой клеткой, и она сдвинется. Можно тапнуть по любой фишке в одном ряду или столбце с пустой клеткой: сдвинется весь ряд. В зачёт идёт число ходов.</p>',
+    overEyebrow: 'Собрано',
+    overTone: 'good',
+    lowerIsBetter: true,
+    formatScore: function (n) { return String(n); },
+    unit: function (n) { return P.plural(n, MOVES); },
+    kbdHint: 'На компьютере: стрелки двигают фишку в пустую клетку',
+    onReset: reset
+  });
+
+  function blankPos() { for (var i = 0; i < N * N; i++) if (grid[i] === 0) return i; return -1; }
+  function build() {
+    tilesEl.textContent = '';
+    tiles = [];
+    for (var v = 1; v < N * N; v++) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'tile'; b.textContent = String(v); b.id = 'tile-' + v;
+      (function (value) { b.addEventListener('click', function () { tap(value); }); })(v);
+      tilesEl.appendChild(b);
+      tiles[v] = b;
+    }
+  }
+  function paint() {
+    for (var i = 0; i < N * N; i++) {
+      var v = grid[i];
+      if (!v) continue;
+      var t = tiles[v];
+      t.style.setProperty('--r', (i / N) | 0);
+      t.style.setProperty('--c', i % N);
+      t.classList.toggle('home', v === i + 1);
+      t.setAttribute('aria-label', 'Фишка ' + v + (v === i + 1 ? ', на месте' : ''));
+    }
+  }
+  /* Перемешиваем случайными ходами от собранного поля, поэтому расклад всегда решаем */
+  function shuffle() {
+    grid = [];
+    for (var i = 1; i < N * N; i++) grid.push(i);
+    grid.push(0);
+    var b = N * N - 1, prev = -1;
+    for (var k = 0; k < 160; k++) {
+      var opts = [], x = b % N, y = (b / N) | 0;
+      if (x > 0) opts.push(b - 1);
+      if (x < N - 1) opts.push(b + 1);
+      if (y > 0) opts.push(b - N);
+      if (y < N - 1) opts.push(b + N);
+      opts = opts.filter(function (o) { return o !== prev; });
+      var to = opts[(Math.random() * opts.length) | 0];
+      grid[b] = grid[to]; grid[to] = 0; prev = b; b = to;
+    }
+    if (solved()) shuffle();
+  }
+  function solved() { for (var i = 0; i < N * N - 1; i++) if (grid[i] !== i + 1) return false; return true; }
+  function reset() {
+    build(); shuffle(); paint();
+    moves = 0; elapsed = 0; done = false; started = true;
+    board.classList.remove('solved');
+    shell.setScore('0');
+    shell.setSide(P.clock(0));
+  }
+  function demo() {
+    build();
+    grid = [1, 2, 3, 4, 5, 6, 0, 8, 9, 10, 7, 11, 13, 14, 15, 12];
+    paint();
+  }
+  function tap(v) {
+    if (!shell.running || done) return;
+    var pos = grid.indexOf(v), b = blankPos();
+    var px = pos % N, py = (pos / N) | 0, bx = b % N, by = (b / N) | 0;
+    if (px !== bx && py !== by) return;
+    var step = px === bx ? (py < by ? -N : N) : (px < bx ? -1 : 1);
+    while (b !== pos) { grid[b] = grid[b + step]; grid[b + step] = 0; b += step; moves++; }
+    afterMove();
+  }
+  function slideBlank(d) {
+    if (!shell.running || done) return;
+    var b = blankPos(), x = b % N, y = (b / N) | 0, from = -1;
+    /* Стрелка двигает фишку в сторону стрелки, то есть пустая клетка уходит в обратную */
+    if (d === 'left' && x < N - 1) from = b + 1;
+    if (d === 'right' && x > 0) from = b - 1;
+    if (d === 'up' && y < N - 1) from = b + N;
+    if (d === 'down' && y > 0) from = b - N;
+    if (from < 0) return;
+    grid[b] = grid[from]; grid[from] = 0; moves++;
+    afterMove();
+  }
+  function afterMove() {
+    paint();
+    shell.setScore(String(moves));
+    P.haptic('tap');
+    if (solved()) {
+      done = true;
+      board.classList.add('solved');
+      shell.end({
+        score: moves,
+        delay: 600,
+        haptic: 'win',
+        stats: 'время: ' + P.clock(elapsed),
+        phrase: 'Мои «Пятнашки» собраны за ' + moves + ' ' + P.plural(moves, MOVES) + '.'
+      });
+    }
+  }
+
+  var last = performance.now();
+  function tick(now) {
+    var dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+    last = now;
+    if (shell.running && !done) { elapsed += dt; shell.setSide(P.clock(elapsed)); }
+    requestAnimationFrame(tick);
+  }
+  function layout() {
+    var r = stage.getBoundingClientRect();
+    var size = Math.max(200, Math.min(r.width - 32, r.height - 230, 400));
+    var gap = Math.max(6, Math.round(size * 0.022));
+    board.style.setProperty('--gap', gap + 'px');
+    board.style.setProperty('--cell', Math.floor((size - gap * 5) / 4) + 'px');
+  }
+
+  window.addEventListener('keydown', function (e) {
+    var d = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[e.code];
+    if (!d) return;
+    e.preventDefault();
+    slideBlank(d);
+  });
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  window.addEventListener('resize', layout);
+  layout();
+  demo();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

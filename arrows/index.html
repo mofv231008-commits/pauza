@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Стрелки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<style>
+/* Одна большая стрелка по центру. Зелёная — свайп туда же, красная — в обратную сторону. */
+.stage{background:var(--shoulder)}
+.play{justify-content:flex-start}
+.arena{flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:0}
+.arrow{width:min(58vw,230px);height:min(58vw,230px);flex:none}
+.arrow svg{display:block;width:100%;height:100%}
+.arrow .shape{fill:var(--mint)}
+.arrow.flip .shape{fill:var(--coral)}
+.arrow.pop{animation:pop .16s ease-out}
+@keyframes pop{0%{opacity:.2}100%{opacity:1}}
+.caption{margin:0;min-height:1.5em;font-family:var(--font-display);font-weight:600;font-size:17px;color:var(--lilac)}
+.caption.good{color:var(--mint)}
+.caption.bad{color:var(--coral)}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--lilac)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;display:block}
+.stage[data-state="paused"] .arrow,.stage[data-state="countdown"] .arrow{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play" id="play">
+    <div class="timebar" id="timebar"><i id="timeFill"></i></div>
+    <div class="arena">
+      <div class="arrow" id="arrow" aria-live="polite">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><path class="shape" d="M50 8 L90 50 L64 50 L64 92 L36 92 L36 50 L10 50 Z" stroke-linejoin="round"/></svg>
+      </div>
+      <p class="caption" id="caption">Свайпни туда же</p>
+      <div class="legend" aria-hidden="true">
+        <span><i style="background:var(--mint)"></i>туда же</span>
+        <span><i style="background:var(--coral)"></i>наоборот</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/pauza.js?v=2"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var DURATION = 40, PENALTY = 3;
+  var ANSWERS = ['стрелка', 'стрелки', 'стрелок'];
+  var NAMES = ['вверх', 'вправо', 'вниз', 'влево'];
+
+  var play = document.getElementById('play'), arrowEl = document.getElementById('arrow'), captionEl = document.getElementById('caption');
+  var timebar = document.getElementById('timebar'), timeFill = document.getElementById('timeFill');
+
+  var score = 0, errors = 0, left = DURATION, cur = null, streak = 0, bestStreak = 0, capTimer = 0;
+
+  var shell = P.shell({
+    id: 'arrows',
+    title: 'Стрелки',
+    tagline: 'Свайпай по стрелке, но следи за цветом.',
+    rulesHtml: '<p>Зелёная стрелка — свайпни в ту же сторону. Красная — в противоположную. За 40 секунд нужно успеть как можно больше, ошибка отнимает 3 секунды.</p>',
+    overEyebrow: 'Время вышло',
+    countdown: true,
+    formatScore: function (n) { return String(n); },
+    unit: function (n) { return P.plural(n, ANSWERS); },
+    kbdHint: 'На компьютере: стрелки на клавиатуре, P — пауза',
+    pauseKeys: ['KeyP', 'Escape', 'Space'],
+    onReset: reset,
+    onRun: function (isResume) { if (!isResume || !cur) next(); }
+  });
+
+  function show() {
+    arrowEl.style.transform = 'rotate(' + cur.dir * 90 + 'deg)';
+    arrowEl.classList.toggle('flip', cur.flip);
+    arrowEl.setAttribute('aria-label', (cur.flip ? 'Красная' : 'Зелёная') + ' стрелка ' + NAMES[cur.dir]);
+    arrowEl.classList.remove('pop'); void arrowEl.offsetWidth; arrowEl.classList.add('pop');
+  }
+  function next() {
+    var d, f;
+    do { d = (Math.random() * 4) | 0; f = Math.random() < Math.min(0.5, 0.2 + score * 0.02); }
+    while (cur && cur.dir === d && cur.flip === f);
+    cur = { dir: d, flip: f };
+    show();
+    if (score < 4) say(cur.flip ? 'Свайпни наоборот' : 'Свайпни туда же', '');
+  }
+  function say(text, tone) {
+    clearTimeout(capTimer);
+    captionEl.textContent = text;
+    captionEl.className = 'caption' + (tone ? ' ' + tone : '');
+    if (tone) capTimer = setTimeout(function () { captionEl.textContent = ''; captionEl.className = 'caption'; }, 600);
+  }
+  function reset() {
+    score = 0; errors = 0; left = DURATION; cur = null; streak = 0; bestStreak = 0;
+    shell.setScore('0');
+    say('', '');
+    showTime();
+  }
+  function answer(d) {
+    if (!shell.running || !cur) return;
+    var want = cur.flip ? (cur.dir + 2) % 4 : cur.dir;
+    if (d === want) {
+      score++; streak++; bestStreak = Math.max(bestStreak, streak);
+      shell.setScore(String(score));
+      P.haptic('coin');
+      if (score >= 4) say(streak >= 5 && streak % 5 === 0 ? 'Серия ' + streak : '', streak >= 5 && streak % 5 === 0 ? 'good' : '');
+    } else {
+      errors++; streak = 0;
+      left = Math.max(0, left - PENALTY);
+      P.haptic('crash');
+      say('Ошибка: −' + PENALTY + ' с', 'bad');
+    }
+    next();
+    showTime();
+  }
+  function showTime() {
+    var warn = left <= 10;
+    shell.setSide(Math.ceil(left) + ' с', warn);
+    timeFill.style.transform = 'scaleX(' + P.clamp(left / DURATION, 0, 1).toFixed(4) + ')';
+    timebar.classList.toggle('warn', warn);
+  }
+  function finish() {
+    shell.end({
+      score: score,
+      stats: 'ошибок: ' + errors + ' · лучшая серия: ' + bestStreak,
+      phrase: 'В «Стрелках» у меня ' + score + ' ' + P.plural(score, ANSWERS) + ' за 40 секунд.'
+    });
+  }
+
+  var last = performance.now();
+  function tick(now) {
+    var dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+    last = now;
+    if (shell.running) {
+      left -= dt;
+      if (left <= 0) { left = 0; showTime(); finish(); } else showTime();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  var sx = 0, sy = 0, tracking = false;
+  play.addEventListener('pointerdown', function (e) { sx = e.clientX; sy = e.clientY; tracking = true; });
+  play.addEventListener('pointermove', function (e) {
+    if (!tracking) return;
+    var dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 28) return;
+    tracking = false;
+    if (Math.abs(dx) > Math.abs(dy)) answer(dx > 0 ? 1 : 3); else answer(dy > 0 ? 2 : 0);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) { play.addEventListener(t, function () { tracking = false; }); });
+  window.addEventListener('keydown', function (e) {
+    var d = { ArrowUp: 0, KeyW: 0, ArrowRight: 1, KeyD: 1, ArrowDown: 2, KeyS: 2, ArrowLeft: 3, KeyA: 3 }[e.code];
+    if (d === undefined || e.repeat) return;
+    e.preventDefault();
+    answer(d);
+  });
+
+  cur = { dir: 1, flip: false };
+  show();
+  showTime();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

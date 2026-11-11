@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Повтори</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<style>
+/* Четыре большие плитки 2×2. Тусклые в покое, яркие в момент вспышки. */
+.stage{background:var(--shoulder)}
+.pads{--size:320px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:12px;width:var(--size);height:var(--size);flex:none}
+.pad{min-width:0;padding:0;border:0;border-radius:26px;cursor:pointer;opacity:.32;transition:opacity .12s ease,transform .12s ease;touch-action:manipulation;display:grid;place-items:center}
+.pad svg{width:34%;height:34%;display:block}
+.pad[data-k="0"]{background:var(--mint)}
+.pad[data-k="1"]{background:var(--coral)}
+.pad[data-k="2"]{background:var(--sun)}
+.pad[data-k="3"]{background:var(--sky)}
+.pad.lit{opacity:1;transform:scale(1.03)}
+.pads.listen .pad{opacity:.62}
+.pads.listen .pad.lit{opacity:1}
+.status{margin:0;min-height:1.5em;font-family:var(--font-display);font-weight:600;font-size:17px;color:var(--lilac);text-align:center}
+.status.go{color:var(--mint)}
+.dots{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:320px;min-height:10px}
+.dots i{display:block;width:10px;height:10px;border-radius:50%;background:rgba(185,168,240,.25)}
+.dots i.on{background:var(--mint)}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="status" id="status">Смотри и запоминай</p>
+    <div class="pads" id="pads">
+      <button class="pad" type="button" data-k="0" id="pad-0" aria-label="Зелёная плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#120630"/></svg></button>
+      <button class="pad" type="button" data-k="1" id="pad-1" aria-label="Красная плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="2.5" width="15" height="15" rx="3" fill="#120630"/></svg></button>
+      <button class="pad" type="button" data-k="2" id="pad-2" aria-label="Жёлтая плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2 L18.5 17 H1.5 Z" fill="#120630"/></svg></button>
+      <button class="pad" type="button" data-k="3" id="pad-3" aria-label="Голубая плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.5 L18.5 10 L10 18.5 L1.5 10 Z" fill="#120630"/></svg></button>
+    </div>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+  </div>
+</div>
+
+<script src="../shared/pauza.js?v=2"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var STEPS = ['шаг', 'шага', 'шагов'];
+
+  var stage = document.getElementById('stage'), padsEl = document.getElementById('pads');
+  var statusEl = document.getElementById('status'), dotsEl = document.getElementById('dots');
+  var pads = Array.prototype.slice.call(padsEl.querySelectorAll('.pad'));
+
+  var seq = [], pos = 0, phase = 'idle', timers = [], showToken = 0;
+
+  var shell = P.shell({
+    id: 'simon',
+    title: 'Повтори',
+    tagline: 'Запомни, в каком порядке мигают плитки.',
+    rulesHtml: '<p>Плитки вспыхивают по очереди. Повтори этот порядок тапами. Каждый раунд добавляется ещё одна вспышка, и показ идёт быстрее. Одна ошибка — и игра окончена.</p>',
+    overEyebrow: 'Ошибка',
+    formatScore: function (n) { return String(n); },
+    unit: function (n) { return P.plural(n, STEPS); },
+    onReset: reset,
+    onRun: function (isResume) { if (isResume) { pos = 0; renderDots(); } playback(); },
+    onPause: function () { clearTimers(); lightAll(false); phase = 'idle'; }
+  });
+
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; showToken++; }
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+  function lightAll(on) { pads.forEach(function (p) { p.classList.toggle('lit', on); }); }
+  function flash(k, ms) {
+    pads[k].classList.add('lit');
+    later(function () { pads[k].classList.remove('lit'); }, ms);
+  }
+  function say(text, cls) { statusEl.textContent = text; statusEl.className = 'status' + (cls ? ' ' + cls : ''); }
+  function renderDots() {
+    dotsEl.textContent = '';
+    for (var i = 0; i < seq.length; i++) {
+      var d = document.createElement('i');
+      if (i < pos) d.className = 'on';
+      dotsEl.appendChild(d);
+    }
+  }
+  function playback() {
+    clearTimers();
+    var token = showToken;
+    phase = 'show';
+    padsEl.classList.remove('listen');
+    say('Смотри и запоминай', '');
+    pos = 0; renderDots();
+    var on = Math.max(260, 520 - seq.length * 22), off = Math.max(110, 200 - seq.length * 6);
+    var t = 500;
+    seq.forEach(function (k) {
+      later(function () { if (token === showToken) { flash(k, on); P.haptic('tap'); } }, t);
+      t += on + off;
+    });
+    later(function () {
+      if (token !== showToken) return;
+      phase = 'input';
+      padsEl.classList.add('listen');
+      say('Твоя очередь', 'go');
+    }, t);
+  }
+  function extend() { seq.push((Math.random() * 4) | 0); }
+  function reset() {
+    clearTimers(); lightAll(false);
+    seq = []; pos = 0; extend();
+    shell.setScore('0');
+    shell.setSide('раунд 1');
+    renderDots();
+  }
+  function press(k) {
+    if (!shell.running || phase !== 'input') return;
+    flash(k, 180);
+    if (k !== seq[pos]) {
+      phase = 'idle';
+      padsEl.classList.remove('listen');
+      pads[seq[pos]].classList.add('lit');
+      var done = seq.length - 1;
+      say('Нужна была другая плитка', '');
+      shell.end({
+        score: done,
+        record: done > 0,
+        delay: 900,
+        haptic: 'crash',
+        stats: 'длина последней цепочки: ' + seq.length,
+        phrase: 'В «Повтори» моя память держит ' + done + ' ' + P.plural(done, STEPS) + '.'
+      });
+      later(function () { lightAll(false); }, 900);
+      return;
+    }
+    P.haptic('coin');
+    pos++;
+    renderDots();
+    if (pos === seq.length) {
+      phase = 'idle';
+      padsEl.classList.remove('listen');
+      shell.setScore(String(seq.length));
+      say('Верно!', 'go');
+      extend();
+      shell.setSide('раунд ' + seq.length);
+      later(playback, 650);
+    }
+  }
+
+  pads.forEach(function (p, k) {
+    p.addEventListener('pointerdown', function (e) { e.preventDefault(); press(k); });
+  });
+  window.addEventListener('keydown', function (e) {
+    var k = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, KeyQ: 0, KeyW: 1, KeyA: 2, KeyS: 3 }[e.code];
+    if (k === undefined || e.repeat) return;
+    press(k);
+  });
+  function layout() {
+    var r = stage.getBoundingClientRect();
+    padsEl.style.setProperty('--size', Math.floor(Math.max(200, Math.min(r.width - 32, r.height - 260, 400))) + 'px');
+  }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  window.addEventListener('resize', layout);
+  layout();
+  pads[1].classList.add('lit');
+})();
+</script>
+</body>
+</html>

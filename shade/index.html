@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Оттенок</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<style>
+/* Сетка квадратов одного цвета, один чуть отличается. Сетка растёт с каждым найденным. */
+.stage{background:var(--shoulder)}
+.grid{--size:340px;--n:2;display:grid;grid-template-columns:repeat(var(--n),1fr);grid-template-rows:repeat(var(--n),1fr);gap:6px;width:var(--size);height:var(--size);flex:none}
+.sq{min-width:0;padding:0;border:0;border-radius:calc(28px / var(--n) + 4px);cursor:pointer;touch-action:manipulation}
+.sq.miss{animation:miss .3s ease-out}
+@keyframes miss{0%,100%{transform:none}30%{transform:scale(.9)}}
+.sq.found{outline:4px solid var(--paper);outline-offset:-4px}
+.status{margin:0;min-height:1.5em;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac)}
+.status.good{color:var(--mint)}
+.status.bad{color:var(--coral)}
+.stage[data-state="paused"] .grid,.stage[data-state="countdown"] .grid{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i id="timeFill"></i></div>
+    <div class="grid" id="grid"></div>
+    <p class="status" id="status">Найди квадрат другого оттенка</p>
+  </div>
+</div>
+
+<script src="../shared/pauza.js?v=2"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var DURATION = 45, PENALTY = 3;
+  var FOUND = ['квадрат', 'квадрата', 'квадратов'];
+
+  var stage = document.getElementById('stage'), gridEl = document.getElementById('grid'), statusEl = document.getElementById('status');
+  var timebar = document.getElementById('timebar'), timeFill = document.getElementById('timeFill');
+  var score = 0, errors = 0, left = DURATION, odd = -1, n = 2, statusTimer = 0;
+
+  var shell = P.shell({
+    id: 'shade',
+    title: 'Оттенок',
+    tagline: 'Найди квадрат, который отличается цветом.',
+    rulesHtml: '<p>Все квадраты одного цвета, кроме одного. Тапни по нему. С каждым найденным квадратов становится больше, а разница в цвете меньше. 45 секунд, промах отнимает 3 секунды.</p>',
+    overEyebrow: 'Время вышло',
+    countdown: true,
+    formatScore: function (v) { return String(v); },
+    unit: function (v) { return P.plural(v, FOUND); },
+    onReset: reset,
+    onRun: function (isResume) { if (!isResume) round(); }
+  });
+
+  function sizeFor(s) { return Math.min(8, 2 + Math.floor((s + 1) / 3)); }
+  function deltaFor(s) { return Math.max(4, 22 - s * 0.9); }
+  function round() {
+    n = sizeFor(score);
+    var hue = (Math.random() * 360) | 0, sat = 55 + ((Math.random() * 25) | 0), light = 48 + ((Math.random() * 14) | 0);
+    var d = deltaFor(score) * (Math.random() < 0.5 ? 1 : -1);
+    var oddLight = P.clamp(light + d, 18, 88);
+    odd = (Math.random() * n * n) | 0;
+    gridEl.style.setProperty('--n', n);
+    gridEl.textContent = '';
+    for (var i = 0; i < n * n; i++) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'sq'; b.id = 'sq-' + i;
+      b.style.background = 'hsl(' + hue + ',' + sat + '%,' + (i === odd ? oddLight : light) + '%)';
+      b.setAttribute('aria-label', 'Квадрат ' + (i + 1));
+      (function (k) { b.addEventListener('click', function () { pick(k, b); }); })(i);
+      gridEl.appendChild(b);
+    }
+  }
+  function say(text, tone) {
+    clearTimeout(statusTimer);
+    statusEl.textContent = text;
+    statusEl.className = 'status' + (tone ? ' ' + tone : '');
+    if (tone) statusTimer = setTimeout(function () { statusEl.textContent = ''; statusEl.className = 'status'; }, 700);
+  }
+  function pick(i, el) {
+    if (!shell.running) return;
+    if (i === odd) {
+      score++;
+      shell.setScore(String(score));
+      P.haptic('coin');
+      say(score % 5 === 0 ? 'Сетка ' + sizeFor(score) + '×' + sizeFor(score) : '', score % 5 === 0 ? 'good' : '');
+      round();
+    } else {
+      errors++;
+      left = Math.max(0, left - PENALTY);
+      P.haptic('crash');
+      say('Мимо: −' + PENALTY + ' с', 'bad');
+      el.classList.remove('miss'); void el.offsetWidth; el.classList.add('miss');
+      showTime();
+    }
+  }
+  function reset() {
+    score = 0; errors = 0; left = DURATION;
+    shell.setScore('0');
+    say('', '');
+    showTime();
+  }
+  function finish() {
+    var cells = gridEl.children;
+    if (cells[odd]) cells[odd].classList.add('found');
+    shell.end({
+      score: score,
+      delay: 700,
+      stats: 'ошибок: ' + errors + ' · последняя сетка: ' + n + '×' + n,
+      phrase: 'В «Оттенке» у меня ' + score + ' ' + P.plural(score, FOUND) + ' за 45 секунд.'
+    });
+  }
+  function showTime() {
+    var warn = left <= 10;
+    shell.setSide(Math.ceil(left) + ' с', warn);
+    timeFill.style.transform = 'scaleX(' + P.clamp(left / DURATION, 0, 1).toFixed(4) + ')';
+    timebar.classList.toggle('warn', warn);
+  }
+
+  var last = performance.now();
+  function tick(now) {
+    var dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+    last = now;
+    if (shell.running) {
+      left -= dt;
+      if (left <= 0) { left = 0; showTime(); finish(); } else showTime();
+    }
+    requestAnimationFrame(tick);
+  }
+  function layout() {
+    var r = stage.getBoundingClientRect();
+    gridEl.style.setProperty('--size', Math.floor(Math.max(200, Math.min(r.width - 32, r.height - 230, 420))) + 'px');
+  }
+
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  window.addEventListener('resize', layout);
+  layout();
+  score = 4; round(); score = 0;
+  showTime();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

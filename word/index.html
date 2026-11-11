@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Слово</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<style>
+/* Сверху сетка 6×5 для попыток, снизу русская клавиатура ЙЦУКЕН */
+.stage{background:var(--shoulder)}
+.play{justify-content:space-between;gap:12px;padding-block:80px 12px}
+.rows{--tile:54px;display:grid;grid-template-rows:repeat(6,var(--tile));gap:6px;flex:none;margin-block:auto}
+.row{display:grid;grid-template-columns:repeat(5,var(--tile));gap:6px}
+.row.shake{animation:shake .32s ease-out}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-8px)}50%{transform:translateX(7px)}80%{transform:translateX(-4px)}}
+.tile{
+  display:grid;place-items:center;border-radius:10px;border:2px solid rgba(185,168,240,.22);background:transparent;
+  font-family:var(--font-display);font-weight:800;font-size:calc(var(--tile) * .46);text-transform:uppercase;color:var(--paper);
+}
+.tile.filled{border-color:rgba(185,168,240,.6);animation:tick .1s ease-out}
+@keyframes tick{50%{transform:scale(1.08)}}
+.tile.reveal{animation:flip .36s ease-in-out both}
+@keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+.tile.abs,.key.abs{background:#2A1470;border-color:#2A1470;color:rgba(244,241,255,.55)}
+.tile.pre,.key.pre{background:var(--sun);border-color:var(--sun);color:var(--ink)}
+.tile.ok,.key.ok{background:var(--mint);border-color:var(--mint);color:var(--ink)}
+.msg{margin:0;min-height:1.4em;font-size:15px;font-weight:600;color:var(--coral);text-align:center}
+.msg.info{color:var(--lilac)}
+.kbd{display:flex;flex-direction:column;gap:6px;width:100%;max-width:460px;flex:none}
+.krow{display:flex;justify-content:center;gap:4px}
+.key{
+  flex:1 1 0;min-width:0;height:var(--kh,46px);padding:0;border:0;border-radius:8px;cursor:pointer;
+  background:#4B2FB8;color:var(--paper);font-family:var(--font-body);font-weight:600;font-size:17px;text-transform:uppercase;touch-action:manipulation;
+}
+.key.wide{flex:1.6 1 0;font-size:12px;text-transform:none}
+.key svg{width:22px;height:22px;display:block;margin:auto}
+.key:active{transform:translateY(1px)}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="rows" id="rows"></div>
+    <p class="msg" id="msg" role="status"></p>
+    <div class="kbd" id="kbd"></div>
+  </div>
+</div>
+
+<script src="../shared/pauza.js?v=2"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var TRIES = 6, LEN = 5;
+  var ATTEMPTS = ['попытка', 'попытки', 'попыток'];
+  var LAYOUT = ['йцукенгшщзхъ', 'фывапролджэ', '<ячсмитьбю>'];
+  var TARGETS = ["абзац","адрес","актер","акула","алмаз","ангел","арбуз","арена","армия","астра","атлас","багаж","балет","банан","баран","башня","белка","берег","бетон","билет","блеск","блюдо","бокал","бочка","бровь","броня","буква","булка","бутон","буфет","вагон","вальс","ванна","ведро","весна","ветер","ветка","вирус","вишня","вобла","вождь","волна","ворон","время","газон","гамак","гараж","герой","глина","голос","гонка","город","горох","гость","грамм","гроза","груша","губка","дверь","девиз","декор","дождь","доска","дубль","дупло","дымка","дятел","жажда","жилет","жираф","забор","завод","загар","закат","замок","запах","заряд","зебра","зерно","зефир","знамя","игрок","икона","индюк","искра","кабан","казак","какао","камин","канал","капля","карта","каска","касса","катер","кефир","кисть","клоун","книга","кобра","койка","колба","комар","конус","короб","котел","кофта","кошка","кровь","кубок","кукла","кулак","купол","лавка","лампа","ласка","лента","лилия","лимон","линия","лодка","ложка","локон","лотос","магия","майка","малыш","манго","марка","маска","масло","мачта","мелок","метро","мечта","минус","мираж","мишка","молот","монах","мопед","мороз","мотор","мысль","мышка","набор","навес","народ","наука","нерпа","нитка","норка","носок","образ","обруч","овраг","огонь","окунь","олень","омлет","опера","орган","осень","отдых","ответ","пакет","палец","палка","панда","папка","парад","парик","парус","пенал","перец","песок","песня","петля","пирог","пламя","племя","повар","поезд","поиск","полет","полка","порох","почта","право","птица","пульт","пушка","пчела","пятно","радио","район","рамка","ранец","ребус","рейка","рельс","речка","робот","рожок","роман","рояль","рубин","ручей","рыбак","рынок","рюмка","сабля","салат","салон","сапог","сауна","сахар","сачок","свеча","север","сезон","семья","сетка","скала","сквер","слива","слово","сокол","сосна","спина","спорт","среда","стадо","сталь","старт","стена","стриж","судно","сумка","сырок","табло","тайга","такси","танец","тапок","тесто","товар","топор","точка","трава","туман","тыква","уголь","удача","улица","устье","фасад","ферма","финал","форма","фрукт","халат","хвост","химик","холод","хомяк","цапля","чайка","чашка","шапка","шарик","шахта","шашка","шланг","шорты","шпага","шрифт","штамп","шторм","шутка","щенок","щетка","экран","эскиз","ягода","якорь","бисер","бобер","весло","вафля","дебют","диван","жетон","калач","канат","крыша","кулон","лапша","музей","обзор","океан","отель","пауза","пицца","плита","пудра","рулет","финик","отряд","поход","вечер","сироп","томат","скунс","тапир","бизон","лемур","орлан","филин","петух","ослик","ручка","школа","вилка"];
+
+  var stage = document.getElementById('stage'), rowsEl = document.getElementById('rows');
+  var msgEl = document.getElementById('msg'), kbdEl = document.getElementById('kbd');
+  var tiles = [], keys = {}, answer = '', guesses = [], cur = '', locked = false, elapsed = 0, msgTimer = 0, recent = [];
+
+  /* Словарь: все слова из пяти букв подряд, буквы а..я записаны символами @.._ */
+  var dict = null;
+  fetch('words.txt').then(function (r) { return r.ok ? r.text() : Promise.reject(); }).then(function (blob) {
+    var set = new Set();
+    for (var i = 0; i + LEN <= blob.length; i += LEN) set.add(blob.substr(i, LEN));
+    dict = set;
+  }).catch(function () { dict = null; });
+  function enc(w) { var s = ''; for (var i = 0; i < w.length; i++) s += String.fromCharCode(0x40 + w.charCodeAt(i) - 0x430); return s; }
+  function known(w) { return !dict || dict.has(enc(w)); }
+
+  var shell = P.shell({
+    id: 'word',
+    title: 'Слово',
+    tagline: 'Угадай слово из пяти букв за шесть попыток.',
+    rulesHtml: '<p>Введи любое существующее слово из пяти букв. Зелёная буква стоит на своём месте, жёлтая есть в слове, но в другом месте, тёмной в слове нет. Буква Ё пишется как Е.</p>',
+    overEyebrow: 'Угадано',
+    overTone: 'good',
+    lowerIsBetter: true,
+    formatScore: function (n) { return n ? String(n) : '—'; },
+    unit: function (n) { return n ? P.plural(n, ATTEMPTS) : ''; },
+    pauseKeys: ['Escape'],
+    onReset: reset
+  });
+
+  function build() {
+    rowsEl.textContent = ''; tiles = [];
+    for (var r = 0; r < TRIES; r++) {
+      var row = document.createElement('div'); row.className = 'row';
+      var line = [];
+      for (var c = 0; c < LEN; c++) { var t = document.createElement('div'); t.className = 'tile'; row.appendChild(t); line.push(t); }
+      rowsEl.appendChild(row); tiles.push(line);
+    }
+    kbdEl.textContent = ''; keys = {};
+    LAYOUT.forEach(function (line) {
+      var krow = document.createElement('div'); krow.className = 'krow';
+      line.split('').forEach(function (ch) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'key';
+        if (ch === '<') {
+          b.className = 'key wide'; b.textContent = 'Ввод'; b.setAttribute('aria-label', 'Проверить слово');
+          b.addEventListener('click', submit);
+        } else if (ch === '>') {
+          b.className = 'key wide'; b.setAttribute('aria-label', 'Стереть букву');
+          b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 H20 V19 H9 L3 12 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9 L17 15 M17 9 L12 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+          b.addEventListener('click', erase);
+        } else {
+          b.textContent = ch; b.id = 'key-' + ch;
+          b.addEventListener('click', function () { type(ch); });
+          keys[ch] = b;
+        }
+        krow.appendChild(b);
+      });
+      kbdEl.appendChild(krow);
+    });
+  }
+  function say(text, info) {
+    clearTimeout(msgTimer);
+    msgEl.textContent = text;
+    msgEl.className = 'msg' + (info ? ' info' : '');
+    if (text) msgTimer = setTimeout(function () { msgEl.textContent = ''; }, 1800);
+  }
+  function drawCurrent() {
+    var row = tiles[guesses.length];
+    if (!row) return;
+    for (var c = 0; c < LEN; c++) {
+      row[c].textContent = cur[c] || '';
+      row[c].classList.toggle('filled', !!cur[c]);
+    }
+  }
+  function type(ch) {
+    if (!shell.running || locked || cur.length >= LEN) return;
+    cur += ch === 'ё' ? 'е' : ch;
+    drawCurrent();
+  }
+  function erase() {
+    if (!shell.running || locked || !cur.length) return;
+    cur = cur.slice(0, -1);
+    drawCurrent();
+  }
+  function shake() {
+    var row = rowsEl.children[guesses.length];
+    row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake');
+    P.haptic('crash');
+  }
+  /* Классическая проверка: сначала точные совпадения, потом буквы не на своих местах с учётом их количества */
+  function score(guess) {
+    var res = ['abs', 'abs', 'abs', 'abs', 'abs'], left = {};
+    for (var i = 0; i < LEN; i++) {
+      if (guess[i] === answer[i]) res[i] = 'ok';
+      else left[answer[i]] = (left[answer[i]] || 0) + 1;
+    }
+    for (var j = 0; j < LEN; j++) {
+      if (res[j] === 'ok') continue;
+      if (left[guess[j]]) { res[j] = 'pre'; left[guess[j]]--; }
+    }
+    return res;
+  }
+  function paintKey(ch, st) {
+    var k = keys[ch];
+    if (!k) return;
+    var rank = { abs: 1, pre: 2, ok: 3 };
+    var curSt = k.getAttribute('data-st');
+    if (!curSt || rank[st] > rank[curSt]) { k.setAttribute('data-st', st); k.classList.remove('abs', 'pre', 'ok'); k.classList.add(st); }
+  }
+  function submit() {
+    if (!shell.running || locked) return;
+    if (cur.length < LEN) { say('Нужно пять букв'); shake(); return; }
+    if (!known(cur)) { say('Такого слова нет в словаре'); shake(); return; }
+    var guess = cur, res = score(guess), row = tiles[guesses.length];
+    guesses.push(guess); cur = '';
+    locked = true;
+    row.forEach(function (t, i) {
+      setTimeout(function () {
+        t.classList.add('reveal');
+        setTimeout(function () { t.classList.add(res[i]); }, 180);
+      }, i * 150);
+    });
+    setTimeout(function () {
+      for (var i = 0; i < LEN; i++) paintKey(guess[i], res[i]);
+      locked = false;
+      P.haptic(guess === answer ? 'win' : 'tap');
+      if (guess === answer) win();
+      else if (guesses.length >= TRIES) lose();
+      else shell.setSide('попытка ' + (guesses.length + 1) + '/' + TRIES);
+    }, LEN * 150 + 260);
+  }
+  function win() {
+    var n = guesses.length;
+    shell.setScore(String(n));
+    shell.end({
+      score: n,
+      delay: 500,
+      stats: 'слово: ' + answer.toUpperCase() + ' · время: ' + P.clock(elapsed),
+      phrase: 'В «Слове» угадано с ' + n + '-й попытки.'
+    });
+  }
+  function lose() {
+    var b = shell.best;
+    shell.end({
+      score: 0,
+      record: false,
+      eyebrow: 'Не угадано',
+      tone: 'bad',
+      delay: 500,
+      haptic: 'crash',
+      stats: 'загаданное слово: ' + answer.toUpperCase(),
+      phrase: b ? 'Мой рекорд в «Слове» — ' + b + ' ' + P.plural(b, ATTEMPTS) + '.' : 'Угадай слово из пяти букв за шесть попыток.'
+    });
+  }
+  function pickAnswer() {
+    var w, guard = 0;
+    do { w = TARGETS[(Math.random() * TARGETS.length) | 0]; guard++; } while (recent.indexOf(w) !== -1 && guard < 30);
+    recent.push(w); if (recent.length > 40) recent.shift();
+    P.store.set('pz_word_recent', recent);
+    return w;
+  }
+  function reset() {
+    build();
+    guesses = []; cur = ''; locked = false; elapsed = 0;
+    answer = pickAnswer();
+    shell.setScore('—');
+    shell.setSide('попытка 1/' + TRIES);
+    say('');
+  }
+  function demo() {
+    build();
+    answer = 'пауза';
+    ['салат', 'гроза'].forEach(function (g, r) {
+      var st = score(g);
+      for (var i = 0; i < LEN; i++) { tiles[r][i].textContent = g[i]; tiles[r][i].classList.add(st[i]); paintKey(g[i], st[i]); }
+    });
+  }
+
+  window.addEventListener('keydown', function (e) {
+    if (!shell.running || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Enter') { e.preventDefault(); submit(); return; }
+    if (e.key === 'Backspace') { e.preventDefault(); erase(); return; }
+    var ch = (e.key || '').toLowerCase();
+    if (/^[а-яё]$/.test(ch)) { e.preventDefault(); type(ch); }
+  });
+
+  var last = performance.now();
+  function tick(now) {
+    var dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+    last = now;
+    if (shell.running) elapsed += dt;
+    requestAnimationFrame(tick);
+  }
+  function layout() {
+    var r = stage.getBoundingClientRect();
+    var kh = P.clamp(Math.round(r.height * 0.06), 40, 52);
+    kbdEl.style.setProperty('--kh', kh + 'px');
+    var byW = (Math.min(r.width, 460) - 32 - 24) / 5;
+    var byH = (r.height - 80 - 12 - (kh * 3 + 12) - 1.4 * 15 - 36 - 30) / 6;
+    rowsEl.style.setProperty('--tile', Math.floor(P.clamp(Math.min(byW, byH), 34, 62)) + 'px');
+  }
+
+  recent = P.store.get('pz_word_recent', []);
+  if (!Array.isArray(recent)) recent = [];
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  window.addEventListener('resize', layout);
+  layout();
+  demo();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

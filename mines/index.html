@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Сапёр</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<style>
+/* Поле 9×9 из кнопок, под ним переключатель «Открыть / Флажок» */
+.board{--size:340px;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);gap:3px;width:var(--size);height:var(--size);flex:none;padding:6px;border-radius:16px;background:var(--night)}
+.cell{
+  display:grid;place-items:center;min-width:0;padding:0;border:0;border-radius:6px;cursor:pointer;
+  background:#4B2FB8;color:var(--paper);font-family:var(--font-display);font-weight:800;font-size:calc(var(--size) / 9 * .46);line-height:1;
+  touch-action:manipulation;-webkit-touch-callout:none;
+}
+.cell.open{background:rgba(185,168,240,.1);cursor:default}
+.cell.flag{background:#4B2FB8}
+.cell svg{display:block;width:62%;height:62%}
+.cell.boom{background:var(--coral)}
+.cell[data-n="1"]{color:var(--sky)}
+.cell[data-n="2"]{color:var(--mint)}
+.cell[data-n="3"]{color:var(--coral)}
+.cell[data-n="4"]{color:var(--pink)}
+.cell[data-n="5"]{color:var(--sun)}
+.cell[data-n="6"],.cell[data-n="7"],.cell[data-n="8"]{color:var(--paper)}
+.mode{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;border-radius:16px;background:var(--night);width:min(100%,340px);flex:none}
+.mode button{min-height:46px;border:0;border-radius:12px;background:transparent;color:var(--lilac);font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.mode button[aria-pressed="true"]{background:var(--shoulder);color:var(--paper)}
+.mode svg{width:16px;height:16px}
+.mine-dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--coral)}
+.hint{margin:-6px 0 0;font-size:13px;color:var(--lilac);text-align:center}
+.stage[data-state="paused"] .board{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="board" id="board" role="grid" aria-label="Минное поле 9 на 9"></div>
+    <div class="mode" role="group" aria-label="Что делает тап">
+      <button type="button" id="modeOpen" aria-pressed="true">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>Открыть
+      </button>
+      <button type="button" id="modeFlag" aria-pressed="false">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 15 V2 L13 5.5 L4 9" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Флажок
+      </button>
+    </div>
+    <p class="hint">Долгое нажатие на клетку тоже ставит флажок</p>
+  </div>
+</div>
+
+<script src="../shared/pauza.js?v=2"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 9, MINES = 10;
+  var FLAG_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 15 V2 L13 5.5 L4 9" fill="#FF6B4A" stroke="#FF6B4A" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+  var MINE_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="4.6" fill="#120630"/><path d="M8 1.5 V14.5 M1.5 8 H14.5 M3.4 3.4 L12.6 12.6 M12.6 3.4 L3.4 12.6" stroke="#120630" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
+  var stage = document.getElementById('stage'), board = document.getElementById('board');
+  var modeOpen = document.getElementById('modeOpen'), modeFlag = document.getElementById('modeFlag');
+  var cells = [], placed = false, flagMode = false, flags = 0, opened = 0, elapsed = 0, done = false;
+
+  var shell = P.shell({
+    id: 'mines',
+    title: 'Сапёр',
+    tagline: 'Открой всё поле и не наступи на мину.',
+    rulesHtml: '<p>На поле 9×9 спрятано 10 мин. Цифра показывает, сколько мин рядом с клеткой. Помечай мины флажками. Тап по открытой цифре открывает соседей, если флажков вокруг хватает. Первый тап всегда безопасный.</p>',
+    overEyebrow: 'Поле разминировано',
+    overTone: 'good',
+    lowerIsBetter: true,
+    formatScore: function (n) { return n ? P.clock(n) : '—'; },
+    unit: function () { return ''; },
+    onReset: reset
+  });
+
+  function idx(x, y) { return y * N + x; }
+  function around(i, fn) {
+    var x = i % N, y = (i / N) | 0;
+    for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue;
+      var nx = x + dx, ny = y + dy;
+      if (nx >= 0 && ny >= 0 && nx < N && ny < N) fn(idx(nx, ny));
+    }
+  }
+  function build() {
+    board.textContent = '';
+    cells = [];
+    for (var i = 0; i < N * N; i++) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'cell'; b.id = 'cell-' + i;
+      b.setAttribute('aria-label', 'Закрытая клетка');
+      board.appendChild(b);
+      cells.push({ el: b, mine: false, n: 0, open: false, flag: false });
+      bind(b, i);
+    }
+  }
+  function placeMines(safe) {
+    var banned = {}; banned[safe] = 1;
+    around(safe, function (j) { banned[j] = 1; });
+    var count = 0;
+    while (count < MINES) {
+      var k = (Math.random() * N * N) | 0;
+      if (banned[k] || cells[k].mine) continue;
+      cells[k].mine = true; count++;
+    }
+    cells.forEach(function (c, i) { var n = 0; around(i, function (j) { if (cells[j].mine) n++; }); c.n = n; });
+    placed = true;
+  }
+  function paint(i) {
+    var c = cells[i], el = c.el;
+    el.className = 'cell' + (c.open ? ' open' : '') + (c.flag ? ' flag' : '') + (c.boom ? ' boom' : '');
+    if (c.open && c.mine) { el.innerHTML = MINE_SVG; el.setAttribute('aria-label', 'Мина'); }
+    else if (c.open) { el.textContent = c.n ? String(c.n) : ''; el.setAttribute('data-n', String(c.n)); el.setAttribute('aria-label', c.n ? 'Рядом мин: ' + c.n : 'Пусто'); }
+    else if (c.flag) { el.innerHTML = FLAG_SVG; el.setAttribute('aria-label', 'Флажок'); }
+    else { el.textContent = ''; el.removeAttribute('data-n'); el.setAttribute('aria-label', 'Закрытая клетка'); }
+  }
+  function showFlags() { shell.setSide('<span class="mine-dot"></span>' + (MINES - flags)); }
+  function reset() {
+    build(); placed = false; flags = 0; opened = 0; elapsed = 0; done = false;
+    setMode(false);
+    shell.setScore(P.clock(0));
+    showFlags();
+  }
+  function demo() {
+    build();
+    var pattern = { 30: 1, 31: 1, 32: 2, 39: 0, 40: 0, 41: 1, 48: 1, 49: 1, 50: 2, 57: 0, 58: 1 };
+    Object.keys(pattern).forEach(function (k) { var c = cells[+k]; c.open = true; c.n = pattern[k]; paint(+k); });
+    cells[33].flag = true; paint(33);
+  }
+  function setMode(flag) {
+    flagMode = flag;
+    modeOpen.setAttribute('aria-pressed', String(!flag));
+    modeFlag.setAttribute('aria-pressed', String(flag));
+  }
+  function toggleFlag(i) {
+    var c = cells[i];
+    if (c.open || done) return;
+    c.flag = !c.flag; flags += c.flag ? 1 : -1;
+    paint(i); showFlags();
+    P.haptic('tap');
+  }
+  function flood(start) {
+    var stack = [start];
+    while (stack.length) {
+      var i = stack.pop(), c = cells[i];
+      if (c.open || c.flag) continue;
+      c.open = true; opened++; paint(i);
+      if (c.n === 0 && !c.mine) around(i, function (j) { if (!cells[j].open) stack.push(j); });
+    }
+  }
+  function reveal(i) {
+    var c = cells[i];
+    if (c.flag || done) return;
+    if (!placed) placeMines(i);
+    if (c.open) { chord(i); return; }
+    if (c.mine) { explode(i); return; }
+    flood(i);
+    P.haptic('tap');
+    checkWin();
+  }
+  /* Тап по открытой цифре: если вокруг столько же флажков, открываем остальных соседей */
+  function chord(i) {
+    var c = cells[i];
+    if (!c.n) return;
+    var f = 0; around(i, function (j) { if (cells[j].flag) f++; });
+    if (f !== c.n) return;
+    var hitMine = -1;
+    around(i, function (j) {
+      var d = cells[j];
+      if (d.open || d.flag) return;
+      if (d.mine) { if (hitMine < 0) hitMine = j; } else flood(j);
+    });
+    if (hitMine >= 0) explode(hitMine); else checkWin();
+  }
+  function explode(i) {
+    done = true;
+    cells[i].boom = true;
+    cells.forEach(function (c, j) { if (c.mine) { c.open = true; c.flag = false; paint(j); } });
+    var safeTotal = N * N - MINES;
+    shell.end({
+      score: 0,
+      record: false,
+      eyebrow: 'Подрыв',
+      tone: 'bad',
+      delay: 900,
+      haptic: 'crash',
+      stats: 'открыто клеток: ' + opened + ' из ' + safeTotal,
+      phrase: shell.best ? 'Мой рекорд в «Сапёре» — ' + P.clock(shell.best) + '.' : 'Сапёр: поле 9×9 и 10 мин. Посмотрим, кто разминирует быстрее.'
+    });
+  }
+  function checkWin() {
+    if (opened < N * N - MINES) return;
+    done = true;
+    cells.forEach(function (c, j) { if (c.mine && !c.flag) { c.flag = true; paint(j); } });
+    flags = MINES; showFlags();
+    var sec = Math.max(1, Math.round(elapsed));
+    shell.end({
+      score: sec,
+      delay: 500,
+      haptic: 'win',
+      stats: 'поле 9×9, мин: ' + MINES,
+      phrase: 'Моё поле в «Сапёре» разминировано за ' + P.clock(sec) + '.'
+    });
+  }
+
+  function bind(el, i) {
+    var pressTimer = 0, longDone = false;
+    el.addEventListener('pointerdown', function () {
+      if (!shell.running) return;
+      longDone = false;
+      clearTimeout(pressTimer);
+      pressTimer = setTimeout(function () { longDone = true; if (!cells[i].open) toggleFlag(i); }, 420);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (t) { el.addEventListener(t, function () { clearTimeout(pressTimer); }); });
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    el.addEventListener('click', function () {
+      if (!shell.running) return;
+      if (longDone) { longDone = false; return; }
+      if (flagMode && !cells[i].open) toggleFlag(i); else reveal(i);
+    });
+  }
+
+  modeOpen.addEventListener('click', function () { setMode(false); });
+  modeFlag.addEventListener('click', function () { setMode(true); });
+  window.addEventListener('keydown', function (e) { if (e.code === 'KeyF' && shell.running) setMode(!flagMode); });
+
+  var last = performance.now();
+  function tick(now) {
+    var dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+    last = now;
+    if (shell.running && placed && !done) { elapsed += dt; shell.setScore(P.clock(elapsed)); }
+    requestAnimationFrame(tick);
+  }
+  function layout() {
+    var r = stage.getBoundingClientRect();
+    var s = Math.max(220, Math.min(r.width - 32, r.height - 270, 420));
+    board.style.setProperty('--size', Math.floor(s) + 'px');
+  }
+
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  window.addEventListener('resize', layout);
+  layout();
+  demo();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

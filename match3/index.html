@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Три в ряд</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<style>
+/* Поле 7×7. Каждая фигура — отдельный элемент, который едет через transform. */
+.board{
+  --cell:46px;--gap:4px;--step:calc(var(--cell) + var(--gap));
+  position:relative;flex:none;overflow:hidden;touch-action:none;
+  width:calc(var(--cell) * 7 + var(--gap) * 8);height:calc(var(--cell) * 7 + var(--gap) * 8);
+  border-radius:18px;background:var(--night);
+}
+.cells{position:absolute;inset:var(--gap);display:grid;grid-template-columns:repeat(7,var(--cell));grid-auto-rows:var(--cell);gap:var(--gap)}
+.cells i{display:block;border-radius:10px;background:rgba(185,168,240,.07)}
+.gems{position:absolute;inset:var(--gap)}
+.gem{
+  position:absolute;left:0;top:0;width:var(--cell);height:var(--cell);display:grid;place-items:center;
+  transform:translate(calc(var(--c) * var(--step)),calc(var(--r) * var(--step)));
+  transition:transform .17s ease-in;
+}
+.gem svg{display:block;width:74%;height:74%;transition:transform .14s ease,opacity .14s ease}
+.gem.sel svg{transform:scale(1.18)}
+.gem.sel::after{content:"";position:absolute;inset:1px;border-radius:10px;border:2px solid var(--paper)}
+.gem.gone svg{transform:scale(.2);opacity:0}
+.gem.fresh{transition:none}
+.combo{position:absolute;left:0;right:0;top:40%;text-align:center;pointer-events:none;font-family:var(--font-display);font-weight:800;font-size:30px;color:var(--sun);text-shadow:0 4px 18px rgba(20,7,52,.8);opacity:0}
+.combo.show{animation:combo .7s ease-out}
+@keyframes combo{0%{opacity:0;transform:translateY(10px) scale(.9)}25%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-14px)}}
+.stage[data-state="paused"] .gems{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i id="timeFill"></i></div>
+    <div class="board" id="board">
+      <div class="cells" aria-hidden="true" id="cells"></div>
+      <div class="gems" id="gems"></div>
+      <div class="combo" id="combo"></div>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/pauza.js?v=2"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 7, DURATION = 60;
+  var POINTS = ['очко', 'очка', 'очков'];
+  var SHAPES = [
+    '<circle cx="20" cy="20" r="14" fill="#3DF5B0"/>',
+    '<rect x="7" y="7" width="26" height="26" rx="5" fill="#FF6B4A"/>',
+    '<path d="M20 5 L36 33 H4 Z" fill="#FFD84D" stroke="#FFD84D" stroke-width="3" stroke-linejoin="round"/>',
+    '<path d="M20 3 L37 20 L20 37 L3 20 Z" fill="#B9A8F0"/>',
+    '<path d="M20 35 C5 25 3 15 8.5 10 C13 6.5 18 8.5 20 12.5 C22 8.5 27 6.5 31.5 10 C37 15 35 25 20 35 Z" fill="#FF8AD8"/>',
+    '<path d="M15.5 4 h9 v11.5 h11.5 v9 h-11.5 v11.5 h-9 v-11.5 h-11.5 v-9 h11.5 Z" fill="#6FD3FF"/>'
+  ];
+
+  var stage = document.getElementById('stage'), board = document.getElementById('board'), gemsEl = document.getElementById('gems');
+  var comboEl = document.getElementById('combo');
+  var timebar = document.getElementById('timebar'), timeFill = document.getElementById('timeFill');
+  var cellsEl = document.getElementById('cells');
+  for (var ci = 0; ci < N * N; ci++) cellsEl.appendChild(document.createElement('i'));
+
+  var grid = [], score = 0, left = DURATION, busy = false, selected = null, bestCombo = 0, matched = 0, finishing = false;
+
+  var shell = P.shell({
+    id: 'match3',
+    title: 'Три в ряд',
+    tagline: 'Собирай по три одинаковые фигуры.',
+    rulesHtml: '<p>Свайпни фигуру на соседнюю клетку или тапни по двум соседним. Если получится ряд из трёх и больше одинаковых, они исчезнут. Цепочки дают множитель. На всё 60 секунд.</p>',
+    overEyebrow: 'Время вышло',
+    formatScore: function (n) { return P.fmt(n); },
+    unit: function (n) { return P.plural(n, POINTS); },
+    onReset: reset
+  });
+
+  function wait(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+  function at(r, c) { return r >= 0 && c >= 0 && r < N && c < N ? grid[r][c] : null; }
+  function makeGem(type, r, c) {
+    var el = document.createElement('div');
+    el.className = 'gem';
+    el.innerHTML = '<svg viewBox="0 0 40 40" aria-hidden="true">' + SHAPES[type] + '</svg>';
+    var g = { type: type, el: el, r: r, c: c };
+    place(g);
+    gemsEl.appendChild(el);
+    return g;
+  }
+  function place(g) { g.el.style.setProperty('--r', g.r); g.el.style.setProperty('--c', g.c); }
+  function randomType(r, c) {
+    var t, guard = 0;
+    do {
+      t = (Math.random() * SHAPES.length) | 0;
+      guard++;
+    } while (guard < 20 && (
+      (c >= 2 && at(r, c - 1) && at(r, c - 2) && at(r, c - 1).type === t && at(r, c - 2).type === t) ||
+      (r >= 2 && at(r - 1, c) && at(r - 2, c) && at(r - 1, c).type === t && at(r - 2, c).type === t)));
+    return t;
+  }
+  function fill() {
+    gemsEl.textContent = '';
+    grid = [];
+    for (var r = 0; r < N; r++) { grid.push([]); for (var c = 0; c < N; c++) grid[r].push(null); }
+    for (var r2 = 0; r2 < N; r2++) for (var c2 = 0; c2 < N; c2++) grid[r2][c2] = makeGem(randomType(r2, c2), r2, c2);
+    if (!hasMoves()) fill();
+  }
+  function findMatches() {
+    var hit = {};
+    function mark(cells) { cells.forEach(function (p) { hit[p[0] + ',' + p[1]] = p; }); }
+    for (var r = 0; r < N; r++) {
+      var run = [[r, 0]];
+      for (var c = 1; c <= N; c++) {
+        if (c < N && grid[r][c] && grid[r][c - 1] && grid[r][c].type === grid[r][c - 1].type) run.push([r, c]);
+        else { if (run.length >= 3) mark(run); run = [[r, c]]; }
+      }
+    }
+    for (var c3 = 0; c3 < N; c3++) {
+      var col = [[0, c3]];
+      for (var r3 = 1; r3 <= N; r3++) {
+        if (r3 < N && grid[r3][c3] && grid[r3 - 1][c3] && grid[r3][c3].type === grid[r3 - 1][c3].type) col.push([r3, c3]);
+        else { if (col.length >= 3) mark(col); col = [[r3, c3]]; }
+      }
+    }
+    return Object.keys(hit).map(function (k) { return hit[k]; });
+  }
+  function swapCells(a, b) {
+    var ga = grid[a[0]][a[1]], gb = grid[b[0]][b[1]];
+    grid[a[0]][a[1]] = gb; grid[b[0]][b[1]] = ga;
+    if (ga) { ga.r = b[0]; ga.c = b[1]; }
+    if (gb) { gb.r = a[0]; gb.c = a[1]; }
+  }
+  function hasMoves() {
+    for (var r = 0; r < N; r++) for (var c = 0; c < N; c++) {
+      var nb = [[r, c + 1], [r + 1, c]];
+      for (var k = 0; k < 2; k++) {
+        var b = nb[k];
+        if (b[0] >= N || b[1] >= N) continue;
+        swapCells([r, c], b);
+        var ok = findMatches().length > 0;
+        swapCells([r, c], b);
+        if (ok) return true;
+      }
+    }
+    return false;
+  }
+  function select(g) {
+    if (selected) selected.el.classList.remove('sel');
+    selected = g;
+    if (g) g.el.classList.add('sel');
+  }
+  function showCombo(n) {
+    comboEl.textContent = '×' + n;
+    comboEl.classList.remove('show'); void comboEl.offsetWidth; comboEl.classList.add('show');
+  }
+
+  async function trySwap(a, b) {
+    if (busy || !shell.running) return;
+    if (b[0] < 0 || b[1] < 0 || b[0] >= N || b[1] >= N) return;
+    busy = true; select(null);
+    swapCells(a, b);
+    place(grid[a[0]][a[1]]); place(grid[b[0]][b[1]]);
+    await wait(170);
+    var m = findMatches();
+    if (!m.length) {
+      swapCells(a, b);
+      place(grid[a[0]][a[1]]); place(grid[b[0]][b[1]]);
+      P.haptic('tap');
+      await wait(170);
+      busy = false;
+      return;
+    }
+    var combo = 0;
+    while (m.length) {
+      combo++;
+      bestCombo = Math.max(bestCombo, combo);
+      matched += m.length;
+      score += m.length * 10 * combo + (m.length > 3 ? (m.length - 3) * 20 : 0);
+      shell.setScore(P.fmt(score));
+      P.haptic('coin');
+      if (combo > 1) showCombo(combo);
+      m.forEach(function (p) { grid[p[0]][p[1]].el.classList.add('gone'); });
+      await wait(150);
+      m.forEach(function (p) { var g = grid[p[0]][p[1]]; if (g.el.parentNode) g.el.parentNode.removeChild(g.el); grid[p[0]][p[1]] = null; });
+      collapse();
+      await wait(230);
+      m = findMatches();
+    }
+    if (!hasMoves()) { shell.toast('Ходов нет, перемешиваю'); await wait(400); fill(); }
+    busy = false;
+    if (left <= 0) finish();
+  }
+  /* Фигуры падают вниз, сверху приходят новые */
+  function collapse() {
+    var fresh = [];
+    for (var c = 0; c < N; c++) {
+      var write = N - 1;
+      for (var r = N - 1; r >= 0; r--) {
+        var g = grid[r][c];
+        if (!g) continue;
+        if (write !== r) { grid[write][c] = g; grid[r][c] = null; g.r = write; place(g); }
+        write--;
+      }
+      for (var k = write, n = 1; k >= 0; k--, n++) {
+        var ng = makeGem((Math.random() * SHAPES.length) | 0, -n, c);
+        ng.el.classList.add('fresh');
+        grid[k][c] = ng; ng.r = k;
+        fresh.push(ng);
+      }
+    }
+    void gemsEl.offsetWidth;
+    fresh.forEach(function (g) { g.el.classList.remove('fresh'); place(g); });
+  }
+  function reset() {
+    select(null); busy = false; finishing = false;
+    score = 0; left = DURATION; bestCombo = 0; matched = 0;
+    fill();
+    shell.setScore('0');
+    showTime();
+  }
+  function finish() {
+    if (finishing) return;
+    finishing = true;
+    shell.end({
+      score: score,
+      delay: 300,
+      stats: 'фигур собрано: ' + matched + ' · лучшая цепочка: ×' + Math.max(1, bestCombo),
+      phrase: 'В «Три в ряд» у меня ' + P.fmt(score) + ' ' + P.plural(score, POINTS) + ' за минуту.'
+    });
+  }
+  function showTime() {
+    var warn = left <= 10;
+    shell.setSide(P.clock(Math.ceil(left)), warn);
+    timeFill.style.transform = 'scaleX(' + P.clamp(left / DURATION, 0, 1).toFixed(4) + ')';
+    timebar.classList.toggle('warn', warn);
+  }
+
+  var last = performance.now();
+  function tick(now) {
+    var dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+    last = now;
+    if (shell.running && !finishing) {
+      left = Math.max(0, left - dt);
+      showTime();
+      if (left <= 0 && !busy) finish();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function cellAt(e) {
+    var rect = gemsEl.getBoundingClientRect();
+    var step = rect.width / N;
+    var c = Math.floor((e.clientX - rect.left) / step), r = Math.floor((e.clientY - rect.top) / step);
+    return r >= 0 && c >= 0 && r < N && c < N ? [r, c] : null;
+  }
+  var down = null, sx = 0, sy = 0, swiped = false;
+  board.addEventListener('pointerdown', function (e) {
+    if (!shell.running || busy) return;
+    down = cellAt(e); sx = e.clientX; sy = e.clientY; swiped = false;
+  });
+  board.addEventListener('pointermove', function (e) {
+    if (!down || swiped) return;
+    var dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+    swiped = true;
+    var to = Math.abs(dx) > Math.abs(dy) ? [down[0], down[1] + (dx > 0 ? 1 : -1)] : [down[0] + (dy > 0 ? 1 : -1), down[1]];
+    trySwap(down, to);
+  });
+  board.addEventListener('pointerup', function () {
+    if (!down || swiped || busy || !shell.running) { down = null; return; }
+    var g = grid[down[0]][down[1]];
+    if (selected && selected !== g && Math.abs(selected.r - g.r) + Math.abs(selected.c - g.c) === 1) {
+      trySwap([selected.r, selected.c], [g.r, g.c]);
+    } else {
+      select(selected === g ? null : g);
+    }
+    down = null;
+  });
+  board.addEventListener('pointercancel', function () { down = null; });
+
+  function layout() {
+    var r = stage.getBoundingClientRect();
+    var size = Math.max(220, Math.min(r.width - 32, r.height - 220, 420));
+    var gap = Math.max(3, Math.round(size * 0.012));
+    board.style.setProperty('--gap', gap + 'px');
+    board.style.setProperty('--cell', Math.floor((size - gap * 8) / 7) + 'px');
+  }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  window.addEventListener('resize', layout);
+  layout();
+  fill();
+  showTime();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

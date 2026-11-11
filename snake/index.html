@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Змейка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=2">
+<style>
+.stage{background:var(--shoulder)}
+.field{flex:none;display:block;border-radius:16px;background:var(--night);touch-action:none}
+.swipe-hint{margin:0;font-size:14px;color:var(--lilac)}
+.stage[data-state="paused"] .field{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play" id="play">
+    <canvas class="field" id="field" aria-label="Поле змейки. Свайпай, чтобы повернуть"></canvas>
+    <p class="swipe-hint">Свайпай, чтобы повернуть</p>
+  </div>
+</div>
+
+<script src="../shared/pauza.js?v=2"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 15;
+  var APPLES = ['яблоко', 'яблока', 'яблок'];
+  var DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+
+  var stage = document.getElementById('stage'), play = document.getElementById('play');
+  var canvas = document.getElementById('field'), ctx = canvas.getContext('2d');
+  var size = 300, cell = 20, dpr = 1;
+
+  var snake = [], dir = 0, queue = [], apple = null, eaten = 0, acc = 0, prev = [], alive = true, deathFlash = 0;
+
+  var shell = P.shell({
+    id: 'snake',
+    title: 'Змейка',
+    tagline: 'Ешь яблоки и не врезайся.',
+    rulesHtml: '<p>Свайп в любую сторону поворачивает змейку. Каждое яблоко делает её длиннее и быстрее. Нельзя врезаться в стенку и в себя.</p>',
+    overEyebrow: 'Врезалась',
+    countdown: true,
+    formatScore: function (n) { return String(n); },
+    unit: function (n) { return P.plural(n, APPLES); },
+    kbdHint: 'На компьютере: стрелки и пробел для паузы',
+    onReset: reset
+  });
+
+  function key(x, y) { return x + ',' + y; }
+  function placeApple() {
+    var taken = {};
+    snake.forEach(function (s) { taken[key(s[0], s[1])] = 1; });
+    var free = [];
+    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) if (!taken[key(x, y)]) free.push([x, y]);
+    apple = free.length ? free[(Math.random() * free.length) | 0] : null;
+  }
+  function reset() {
+    var mid = (N / 2) | 0;
+    snake = [[mid, mid], [mid - 1, mid], [mid - 2, mid]];
+    prev = snake.map(function (s) { return s.slice(); });
+    dir = 0; queue = []; eaten = 0; acc = 0; alive = true; deathFlash = 0;
+    placeApple();
+    shell.setScore('0');
+  }
+  function demo() {
+    snake = [[9, 6], [8, 6], [7, 6], [6, 6], [6, 7], [6, 8], [5, 8]];
+    prev = snake.map(function (s) { return s.slice(); });
+    apple = [11, 6];
+  }
+  function stepTime() { return Math.max(0.065, 0.15 - eaten * 0.004); }
+
+  function turn(d) {
+    if (shell.state !== 'running' && shell.state !== 'countdown') return;
+    var last = queue.length ? queue[queue.length - 1] : dir;
+    if (d === last || (d + 2) % 4 === last || queue.length >= 2) return;
+    queue.push(d);
+  }
+  function step() {
+    if (queue.length) dir = queue.shift();
+    var head = snake[0], nx = head[0] + DIRS[dir][0], ny = head[1] + DIRS[dir][1];
+    var grows = apple && nx === apple[0] && ny === apple[1];
+    var bodyLen = grows ? snake.length : snake.length - 1;
+    var hitSelf = false;
+    for (var i = 0; i < bodyLen; i++) if (snake[i][0] === nx && snake[i][1] === ny) { hitSelf = true; break; }
+    if (nx < 0 || ny < 0 || nx >= N || ny >= N || hitSelf) { die(); return; }
+    prev = snake.map(function (s) { return s.slice(); });
+    snake.unshift([nx, ny]);
+    if (grows) {
+      prev.push(prev[prev.length - 1].slice());
+      eaten++;
+      shell.setScore(String(eaten));
+      P.haptic('coin');
+      placeApple();
+      if (!apple) { die(true); }
+    } else {
+      snake.pop();
+    }
+  }
+  function die(won) {
+    alive = false; deathFlash = 1;
+    shell.end({
+      score: eaten,
+      delay: 700,
+      haptic: won ? 'win' : 'crash',
+      eyebrow: won ? 'Поле заполнено' : null,
+      stats: 'длина змейки: ' + snake.length,
+      phrase: 'Моя змейка съела ' + eaten + ' ' + P.plural(eaten, APPLES) + '.'
+    });
+  }
+
+  function layout() {
+    var r = stage.getBoundingClientRect();
+    var s = Math.max(180, Math.min(r.width - 32, r.height - 200, 420));
+    cell = Math.floor(s / N); size = cell * N;
+    dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
+    canvas.width = Math.round(size * dpr); canvas.height = Math.round(size * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw(1);
+  }
+  function rr(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function draw(t) {
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = 'rgba(185,168,240,0.05)';
+    for (var y = 0; y < N; y++) for (var x = (y % 2); x < N; x += 2) ctx.fillRect(x * cell, y * cell, cell, cell);
+
+    if (apple) {
+      var ax = (apple[0] + 0.5) * cell, ay = (apple[1] + 0.5) * cell, ar = cell * 0.36;
+      ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.arc(ax, ay + cell * 0.04, ar, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#3DF5B0'; ctx.beginPath(); ctx.ellipse(ax + cell * 0.12, ay - ar * 0.95, cell * 0.12, cell * 0.06, -0.6, 0, Math.PI * 2); ctx.fill();
+    }
+
+    var lerp = alive ? P.clamp(t, 0, 1) : 1;
+    var pad = Math.max(1.5, cell * 0.1);
+    for (var i = snake.length - 1; i >= 0; i--) {
+      var a = prev[i] || snake[i], b = snake[i];
+      var px = (a[0] + (b[0] - a[0]) * lerp) * cell, py = (a[1] + (b[1] - a[1]) * lerp) * cell;
+      var shade = i === 0 ? '#3DF5B0' : (i % 2 ? '#2FD99B' : '#36E7A6');
+      if (!alive && deathFlash > 0.5) shade = '#FF6B4A';
+      ctx.fillStyle = shade;
+      rr(px + pad, py + pad, cell - pad * 2, cell - pad * 2, cell * 0.3); ctx.fill();
+      if (i === 0) {
+        var ex = DIRS[dir][0], ey = DIRS[dir][1];
+        var cx = px + cell / 2 + ex * cell * 0.14, cy = py + cell / 2 + ey * cell * 0.14;
+        var ox = -ey * cell * 0.17, oy = ex * cell * 0.17;
+        ctx.fillStyle = '#120630';
+        ctx.beginPath(); ctx.arc(cx + ox, cy + oy, cell * 0.08, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - ox, cy - oy, cell * 0.08, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+    last = now;
+    if (shell.running && alive) {
+      acc += dt;
+      var st = stepTime();
+      while (acc >= st && alive && shell.running) { acc -= st; step(); }
+      draw(acc / st);
+    } else {
+      if (deathFlash > 0) deathFlash = Math.max(0, deathFlash - dt * 1.5);
+      draw(1);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  var sx = 0, sy = 0, tracking = false;
+  play.addEventListener('pointerdown', function (e) { sx = e.clientX; sy = e.clientY; tracking = true; });
+  play.addEventListener('pointermove', function (e) {
+    if (!tracking) return;
+    var dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 22) return;
+    sx = e.clientX; sy = e.clientY;
+    if (Math.abs(dx) > Math.abs(dy)) turn(dx > 0 ? 0 : 2); else turn(dy > 0 ? 1 : 3);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) { play.addEventListener(t, function () { tracking = false; }); });
+  window.addEventListener('keydown', function (e) {
+    var d = { ArrowRight: 0, KeyD: 0, ArrowDown: 1, KeyS: 1, ArrowLeft: 2, KeyA: 2, ArrowUp: 3, KeyW: 3 }[e.code];
+    if (d === undefined) return;
+    e.preventDefault();
+    turn(d);
+  });
+
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  window.addEventListener('resize', layout);
+  demo();
+  layout();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

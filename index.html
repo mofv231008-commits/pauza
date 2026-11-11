@@ -10,7 +10,7 @@
 <script>
 /* Ссылка вида t.me/Pauzagame_bot/play?startapp=race сразу открывает нужную игру */
 (function () {
-  var known = { race: 1, reaction: 1, tower: 1, '2048': 1, pairs: 1, math: 1 };
+  var known = { 'race': 1, 'flight': 1, 'snake': 1, 'bounce': 1, 'tower': 1, 'reaction': 1, '2048': 1, 'match3': 1, 'fifteen': 1, 'mines': 1, 'pairs': 1, 'simon': 1, 'shade': 1, 'arrows': 1, 'word': 1, 'math': 1 };
   var wanted = window.Pauza.startParam();
   if (wanted && known[wanted]) location.replace(wanted + '/' + location.hash);
 })();
@@ -20,10 +20,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="shared/pauza.css?v=2">
 <style>
-/* Экран выбора: шапка с названием и сетка карточек в две колонки */
+/* Экран выбора: шапка, затем разделы по типу игры, в каждом сетка карточек в две колонки */
 body.hub{overflow-y:auto;height:auto;min-height:100%}
 .hub-wrap{
-  width:min(100%,460px);margin-inline:auto;display:flex;flex-direction:column;gap:20px;
+  width:min(100%,460px);margin-inline:auto;display:flex;flex-direction:column;gap:22px;
   padding-block:22px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
 }
 .hub-head{display:flex;align-items:center;gap:16px}
@@ -31,6 +31,8 @@ body.hub{overflow-y:auto;height:auto;min-height:100%}
 .hub-head .mark i{width:16px;height:46px;border-radius:8px}
 .hub-head h1{font-size:34px}
 .hub-head .tag{margin:4px 0 0;font-size:15px}
+.group{display:flex;flex-direction:column;gap:10px}
+.group-title{margin:0;font-family:var(--font-display);font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--lilac)}
 .cards{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .card{
   display:flex;flex-direction:column;height:100%;min-width:0;overflow:hidden;
@@ -54,73 +56,176 @@ body.hub{overflow-y:auto;height:auto;min-height:100%}
     <div class="mark" aria-hidden="true"><i></i><i></i></div>
     <div>
       <h1>Пауза</h1>
-      <p class="tag">Игры на минуту, пока ждёшь ответа.</p>
+      <p class="tag">16 игр на минуту, пока ждёшь ответа.</p>
     </div>
   </header>
 
-  <ul class="cards">
-    <li><a class="card" href="race/" data-id="race">
-      <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <section class="group" aria-labelledby="g0">
+    <h2 class="group-title" id="g0">Ловкость</h2>
+    <ul class="cards">
+      <li><a class="card" href="race/" data-id="race">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="160" height="90" fill="#22105A"/><rect x="30" width="100" height="90" fill="#3B1E8C"/>
         <rect x="29" width="2" height="90" fill="#3DF5B0"/><rect x="129" width="2" height="90" fill="#3DF5B0"/>
         <g fill="#3DF5B0" opacity=".3"><rect x="62.5" y="4" width="2" height="16" rx="1"/><rect x="62.5" y="36" width="2" height="16" rx="1"/><rect x="62.5" y="68" width="2" height="16" rx="1"/><rect x="95.5" y="4" width="2" height="16" rx="1"/><rect x="95.5" y="36" width="2" height="16" rx="1"/><rect x="95.5" y="68" width="2" height="16" rx="1"/></g>
         <rect x="37" y="8" width="19" height="31" rx="6" fill="#FF6B4A"/><rect x="104" y="-8" width="19" height="31" rx="6" fill="#FF9A6B"/>
         <rect x="70.5" y="50" width="19" height="31" rx="6" fill="#3DF5B0"/><circle cx="113.5" cy="54" r="5.5" fill="#FFD84D"/>
       </svg></span>
-      <span class="card-body"><span class="card-title">Гонка</span><span class="card-desc">Уворачивайся от машин</span><span class="card-best" hidden></span></span>
-    </a></li>
-
-    <li><a class="card" href="tower/" data-id="tower">
-      <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <span class="card-body"><span class="card-title">Гонка</span><span class="card-desc">Уворачивайся от машин</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="flight/" data-id="flight">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#22105A"/><circle cx="20" cy="14" r="1" fill="#F4F1FF" opacity=".6"/><circle cx="64" cy="22" r="1" fill="#F4F1FF" opacity=".5"/><circle cx="140" cy="10" r="1" fill="#F4F1FF" opacity=".6"/>
+        <rect x="96" y="-6" width="24" height="34" rx="5" fill="#3DF5B0"/><rect x="96" y="62" width="24" height="34" rx="5" fill="#3DF5B0"/>
+        <path d="M70 44 L44 34 L50 44 L44 54 Z" fill="#F4F1FF"/><path d="M70 44 L50 44 L44 54 Z" fill="#B9A8F0"/>
+        <rect y="82" width="160" height="2" fill="#FF6B4A"/>
+      </svg></span>
+        <span class="card-body"><span class="card-title">Полёт</span><span class="card-desc">Пролетай сквозь арки</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="snake/" data-id="snake">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#140734"/>
+        <g fill="#36E7A6"><rect x="34" y="52" width="14" height="14" rx="4"/><rect x="50" y="52" width="14" height="14" rx="4"/><rect x="66" y="52" width="14" height="14" rx="4"/><rect x="66" y="36" width="14" height="14" rx="4"/><rect x="82" y="36" width="14" height="14" rx="4"/></g>
+        <rect x="98" y="36" width="14" height="14" rx="4" fill="#3DF5B0"/><circle cx="107" cy="40.5" r="1.6" fill="#120630"/><circle cx="107" cy="45.5" r="1.6" fill="#120630"/>
+        <circle cx="129" cy="44" r="6" fill="#FF6B4A"/><ellipse cx="131" cy="36.5" rx="2.6" ry="1.4" fill="#3DF5B0" transform="rotate(-30 131 36.5)"/>
+      </svg></span>
+        <span class="card-body"><span class="card-title">Змейка</span><span class="card-desc">Ешь и не врезайся</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="bounce/" data-id="bounce">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#140734"/>
+        <g><rect x="8" y="10" width="34" height="9" rx="2" fill="#FF6B4A"/><rect x="45" y="10" width="34" height="9" rx="2" fill="#FF6B4A"/><rect x="118" y="10" width="34" height="9" rx="2" fill="#FF6B4A"/>
+        <rect x="8" y="22" width="34" height="9" rx="2" fill="#FFD84D"/><rect x="82" y="22" width="34" height="9" rx="2" fill="#FFD84D"/><rect x="118" y="22" width="34" height="9" rx="2" fill="#FFD84D"/>
+        <rect x="45" y="34" width="34" height="9" rx="2" fill="#6FD3FF"/><rect x="118" y="34" width="34" height="9" rx="2" fill="#6FD3FF"/></g>
+        <circle cx="96" cy="58" r="4.5" fill="#F4F1FF"/><rect x="62" y="76" width="44" height="6" rx="3" fill="#3DF5B0"/>
+      </svg></span>
+        <span class="card-body"><span class="card-title">Отскок</span><span class="card-desc">Разбей кирпичи мячом</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="tower/" data-id="tower">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="160" height="90" fill="#22105A"/>
         <rect x="48" y="74" width="64" height="11" rx="3" fill="#3DF5B0"/><rect x="54" y="62" width="56" height="11" rx="3" fill="#6FD3FF"/>
         <rect x="50" y="50" width="50" height="11" rx="3" fill="#B9A8F0"/><rect x="58" y="38" width="42" height="11" rx="3" fill="#FF8AD8"/>
         <rect x="84" y="20" width="42" height="11" rx="3" fill="#FFD84D"/>
       </svg></span>
-      <span class="card-body"><span class="card-title">Башня</span><span class="card-desc">Роняй блоки ровно</span><span class="card-best" hidden></span></span>
-    </a></li>
-
-    <li><a class="card" href="2048/" data-id="2048">
-      <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <span class="card-body"><span class="card-title">Башня</span><span class="card-desc">Роняй блоки ровно</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="reaction/" data-id="reaction">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#3B1E8C"/>
+        <circle cx="80" cy="45" r="54" fill="none" stroke="#3DF5B0" stroke-width="2" opacity=".14"/><circle cx="80" cy="45" r="42" fill="none" stroke="#3DF5B0" stroke-width="2" opacity=".32"/>
+        <circle cx="80" cy="45" r="30" fill="#3DF5B0"/>
+        <path d="M84 26 L69 48 H79 L75 64 L91 41 H81 Z" fill="#120630"/>
+      </svg></span>
+        <span class="card-body"><span class="card-title">Реакция</span><span class="card-desc">Жми на зелёный</span><span class="card-best" hidden></span></span>
+      </a></li>
+    </ul>
+  </section>
+  <section class="group" aria-labelledby="g1">
+    <h2 class="group-title" id="g1">Головоломки</h2>
+    <ul class="cards">
+      <li><a class="card" href="2048/" data-id="2048">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="160" height="90" fill="#140734"/>
         <rect x="14" y="30" width="30" height="30" rx="7" fill="#2E1A78"/><rect x="48" y="30" width="30" height="30" rx="7" fill="#4B2FB8"/>
         <rect x="82" y="30" width="30" height="30" rx="7" fill="#B9A8F0"/><rect x="116" y="30" width="30" height="30" rx="7" fill="#3DF5B0"/>
         <g font-size="13" text-anchor="middle"><text x="29" y="50" fill="#F4F1FF">2</text><text x="63" y="50" fill="#F4F1FF">4</text><text x="97" y="50" fill="#120630">8</text><text x="131" y="50" fill="#120630">16</text></g>
       </svg></span>
-      <span class="card-body"><span class="card-title">2048 за минуту</span><span class="card-desc">Складывай плитки на время</span><span class="card-best" hidden></span></span>
-    </a></li>
-
-    <li><a class="card" href="pairs/" data-id="pairs">
-      <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <span class="card-body"><span class="card-title">2048 за минуту</span><span class="card-desc">Складывай плитки на время</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="match3/" data-id="match3">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#140734"/>
+        <circle cx="37" cy="45" r="12" fill="#3DF5B0"/><circle cx="67" cy="45" r="12" fill="#3DF5B0"/><circle cx="97" cy="45" r="12" fill="#3DF5B0"/>
+        <path d="M127 32 L140 45 L127 58 L114 45 Z" fill="#B9A8F0"/>
+        <rect x="27" y="10" width="20" height="16" rx="4" fill="#FF6B4A" opacity=".55"/><path d="M67 10 L77 26 H57 Z" fill="#FFD84D" opacity=".55"/><rect x="87" y="64" width="20" height="16" rx="4" fill="#FF6B4A" opacity=".55"/>
+      </svg></span>
+        <span class="card-body"><span class="card-title">Три в ряд</span><span class="card-desc">Собирай одинаковые фигуры</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="fifteen/" data-id="fifteen">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#140734"/>
+        <rect x="32" y="14" width="30" height="30" rx="6" fill="#3DF5B0"/><rect x="65" y="14" width="30" height="30" rx="6" fill="#3DF5B0"/><rect x="98" y="14" width="30" height="30" rx="6" fill="#4B2FB8"/>
+        <rect x="32" y="47" width="30" height="30" rx="6" fill="#4B2FB8"/><rect x="65" y="47" width="30" height="30" rx="6" fill="#4B2FB8"/>
+        <g font-size="13" text-anchor="middle"><text x="47" y="34" fill="#120630">1</text><text x="80" y="34" fill="#120630">2</text><text x="113" y="34" fill="#F4F1FF">7</text><text x="47" y="67" fill="#F4F1FF">5</text><text x="80" y="67" fill="#F4F1FF">3</text></g>
+      </svg></span>
+        <span class="card-body"><span class="card-title">Пятнашки</span><span class="card-desc">Расставь фишки по порядку</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="mines/" data-id="mines">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#140734"/>
+        <g fill="#4B2FB8"><rect x="40" y="12" width="24" height="24" rx="5"/><rect x="96" y="12" width="24" height="24" rx="5"/><rect x="96" y="40" width="24" height="24" rx="5"/></g>
+        <g fill="#2A1470"><rect x="68" y="12" width="24" height="24" rx="5"/><rect x="40" y="40" width="24" height="24" rx="5"/><rect x="68" y="40" width="24" height="24" rx="5"/><rect x="40" y="68" width="24" height="24" rx="5"/><rect x="68" y="68" width="24" height="24" rx="5"/><rect x="96" y="68" width="24" height="24" rx="5"/></g>
+        <g font-size="13" text-anchor="middle"><text x="80" y="29" fill="#6FD3FF">1</text><text x="80" y="57" fill="#3DF5B0">2</text><text x="108" y="85" fill="#6FD3FF">1</text></g>
+        <path d="M104 61 V43 L114 47.5 L104 52" fill="#FF6B4A" stroke="#FF6B4A" stroke-width="2" stroke-linejoin="round"/>
+      </svg></span>
+        <span class="card-body"><span class="card-title">Сапёр</span><span class="card-desc">Открой поле без мин</span><span class="card-best" hidden></span></span>
+      </a></li>
+    </ul>
+  </section>
+  <section class="group" aria-labelledby="g2">
+    <h2 class="group-title" id="g2">Память и внимание</h2>
+    <ul class="cards">
+      <li><a class="card" href="pairs/" data-id="pairs">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="160" height="90" fill="#3B1E8C"/>
         <rect x="21" y="20" width="36" height="50" rx="8" fill="#22105A"/><rect x="62" y="20" width="36" height="50" rx="8" fill="#140734"/><rect x="103" y="20" width="36" height="50" rx="8" fill="#22105A"/>
         <path d="M39 33 L41.9 40.4 L49.8 40.8 L43.7 45.9 L45.7 53.6 L39 49.3 L32.3 53.6 L34.3 45.9 L28.2 40.8 L36.1 40.4 Z" fill="#FFD84D"/>
         <path d="M121 33 L123.9 40.4 L131.8 40.8 L125.7 45.9 L127.7 53.6 L121 49.3 L114.3 53.6 L116.3 45.9 L110.2 40.8 L118.1 40.4 Z" fill="#FFD84D"/>
         <rect x="74.5" y="37" width="4" height="16" rx="2" fill="#3DF5B0"/><rect x="82" y="37" width="4" height="16" rx="2" fill="#3DF5B0" transform="rotate(9 84 53)"/>
       </svg></span>
-      <span class="card-body"><span class="card-title">Пары</span><span class="card-desc">Найди одинаковые карточки</span><span class="card-best" hidden></span></span>
-    </a></li>
-
-    <li><a class="card" href="math/" data-id="math">
-      <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <span class="card-body"><span class="card-title">Пары</span><span class="card-desc">Найди одинаковые карточки</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="simon/" data-id="simon">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#22105A"/>
+        <rect x="46" y="8" width="33" height="35" rx="9" fill="#3DF5B0" opacity=".35"/><rect x="83" y="8" width="33" height="35" rx="9" fill="#FF6B4A"/>
+        <rect x="46" y="47" width="33" height="35" rx="9" fill="#FFD84D" opacity=".35"/><rect x="83" y="47" width="33" height="35" rx="9" fill="#6FD3FF" opacity=".35"/>
+      </svg></span>
+        <span class="card-body"><span class="card-title">Повтори</span><span class="card-desc">Запомни порядок вспышек</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="shade/" data-id="shade">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#22105A"/>
+        <g fill="hsl(330,70%,58%)"><rect x="47" y="6" width="22" height="22" rx="5"/><rect x="72" y="6" width="22" height="22" rx="5"/><rect x="97" y="6" width="22" height="22" rx="5"/>
+        <rect x="47" y="31" width="22" height="22" rx="5"/><rect x="97" y="31" width="22" height="22" rx="5"/>
+        <rect x="47" y="56" width="22" height="22" rx="5"/><rect x="72" y="56" width="22" height="22" rx="5"/><rect x="97" y="56" width="22" height="22" rx="5"/></g>
+        <rect x="72" y="31" width="22" height="22" rx="5" fill="hsl(330,70%,68%)"/>
+      </svg></span>
+        <span class="card-body"><span class="card-title">Оттенок</span><span class="card-desc">Найди другой цвет</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="arrows/" data-id="arrows">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#22105A"/>
+        <path d="M58 14 L80 38 H66 V76 H50 V38 H36 Z" fill="#3DF5B0"/>
+        <path d="M94 45 L118 23 V37 H138 V53 H118 V67 Z" fill="#FF6B4A"/>
+      </svg></span>
+        <span class="card-body"><span class="card-title">Стрелки</span><span class="card-desc">Свайпай, следи за цветом</span><span class="card-best" hidden></span></span>
+      </a></li>
+    </ul>
+  </section>
+  <section class="group" aria-labelledby="g3">
+    <h2 class="group-title" id="g3">Слова и счёт</h2>
+    <ul class="cards">
+      <li><a class="card" href="word/" data-id="word">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="160" height="90" fill="#22105A"/>
+        <rect x="14" y="30" width="24" height="30" rx="5" fill="#3DF5B0"/><rect x="41" y="30" width="24" height="30" rx="5" fill="#2A1470"/><rect x="68" y="30" width="24" height="30" rx="5" fill="#FFD84D"/><rect x="95" y="30" width="24" height="30" rx="5" fill="#3DF5B0"/><rect x="122" y="30" width="24" height="30" rx="5" fill="#2A1470"/>
+        <g font-size="14" text-anchor="middle"><text x="26" y="51" fill="#120630">С</text><text x="53" y="51" fill="#B9A8F0">Л</text><text x="80" y="51" fill="#120630">О</text><text x="107" y="51" fill="#120630">В</text><text x="134" y="51" fill="#B9A8F0">О</text></g>
+      </svg></span>
+        <span class="card-body"><span class="card-title">Слово</span><span class="card-desc">Угадай за шесть попыток</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="math/" data-id="math">
+        <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="160" height="90" fill="#22105A"/>
         <text x="80" y="40" font-size="17" text-anchor="middle" fill="#F4F1FF">7 × 8 = 54</text>
         <circle cx="62" cy="64" r="11" fill="#FF6B4A"/><path d="M57.5 59.5 L66.5 68.5 M66.5 59.5 L57.5 68.5" stroke="#120630" stroke-width="3" stroke-linecap="round" fill="none"/>
         <circle cx="98" cy="64" r="11" fill="none" stroke="#3DF5B0" stroke-width="2"/><path d="M92.5 64.5 L96.5 68.5 L103.5 60" stroke="#3DF5B0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       </svg></span>
-      <span class="card-body"><span class="card-title">Счёт</span><span class="card-desc">Верно или нет? 45 секунд</span><span class="card-best" hidden></span></span>
-    </a></li>
-
-    <li><a class="card" href="reaction/" data-id="reaction">
-      <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="160" height="90" fill="#3B1E8C"/>
-        <circle cx="80" cy="45" r="54" fill="none" stroke="#3DF5B0" stroke-width="2" opacity=".14"/><circle cx="80" cy="45" r="42" fill="none" stroke="#3DF5B0" stroke-width="2" opacity=".32"/>
-        <circle cx="80" cy="45" r="30" fill="#3DF5B0"/>
-        <path d="M84 26 L69 48 H79 L75 64 L91 41 H81 Z" fill="#120630"/>
-      </svg></span>
-      <span class="card-body"><span class="card-title">Реакция</span><span class="card-desc">Жми на зелёный</span><span class="card-best" hidden></span></span>
-    </a></li>
-  </ul>
+        <span class="card-body"><span class="card-title">Счёт</span><span class="card-desc">Верно или нет? 45 секунд</span><span class="card-best" hidden></span></span>
+      </a></li>
+    </ul>
+  </section>
 
   <p class="hub-foot">Набери @Pauzagame_bot в любом чате, чтобы позвать друга.</p>
 </main>
@@ -129,27 +234,36 @@ body.hub{overflow-y:auto;height:auto;min-height:100%}
 (function () {
   'use strict';
   var P = window.Pauza;
-  P.init();
   var points = ['очко', 'очка', 'очков'];
+  /* Как подписать рекорд на карточке: слово после числа или своя функция */
   var units = {
-    race: points,
+    race: points, '2048': points, match3: points,
+    flight: ['арка', 'арки', 'арок'],
+    snake: ['яблоко', 'яблока', 'яблок'],
+    bounce: ['кирпич', 'кирпича', 'кирпичей'],
     tower: ['этаж', 'этажа', 'этажей'],
-    '2048': points,
+    reaction: function (v) { return v + ' мс'; },
+    fifteen: ['ход', 'хода', 'ходов'],
+    mines: function (v) { return P.clock(v); },
     pairs: ['ход', 'хода', 'ходов'],
-    math: ['пример', 'примера', 'примеров'],
-    reaction: 'мс'
+    simon: ['шаг', 'шага', 'шагов'],
+    shade: ['квадрат', 'квадрата', 'квадратов'],
+    arrows: ['стрелка', 'стрелки', 'стрелок'],
+    word: ['попытка', 'попытки', 'попыток'],
+    math: ['пример', 'примера', 'примеров']
   };
   /* Рекорд гонки из первой версии игры */
   if (P.store.get('pz_best_race', null) === null && P.store.get('pz_best', 0) > 0) {
     P.store.set('pz_best_race', P.store.get('pz_best', 0));
   }
+  P.init();
   Array.prototype.forEach.call(document.querySelectorAll('.card'), function (card) {
     var id = card.getAttribute('data-id');
     var best = P.store.get('pz_best_' + id, null);
-    if (best === null) return;
+    if (best === null || !units[id]) return;
     var u = units[id];
     var line = card.querySelector('.card-best');
-    line.textContent = 'Рекорд: ' + P.fmt(best) + ' ' + (typeof u === 'string' ? u : P.plural(best, u));
+    line.textContent = 'Рекорд: ' + (typeof u === 'function' ? u(best) : P.fmt(best) + ' ' + P.plural(best, u));
     line.hidden = false;
   });
 })();
