@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Защита базы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Защита базы. Нажимай на свободные клетки, чтобы ставить пушки"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['жук', 'жука', 'жуков'], GW = 7, GH = 11;
+  var PATH = [[0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [5, 2], [5, 3], [5, 4], [4, 4], [3, 4], [2, 4], [1, 4], [1, 5], [1, 6], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [5, 8], [5, 9], [4, 9], [3, 9], [3, 10]];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var cs = 50, ox = 0, oy = 80, towers = [], bugs = [], shots = [], fx = [], coins = 100, lives = 10, kills = 0, t = 0, spawnT = 0, wave = 1, sel = null, onPath = {};
+  PATH.forEach(function (p) { onPath[p[0] + ',' + p[1]] = 1; });
+  var COST = [50, 60, 90], DMG = [12, 20, 34], RATE = [0.7, 0.55, 0.42], RANGE = [1.7, 1.95, 2.25];
+  var shell = P.shell({
+    id: 'defense', title: 'Защита базы', tagline: 'Жуки ползут по дороге к базе.',
+    rulesHtml: '<p>Нажми на траву — встанет пушка за 50 монет. Нажми на пушку — улучшишь её. Жуки дают монеты. Если до базы доползут 10 жуков — конец. Каждые 20 секунд жуки сильнее.</p>',
+    startLabel: 'Строить', countdown: true, overEyebrow: 'База пала',
+    unit: function (n) { return P.plural(n, U); }, onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { cs = Math.min(view.W / GW, (view.H - 110) / GH); ox = (view.W - cs * GW) / 2; oy = 84 + (view.H - 100 - cs * GH) / 2; });
+  function reset() { towers = []; bugs = []; shots = []; fx = []; coins = 100; lives = 10; kills = 0; t = 0; spawnT = 1; wave = 1; shell.setScore('0'); side(); }
+  function side() { shell.setSide('💰 ' + coins + ' · ♥ ' + lives, lives <= 3); }
+  function cxy(p) { return { x: ox + (p[0] + 0.5) * cs, y: oy + (p[1] + 0.5) * cs }; }
+  function spawn() {
+    var kind = Math.random() < Math.min(0.35, wave * 0.05) ? 'big' : Math.random() < 0.3 ? 'fast' : 'norm';
+    var hp = (kind === 'big' ? 90 : kind === 'fast' ? 22 : 34) * (1 + (wave - 1) * 0.32);
+    bugs.push({ d: 0, hp: hp, max: hp, kind: kind, sp: kind === 'fast' ? 2.1 : kind === 'big' ? 0.75 : 1.15, r: kind === 'big' ? 0.3 : 0.22, t: Math.random() * 6 });
+  }
+  function posAt(d) { var i = Math.min(PATH.length - 2, Math.floor(d)), k = d - i, a = cxy(PATH[i]), b = cxy(PATH[i + 1]); return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k }; }
+  function step(dt) {
+    t += dt; wave = 1 + Math.floor(t / 20);
+    spawnT -= dt;
+    if (spawnT <= 0) { spawn(); spawnT = Math.max(0.45, 1.5 - wave * 0.09); }
+    bugs.forEach(function (b) {
+      b.d += b.sp * dt * (b.slow > 0 ? 0.5 : 1); b.t += dt; if (b.slow > 0) b.slow -= dt;
+      if (b.d >= PATH.length - 1) { b.dead = true; lives--; side(); P.haptic('crash'); if (lives <= 0) shell.end({ score: kills, delay: 700, stats: 'волна ' + wave + ' · пушек: ' + towers.length, phrase: 'В «Защите базы» я раздавил ' + kills + ' ' + P.plural(kills, U) + ' и продержался до волны ' + wave + '. Сможешь дольше?' }); }
+    });
+    towers.forEach(function (tw) {
+      tw.cool -= dt;
+      var c = cxy([tw.x, tw.y]), best = null, bd = -1;
+      bugs.forEach(function (b) { if (b.dead) return; var p = posAt(b.d); if (Math.hypot(p.x - c.x, p.y - c.y) <= RANGE[tw.lv] * cs && b.d > bd) { bd = b.d; best = b; } });
+      if (best) { var p = posAt(best.d); tw.a = Math.atan2(p.y - c.y, p.x - c.x); if (tw.cool <= 0) { tw.cool = RATE[tw.lv]; shots.push({ x: c.x, y: c.y, b: best, dmg: DMG[tw.lv], lv: tw.lv }); } }
+    });
+    shots.forEach(function (s) {
+      if (s.b.dead) { s.dead = true; return; }
+      var p = posAt(s.b.d), dx = p.x - s.x, dy = p.y - s.y, d = Math.hypot(dx, dy), st = cs * 9 * dt;
+      if (d <= st) { s.dead = true; s.b.hp -= s.dmg; if (s.lv === 2) s.b.slow = 0.6; puff(p.x, p.y, '#FFD84D', 4); if (s.b.hp <= 0 && !s.b.dead) { s.b.dead = true; kills++; coins += s.b.kind === 'big' ? 14 : 7; shell.setScore(String(kills)); side(); puff(p.x, p.y, '#FF6B4A', 14); } }
+      else { s.x += dx / d * st; s.y += dy / d * st; }
+    });
+    shots = shots.filter(function (s) { return !s.dead; }); bugs = bugs.filter(function (b) { return !b.dead; });
+  }
+  function puff(x, y, col, n) { for (var i = 0; i < n; i++) { var a = Math.random() * 6.28, s = 30 + Math.random() * 110; fx.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.4, col: col }); } }
+  P.loop(function (dt) {
+    if (shell.running) step(dt);
+    fx.forEach(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }); fx = fx.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H;
+    c.fillStyle = '#16301F'; c.fillRect(0, 0, W, H);
+    for (var y = 0; y < GH; y++) for (var x = 0; x < GW; x++) {
+      c.fillStyle = onPath[x + ',' + y] ? '#5B4A2F' : (x + y) % 2 ? '#1E3A2A' : '#22422F';
+      c.fillRect(ox + x * cs, oy + y * cs, cs + 0.5, cs + 0.5);
+    }
+    var end = cxy(PATH[PATH.length - 1]);
+    c.fillStyle = '#6FD3FF'; c.fillRect(end.x - cs * 0.4, end.y - cs * 0.3, cs * 0.8, cs * 0.6); c.fillStyle = '#120630'; c.font = '800 ' + Math.round(cs * 0.22) + 'px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText('БАЗА', end.x, end.y + cs * 0.08);
+    towers.forEach(function (tw) {
+      var p = cxy([tw.x, tw.y]), col = ['#3DF5B0', '#FFD84D', '#FF8AD8'][tw.lv];
+      if (sel === tw) { c.strokeStyle = 'rgba(244,241,255,.35)'; c.lineWidth = 2; c.beginPath(); c.arc(p.x, p.y, RANGE[tw.lv] * cs, 0, 7); c.stroke(); }
+      c.fillStyle = '#3B1E8C'; c.beginPath(); c.arc(p.x, p.y, cs * 0.36, 0, 7); c.fill();
+      c.save(); c.translate(p.x, p.y); c.rotate(tw.a + Math.PI / 2); c.fillStyle = col; c.fillRect(-cs * 0.06, -cs * 0.42, cs * 0.12, cs * 0.3); c.restore();
+      c.fillStyle = col; c.beginPath(); c.arc(p.x, p.y, cs * 0.18, 0, 7); c.fill();
+      for (var i = 0; i <= tw.lv; i++) { c.fillStyle = '#F4F1FF'; c.fillRect(p.x - cs * 0.2 + i * cs * 0.15, p.y + cs * 0.38, cs * 0.1, cs * 0.06); }
+    });
+    bugs.forEach(function (b) {
+      var p = posAt(b.d), r = b.r * cs, wob = Math.sin(b.t * 14) * 0.15;
+      c.save(); c.translate(p.x, p.y); c.rotate(wob);
+      c.strokeStyle = '#120630'; c.lineWidth = 2; for (var k = -1; k <= 1; k++) { c.beginPath(); c.moveTo(-r * 1.3, k * r * 0.5); c.lineTo(r * 1.3, -k * r * 0.5); c.stroke(); }
+      c.fillStyle = b.kind === 'big' ? '#FF9A6B' : b.kind === 'fast' ? '#FF8AD8' : '#FF6B4A'; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
+      c.fillStyle = '#120630'; c.beginPath(); c.arc(0, 0, r * 0.25, 0, 7); c.fill(); c.fillRect(-1, -r, 2, r * 2);
+      c.restore();
+      if (b.hp < b.max) { c.fillStyle = '#120630'; c.fillRect(p.x - r, p.y - r - 7, r * 2, 4); c.fillStyle = '#3DF5B0'; c.fillRect(p.x - r, p.y - r - 7, r * 2 * b.hp / b.max, 4); }
+    });
+    c.fillStyle = '#FFD84D'; shots.forEach(function (s) { c.beginPath(); c.arc(s.x, s.y, 3 + s.lv, 0, 7); c.fill(); });
+    fx.forEach(function (p) { c.globalAlpha = p.life * 2.5; c.fillStyle = p.col; c.fillRect(p.x - 2, p.y - 2, 4, 4); }); c.globalAlpha = 1;
+    if (sel && shell.running) { var sp = cxy([sel.x, sel.y]), txt = sel.lv < 2 ? 'ещё раз — улучшить за ' + COST[sel.lv + 1] : 'максимум'; c.font = '600 13px Onest, sans-serif'; c.fillStyle = '#F4F1FF'; c.textAlign = 'center'; c.fillText(txt, W / 2, oy - 10); }
+  }
+  P.gestures(canvas, { tap: function (x, y) {
+    if (!shell.running) return;
+    var gx = Math.floor((x - ox) / cs), gy = Math.floor((y - oy) / cs);
+    if (gx < 0 || gy < 0 || gx >= GW || gy >= GH || onPath[gx + ',' + gy]) { sel = null; return; }
+    var tw = towers.filter(function (q) { return q.x === gx && q.y === gy; })[0];
+    if (!tw) { if (coins >= COST[0]) { coins -= COST[0]; tw = { x: gx, y: gy, lv: 0, cool: 0, a: -Math.PI / 2 }; towers.push(tw); sel = tw; P.haptic('coin'); side(); } else { shell.toast ? shell.toast('Нужно 50 монет') : 0; } return; }
+    if (sel !== tw) { sel = tw; return; }
+    if (tw.lv < 2 && coins >= COST[tw.lv + 1]) { coins -= COST[tw.lv + 1]; tw.lv++; P.haptic('win'); side(); }
+  } });
+})();
+</script>
+</body>
+</html>

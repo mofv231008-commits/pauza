@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Ритм</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Ритм. Нажимай на дорожку, когда нота на линии"></canvas>
+<div class="timebar" id="timebar" style="position:absolute;left:16px;right:16px;top:72px"><i></i></div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'], LC = ['#FF8AD8', '#3DF5B0', '#FFD84D'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var notes = [], t = 0, nextBeat = 0, score = 0, combo = 0, maxCombo = 0, hits = 0, miss = 0, perf = 0, judge = null, flashL = [0, 0, 0], S = 1, bpm = 112;
+  var TRAVEL = 1.6;
+  var shell = P.shell({
+    id: 'rhythm', title: 'Ритм', tagline: 'Три дорожки, одна линия, никакой фальши.',
+    rulesHtml: '<p>Ноты едут вниз по трём дорожкам. Нажимай на дорожку, когда нота пересекает белую линию. Точно — 3 очка, близко — 1. Серия попаданий удваивает очки. Темп растёт. Минута.</p>',
+    startLabel: 'Поехали', countdown: true, overEyebrow: 'Финал',
+    unit: function (n) { return P.plural(n, U); }, kbdHint: 'На компьютере: клавиши ← ↓ → или A S D', onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { S = P.clamp(view.H / 760, 0.8, 1.3); });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  function lineY() { return view.H - 130 * S; }
+  function reset() { notes = []; t = 0; nextBeat = 0.6; score = 0; combo = 0; maxCombo = 0; hits = 0; miss = 0; perf = 0; judge = null; bpm = 112; timer.reset(); shell.setScore('0'); }
+  function schedule() {
+    while (nextBeat < t + TRAVEL + 0.1) {
+      var beat = 60 / bpm, density = Math.min(0.9, 0.35 + t / 90), lane = P.rand(3);
+      notes.push({ lane: lane, at: nextBeat });
+      if (Math.random() < density * 0.35) notes.push({ lane: (lane + 1 + P.rand(2)) % 3, at: nextBeat });
+      nextBeat += Math.random() < density * 0.6 ? beat / 2 : beat;
+      bpm = Math.min(150, 112 + t * 0.6);
+    }
+  }
+  function finish() { shell.end({ score: score, delay: 300, stats: 'точно: ' + perf + ' · промахов: ' + miss + ' · лучшая серия: ' + maxCombo, phrase: 'В «Ритме» я набрал ' + score + ' ' + P.plural(score, U) + ' и серию ' + maxCombo + '. Попадёшь лучше?' }); }
+  function hit(lane) {
+    if (!shell.running) return;
+    flashL[lane] = 0.15;
+    var best = null, bd = 9;
+    notes.forEach(function (n) { if (n.lane === lane && !n.done) { var d = Math.abs(n.at - t); if (d < bd) { bd = d; best = n; } } });
+    if (best && bd < 0.16) {
+      best.done = true; hits++; combo++; maxCombo = Math.max(maxCombo, combo);
+      var p = bd < 0.06 ? 3 : 1; if (p === 3) perf++;
+      score += p * (combo >= 10 ? 2 : 1); shell.setScore(String(score));
+      judge = { s: p === 3 ? 'ТОЧНО' : 'БЛИЗКО', col: p === 3 ? '#3DF5B0' : '#FFD84D', t: 0.5, lane: lane }; P.haptic(p === 3 ? 'coin' : 'tap');
+    } else { combo = 0; judge = { s: 'МИМО', col: '#FF6B4A', t: 0.5, lane: lane }; }
+  }
+  P.loop(function (dt) {
+    if (shell.running) {
+      t += dt; schedule();
+      notes.forEach(function (n) { if (!n.done && t - n.at > 0.17) { n.done = true; n.missed = true; miss++; combo = 0; judge = { s: 'МИМО', col: '#FF6B4A', t: 0.5, lane: n.lane }; } });
+      notes = notes.filter(function (n) { return !n.done || (n.missed && t - n.at < 0.4); });
+    }
+    if (judge) { judge.t -= dt; if (judge.t <= 0) judge = null; }
+    flashL = flashL.map(function (v) { return Math.max(0, v - dt); });
+    draw();
+  });
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H, lw = Math.min(110 * S, (W - 40) / 3), x0 = (W - lw * 3) / 2, ly = lineY(), top = 90;
+    c.fillStyle = '#140734'; c.fillRect(0, 0, W, H);
+    for (var l = 0; l < 3; l++) {
+      c.fillStyle = l % 2 ? '#1E0D4E' : '#22105A'; c.fillRect(x0 + l * lw + 2, top, lw - 4, H - top);
+      if (flashL[l] > 0) { c.fillStyle = 'rgba(244,241,255,' + flashL[l] * 2 + ')'; c.fillRect(x0 + l * lw + 2, ly - 60 * S, lw - 4, 80 * S); }
+    }
+    c.fillStyle = '#F4F1FF'; c.fillRect(x0 - 6, ly - 2, lw * 3 + 12, 4);
+    notes.forEach(function (n) {
+      var y = ly - (n.at - t) / TRAVEL * (ly - top); if (y < top - 20) return;
+      c.globalAlpha = n.missed ? 0.3 : 1; c.fillStyle = LC[n.lane];
+      var nx = x0 + n.lane * lw + 8, nw = lw - 16, nh = 22 * S;
+      c.beginPath(); if (c.roundRect) c.roundRect(nx, y - nh / 2, nw, nh, 8); else c.rect(nx, y - nh / 2, nw, nh); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.4)'; c.fillRect(nx + 6, y - nh / 2 + 4, nw - 12, 3);
+    });
+    c.globalAlpha = 1;
+    for (l = 0; l < 3; l++) { c.strokeStyle = LC[l]; c.lineWidth = 3; c.beginPath(); c.arc(x0 + (l + 0.5) * lw, ly + 50 * S, 22 * S, 0, 7); c.stroke(); }
+    if (judge) { c.globalAlpha = Math.min(1, judge.t * 3); c.fillStyle = judge.col; c.font = '800 ' + Math.round(20 * S) + 'px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText(judge.s, x0 + (judge.lane + 0.5) * lw, ly - 70 * S); c.globalAlpha = 1; }
+    if (combo >= 3) { c.fillStyle = combo >= 10 ? '#FFD84D' : '#B9A8F0'; c.font = '600 ' + Math.round(14 * S) + 'px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText('серия ' + combo + (combo >= 10 ? ' · ×2' : ''), W / 2, top + 26); }
+  }
+  canvas.addEventListener('pointerdown', function (e) { var r = canvas.getBoundingClientRect(), W = view.W, lw = Math.min(110 * S, (W - 40) / 3), x0 = (W - lw * 3) / 2; var l = Math.floor((e.clientX - r.left - x0) / lw); hit(P.clamp(l, 0, 2)); });
+  var KL = { ArrowLeft: 0, KeyA: 0, ArrowDown: 1, KeyS: 1, ArrowRight: 2, KeyD: 2 };
+  window.addEventListener('keydown', function (e) { if (KL[e.code] !== undefined && !e.repeat) { e.preventDefault(); hit(KL[e.code]); } });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Покраска</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Покраска. Свайпай, чтобы катить шарик"></canvas>
+<div class="timebar" id="timebar" style="position:absolute;left:16px;right:16px;top:72px"><i></i></div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['уровень', 'уровня', 'уровней'], COLS = ['#FF8AD8', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF9A6B'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var N = 7, g = [], paint = [], ball = null, anim = null, solved = 0, moves = 0, col = COLS[0], fx = [];
+  var DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+  var shell = P.shell({
+    id: 'paint', title: 'Покраска', tagline: 'Прокати шарик по каждой клетке.',
+    rulesHtml: '<p>Свайпай — шарик катится, пока не упрётся в стену, и красит всё по пути. Закрась весь лабиринт — откроется следующий, побольше. На всё минута.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); }, kbdHint: 'На компьютере: стрелки', onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () {});
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  function slide(gr, x, y, d) { var path = []; while (true) { var nx = x + DX[d], ny = y + DY[d]; if (nx < 0 || ny < 0 || nx >= N || ny >= N || gr[ny][nx]) break; x = nx; y = ny; path.push([x, y]); } return { x: x, y: y, path: path }; }
+  function valid(gr, sx, sy) {
+    var key = function (x, y) { return y * N + x; }, seen = {}, q = [[sx, sy]], cover = {}, edges = {};
+    seen[key(sx, sy)] = 1; cover[key(sx, sy)] = 1;
+    while (q.length) {
+      var p = q.shift(); edges[key(p[0], p[1])] = [];
+      for (var d = 0; d < 4; d++) { var s = slide(gr, p[0], p[1], d); if (!s.path.length) continue; s.path.forEach(function (c) { cover[key(c[0], c[1])] = 1; }); edges[key(p[0], p[1])].push(key(s.x, s.y)); if (!seen[key(s.x, s.y)]) { seen[key(s.x, s.y)] = 1; q.push([s.x, s.y]); } }
+    }
+    var floor = 0, ok = true;
+    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) if (!gr[y][x]) { floor++; if (!cover[key(x, y)]) ok = false; }
+    if (!ok || floor < N * 2) return false;
+    var start = key(sx, sy);
+    return Object.keys(seen).every(function (k) {
+      var vis = {}, st = [+k]; vis[k] = 1;
+      while (st.length) { var c = st.pop(); if (c === start) return true; (edges[c] || []).forEach(function (n) { if (!vis[n]) { vis[n] = 1; st.push(n); } }); }
+      return false;
+    });
+  }
+  function make() {
+    N = Math.min(11, 6 + Math.floor(solved / 2));
+    for (var tries = 0; tries < 400; tries++) {
+      var gr = []; for (var y = 0; y < N; y++) { gr.push([]); for (var x = 0; x < N; x++) gr[y].push(1); }
+      var cx = P.rand(N), cy = P.rand(N); gr[cy][cx] = 0; var sx = cx, sy = cy;
+      var steps = 6 + N + solved;
+      for (var i = 0; i < steps; i++) {
+        var d = P.rand(4), L = 1 + P.rand(N - 2);
+        for (var k = 0; k < L; k++) { var nx = cx + DX[d], ny = cy + DY[d]; if (nx < 0 || ny < 0 || nx >= N || ny >= N) break; cx = nx; cy = ny; gr[cy][cx] = 0; }
+      }
+      if (valid(gr, sx, sy)) { g = gr; ball = { x: sx, y: sy, px: sx, py: sy }; paint = gr.map(function (r) { return r.map(function () { return false; }); }); paint[sy][sx] = true; col = COLS[solved % COLS.length]; moves = 0; return; }
+    }
+    g = [[0, 0], [0, 0]]; N = 2; ball = { x: 0, y: 0, px: 0, py: 0 }; paint = [[true, false], [false, false]];
+  }
+  function reset() { solved = 0; shell.setScore('0'); timer.reset(); make(); }
+  function finish() { shell.end({ score: solved, delay: 300, phrase: 'В «Покраске» я закрасил ' + solved + ' ' + P.plural(solved, U) + ' за минуту. Обгонишь?' }); }
+  function go(d) {
+    if (!shell.running || anim) return;
+    var s = slide(g, ball.x, ball.y, d); if (!s.path.length) return;
+    anim = { path: s.path, t: 0, d: d }; moves++;
+  }
+  function done() { for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) if (!g[y][x] && !paint[y][x]) return false; return true; }
+  P.loop(function (dt) {
+    if (anim && shell.running) {
+      anim.t += dt * 26;
+      while (anim.path.length && anim.t >= 1) { anim.t -= 1; var c = anim.path.shift(); ball.x = c[0]; ball.y = c[1]; paint[c[1]][c[0]] = true; }
+      if (!anim.path.length) { anim = null; if (done()) { solved++; shell.setScore(String(solved)); P.haptic('win'); burst(); make(); } }
+    }
+    fx.forEach(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }); fx = fx.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function burst() { for (var i = 0; i < 40; i++) { var a = Math.random() * 6.28, s = 80 + Math.random() * 240; fx.push({ x: view.W / 2, y: view.H / 2, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.6 + Math.random() * 0.4, col: P.pick(COLS) }); } }
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H;
+    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    if (!ball) return;
+    var size = Math.min(W - 32, H - 150), cs = size / N, ox = (W - size) / 2, oy = 96 + (H - 96 - size) / 2;
+    c.fillStyle = '#140734'; c.fillRect(ox - 6, oy - 6, size + 12, size + 12);
+    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
+      if (g[y][x]) { c.fillStyle = '#3B1E8C'; c.fillRect(ox + x * cs, oy + y * cs, cs + 0.5, cs + 0.5); continue; }
+      c.fillStyle = paint[y][x] ? col : '#F4F1FF'; c.fillRect(ox + x * cs + 1, oy + y * cs + 1, cs - 2, cs - 2);
+    }
+    var bx = ball.x, by = ball.y;
+    if (anim && anim.path.length) { var n = anim.path[0]; bx += (n[0] - ball.x) * anim.t; by += (n[1] - ball.y) * anim.t; }
+    c.fillStyle = '#120630'; c.beginPath(); c.arc(ox + (bx + 0.5) * cs, oy + (by + 0.5) * cs, cs * 0.34, 0, 7); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(ox + (bx + 0.4) * cs, oy + (by + 0.4) * cs, cs * 0.1, 0, 7); c.fill();
+    fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = p.col; c.fillRect(p.x - 3, p.y - 3, 6, 6); }); c.globalAlpha = 1;
+  }
+  P.gestures(canvas, { swipe: function (d) { go({ up: 0, right: 1, down: 2, left: 3 }[d]); } });
+  P.arrows(function (d) { go({ up: 0, right: 1, down: 2, left: 3 }[d]); });
+  make(); timer.show();
+})();
+</script>
+</body>
+</html>

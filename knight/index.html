@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Ход конём</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Ход конём. Нажимай на подсвеченные клетки"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['клетка', 'клетки', 'клеток'], N = 6, MV = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var b = [], kx = -1, ky = -1, n = 0, hints = true, S = 1, anim = null, undo = 0;
+  var shell = P.shell({
+    id: 'knight', title: 'Ход конём', tagline: 'Старая шахматная задача на 36 клеток.',
+    rulesHtml: '<p>Выбери клетку, с которой начнёт конь. Дальше ходи буквой «Г» на подсвеченные клетки. На каждой клетке можно побывать один раз. Обойди все 36. Цифра в кружке — сколько ходов будет дальше с той клетки. Совет: иди туда, где ходов меньше.</p>',
+    startLabel: 'Начать', countdown: false, overEyebrow: 'Ходов нет',
+    unit: function (n2) { return P.plural(n2, U); }, onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { S = P.clamp(view.W / 390, 0.8, 1.3); });
+  function reset() { b = []; for (var y = 0; y < N; y++) { b.push([]); for (var x = 0; x < N; x++) b[y].push(0); } kx = ky = -1; n = 0; shell.setScore('0'); shell.setSide('выбери старт'); }
+  function moves(x, y) { return MV.map(function (m) { return [x + m[0], y + m[1]]; }).filter(function (p) { return p[0] >= 0 && p[1] >= 0 && p[0] < N && p[1] < N && !b[p[1]][p[0]]; }); }
+  function go(x, y) {
+    if (kx >= 0) anim = { fx: kx, fy: ky, t: 0 };
+    kx = x; ky = y; n++; b[y][x] = n; shell.setScore(String(n)); P.haptic('tap'); shell.setSide(n + '/' + N * N);
+    if (n === N * N) { P.haptic('win'); shell.end({ score: n, delay: 500, eyebrow: 'Обход завершён!', tone: 'good', phrase: 'Я обошёл конём все 36 клеток в «Ходе конём». Повторишь?' }); return; }
+    if (!moves(x, y).length) { P.haptic('crash'); shell.end({ score: n, delay: 700, stats: 'осталось клеток: ' + (N * N - n), phrase: 'В «Ходе конём» я обошёл ' + n + ' ' + P.plural(n, U) + ' из 36. Обойдёшь все?' }); }
+  }
+  P.loop(function (dt) { if (anim) { anim.t += dt * 6; if (anim.t >= 1) anim = null; } draw(); });
+  function geo() { var size = Math.min(view.W - 24, view.H - 190), cs = size / N; return { cs: cs, x: (view.W - size) / 2, y: 100 + (view.H - 130 - size) / 2, size: size }; }
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H, G = geo();
+    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    if (!b.length) return;
+    var av = kx >= 0 ? moves(kx, ky) : [];
+    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
+      var px = G.x + x * G.cs, py = G.y + y * G.cs;
+      c.fillStyle = (x + y) % 2 ? '#3B1E8C' : '#5B3FD0'; c.fillRect(px, py, G.cs, G.cs);
+      if (b[y][x]) { c.fillStyle = 'rgba(18,6,48,.45)'; c.fillRect(px, py, G.cs, G.cs); c.fillStyle = 'rgba(244,241,255,.75)'; c.font = '600 ' + Math.round(G.cs * 0.26) + 'px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText(String(b[y][x]), px + G.cs / 2, py + G.cs * 0.6); }
+    }
+    av.forEach(function (p) {
+      var px = G.x + (p[0] + 0.5) * G.cs, py = G.y + (p[1] + 0.5) * G.cs, k = moves(p[0], p[1]).length;
+      c.strokeStyle = '#3DF5B0'; c.lineWidth = 3; c.beginPath(); c.arc(px, py, G.cs * 0.3, 0, 7); c.stroke();
+      if (hints) { c.fillStyle = k <= 1 ? '#FFD84D' : '#3DF5B0'; c.font = '800 ' + Math.round(G.cs * 0.26) + 'px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText(String(k), px, py + G.cs * 0.09); }
+    });
+    if (kx >= 0) {
+      var ax = kx, ay = ky; if (anim) { var e = 1 - Math.pow(1 - anim.t, 3); ax = anim.fx + (kx - anim.fx) * e; ay = anim.fy + (ky - anim.fy) * e; }
+      var cx = G.x + (ax + 0.5) * G.cs, cy = G.y + (ay + 0.5) * G.cs;
+      c.fillStyle = 'rgba(18,6,48,.5)'; c.beginPath(); c.arc(cx, cy, G.cs * 0.4, 0, 7); c.fill();
+      c.fillStyle = P.gold() ? '#FFD84D' : '#FFD84D'; c.font = Math.round(G.cs * 0.62) + 'px "Segoe UI Symbol", "Noto Sans Symbols2", "DejaVu Sans", serif'; c.textAlign = 'center'; c.fillText('♞', cx, cy + G.cs * 0.22);
+    } else if (shell.running) { c.fillStyle = '#B9A8F0'; c.font = '500 ' + Math.round(14 * S) + 'px Onest, sans-serif'; c.textAlign = 'center'; c.fillText('нажми на клетку, откуда начать', W / 2, G.y - 16); }
+  }
+  P.gestures(canvas, { tap: function (x, y) {
+    if (!shell.running) return;
+    var G = geo(), gx = Math.floor((x - G.x) / G.cs), gy = Math.floor((y - G.y) / G.cs);
+    if (gx < 0 || gy < 0 || gx >= N || gy >= N) return;
+    if (kx < 0) { go(gx, gy); return; }
+    if (moves(kx, ky).some(function (p) { return p[0] === gx && p[1] === gy; })) go(gx, gy);
+  } });
+  reset();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Спираль</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Спираль. Веди пальцем влево и вправо"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['кольцо', 'кольца', 'колец'], N = 8, COLS = ['#3DF5B0', '#6FD3FF', '#FF8AD8', '#FFD84D', '#B9A8F0'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var rings = [], rot = 0, ball = null, cam = 0, score = 0, combo = 0, S = 1, drag = null, keys = {}, fx = [], dead = false;
+  var shell = P.shell({
+    id: 'helix', title: 'Спираль', tagline: 'Мяч прыгает, башня крутится.',
+    rulesHtml: '<p>Веди пальцем влево-вправо — кольца сдвигаются. Мяч проваливается в дыры и отскакивает от цветных плит. Красное — смерть. Пролетишь три кольца подряд — мяч раскалится и пробьёт следующее, даже красное.</p>',
+    startLabel: 'Падать', countdown: false, overEyebrow: 'Мяч разбит',
+    unit: function (n) { return P.plural(n, U); }, kbdHint: 'На компьютере: стрелки ← →', onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { S = P.clamp(view.W / 390, 0.8, 1.3); });
+  function gap() { return 118 * S; }
+  function lw() { return view.W - 36 * S; }
+  function makeRing(i) {
+    var seg = [], g0 = P.rand(N), g2 = i > 6 && Math.random() < 0.4;
+    for (var k = 0; k < N; k++) seg.push(0);
+    seg[g0] = 1;
+    if (i === 0) return { seg: seg, col: COLS[0], i: 0 }; if (g2) seg[(g0 + 1) % N] = 1;
+    var danger = Math.min(3, Math.floor(i / 8) + (Math.random() < 0.5 ? 1 : 0));
+    for (var d = 0; d < danger; d++) { var k2 = P.rand(N); if (seg[k2] === 0 && k2 !== g0) seg[k2] = 2; }
+    return { seg: seg, col: COLS[Math.floor(i / 10) % COLS.length], i: i };
+  }
+  function ringY(i) { return 200 * S + i * gap(); }
+  function reset() {
+    rings = []; for (var i = 0; i < 12; i++) rings.push(makeRing(i));
+    rot = 0; cam = 0; score = 0; combo = 0; fx = []; dead = false;
+    ball = { y: ringY(0) - 80 * S, vy: 0, sq: 0 };
+    shell.setScore('0');
+  }
+  function segAt(r) {
+    var L = lw(), left = 18 * S, pos = (((view.W / 2 - left - rot) % L) + L) % L;
+    return Math.floor(pos / (L / N));
+  }
+  function step(dt) {
+    if (keys.l) rot -= 360 * S * dt; if (keys.r) rot += 360 * S * dt;
+    var vmax = 900 * S;
+    ball.vy = Math.min(vmax, ball.vy + 1500 * S * dt);
+    var ny = ball.y + ball.vy * dt, br = 11 * S;
+    for (var i = 0; i < rings.length; i++) {
+      var r = rings[i], y = ringY(r.i);
+      if (r.gone || ball.vy <= 0 || ball.y + br > y || ny + br < y) continue;
+      var s = r.seg[segAt(r)];
+      if (s === 1 || combo >= 3) {
+        r.gone = true; combo++; score += combo >= 3 ? 2 : 1; shell.setScore(String(score));
+        burst(view.W / 2, y - cam, r.col, combo >= 3 ? 26 : 10); if (combo >= 3) P.haptic('coin');
+        if (s !== 1) { combo = 0; ball.vy = -560 * S; ny = y - br; }
+        continue;
+      }
+      if (s === 2) { dead = true; burst(view.W / 2, y - cam, '#FF6B4A', 30); P.haptic('crash'); shell.end({ score: score, delay: 700, phrase: 'В «Спирали» я пролетел ' + score + ' ' + P.plural(score, U) + '. Сможешь глубже?' }); return; }
+      ny = y - br; ball.vy = -560 * S; combo = 0; ball.sq = 0.18; break;
+    }
+    ball.y = ny; ball.sq = Math.max(0, ball.sq - dt);
+    cam += (ball.y - view.H * 0.36 - cam) * Math.min(1, dt * 6);
+    var last = rings[rings.length - 1].i;
+    while (ringY(last) - cam < view.H + gap() * 2) { last++; rings.push(makeRing(last)); }
+    rings = rings.filter(function (r) { return ringY(r.i) - cam > -gap() * 2; });
+  }
+  function burst(x, y, col, n) { for (var i = 0; i < n; i++) { var a = Math.random() * 6.28, s = (60 + Math.random() * 200) * S; fx.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.5 + Math.random() * 0.4, col: col }); } }
+  P.loop(function (dt) {
+    if (shell.running && !dead && ball) step(dt);
+    fx.forEach(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 500 * S * dt; p.life -= dt; }); fx = fx.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H;
+    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1A0C44'); g.addColorStop(1, '#2A1170'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.fillStyle = 'rgba(59,30,140,.8)'; c.fillRect(W / 2 - 16 * S, 0, 32 * S, H);
+    if (!ball) return;
+    var L = lw(), left = 18 * S, sw = L / N, th = 16 * S;
+    rings.forEach(function (r) {
+      if (r.gone) return;
+      var y = ringY(r.i) - cam;
+      if (y < -40 || y > H + 40) return;
+      for (var k = 0; k < N; k++) {
+        if (r.seg[k] === 1) continue;
+        var x = left + (((k * sw + rot) % L) + L) % L;
+        var col = r.seg[k] === 2 ? '#FF6B4A' : r.col;
+        drawSeg(c, x, y, sw - 3 * S, th, col, left, L);
+      }
+    });
+    var by = ball.y - cam, br = 11 * S, sq = ball.sq > 0 ? 1 - ball.sq : 1;
+    if (combo >= 3) { c.fillStyle = 'rgba(255,107,74,.35)'; c.beginPath(); c.arc(W / 2, by - 10 * S, br * 1.8, 0, 7); c.fill(); }
+    c.fillStyle = combo >= 3 ? '#FF6B4A' : P.gold() ? '#FFD84D' : '#FFD84D';
+    c.beginPath(); c.ellipse(W / 2, by, br * (2 - sq), br * sq, 0, 0, 7); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.6)'; c.beginPath(); c.arc(W / 2 - br * 0.35, by - br * 0.35, br * 0.3, 0, 7); c.fill();
+    fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = p.col; c.fillRect(p.x - 2.5, p.y - 2.5, 5, 5); }); c.globalAlpha = 1;
+  }
+  function drawSeg(c, x, y, w, h, col, left, L) {
+    var right = left + L;
+    function part(x0, w0) { c.fillStyle = col; c.beginPath(); if (c.roundRect) c.roundRect(x0, y, w0, h, 5 * S); else c.rect(x0, y, w0, h); c.fill(); c.fillStyle = 'rgba(255,255,255,.25)'; c.fillRect(x0 + 3 * S, y + 2 * S, Math.max(0, w0 - 6 * S), 3 * S); }
+    if (x + w <= right) part(x, w); else { part(x, right - x); part(left, w - (right - x)); }
+  }
+  canvas.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, r: rot }; });
+  window.addEventListener('pointermove', function (e) { if (drag) rot = drag.r + (e.clientX - drag.x) * 1.2; });
+  window.addEventListener('pointerup', function () { drag = null; });
+  window.addEventListener('keydown', function (e) { if (e.code === 'ArrowLeft') { keys.l = true; e.preventDefault(); } if (e.code === 'ArrowRight') { keys.r = true; e.preventDefault(); } });
+  window.addEventListener('keyup', function (e) { if (e.code === 'ArrowLeft') keys.l = false; if (e.code === 'ArrowRight') keys.r = false; });
+  reset();
+})();
+</script>
+</body>
+</html>

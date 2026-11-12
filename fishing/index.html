@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Рыбалка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Рыбалка. Нажми — крючок опускается, нажми ещё — поднимается. Веди пальцем — лодка плывёт"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var fish = [], boatX = 0, hook = null, score = 0, caught = 0, S = 1, t = 0, drag = null, pops = [];
+  var KINDS = [
+    { n: 'малёк', col: '#3DF5B0', len: 22, pts: 5, sp: 70, d: [0.12, 0.4] },
+    { n: 'окунь', col: '#FFD84D', len: 34, pts: 12, sp: 90, d: [0.25, 0.6] },
+    { n: 'щука', col: '#6FD3FF', len: 52, pts: 25, sp: 120, d: [0.45, 0.85] },
+    { n: 'сом', col: '#FF8AD8', len: 64, pts: 45, sp: 65, d: [0.7, 0.95] },
+    { n: 'сапог', col: '#9C5A3C', len: 28, pts: 0, sp: 30, d: [0.3, 0.95], junk: true },
+    { n: 'медуза', col: '#B9A8F0', len: 26, pts: -10, sp: 25, d: [0.2, 0.9], jelly: true }
+  ];
+  var shell = P.shell({
+    id: 'fishing', title: 'Рыбалка', tagline: 'Минута у воды. Крупная рыба — глубже.',
+    rulesHtml: '<p>Нажми — крючок опускается, нажми ещё раз — тянешь обратно. Кто первый попадётся на крючок, того и вытащишь. Глубже — рыба крупнее и дороже. Медуза жалит и отнимает очки. Веди пальцем вбок — лодка плывёт.</p>',
+    startLabel: 'Закинуть', countdown: true, overEyebrow: 'Клёв окончен',
+    unit: function (n) { return P.plural(n, U); }, kbdHint: 'На компьютере: пробел — крючок, стрелки — лодка', pauseKeys: ['KeyP', 'Escape'], onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { S = P.clamp(view.W / 390, 0.8, 1.3); if (!boatX) boatX = view.W / 2; });
+  var timer = P.timeLimit(shell, 60, finish);
+  function surf() { return 150 * S; }
+  function spawn() {
+    var k = Math.random(), kind = k < 0.3 ? 0 : k < 0.55 ? 1 : k < 0.72 ? 2 : k < 0.82 ? 3 : k < 0.91 ? 4 : 5, K = KINDS[kind];
+    var dir = Math.random() < 0.5 ? 1 : -1, depth = surf() + 30 * S + (K.d[0] + Math.random() * (K.d[1] - K.d[0])) * (view.H - surf() - 70 * S);
+    fish.push({ k: K, x: dir > 0 ? -60 : view.W + 60, y: depth, dir: dir, ph: Math.random() * 6 });
+  }
+  function reset() { fish = []; for (var i = 0; i < 9; i++) { spawn(); fish[i].x = Math.random() * view.W; } hook = null; score = 0; caught = 0; pops = []; timer.reset(); shell.setScore('0'); }
+  function finish() { shell.end({ score: Math.max(0, score), delay: 300, stats: 'поймано: ' + caught, phrase: 'На «Рыбалке» я наловил на ' + Math.max(0, score) + ' ' + P.plural(score, U) + ' за минуту. Твой улов?' }); }
+  function toggle() {
+    if (!shell.running) return;
+    if (!hook) hook = { y: surf(), dir: 1, fish: null };
+    else if (hook.dir > 0) hook.dir = -1;
+  }
+  function step(dt) {
+    t += dt;
+    if (Math.random() < dt * 1.3 && fish.length < 14) spawn();
+    fish.forEach(function (f) { if (f.on) return; f.x += f.dir * f.k.sp * S * dt * (1 + Math.min(0.6, t / 100)); f.y += Math.sin(t * 2 + f.ph) * 8 * dt; });
+    fish = fish.filter(function (f) { return f.on || (f.x > -90 && f.x < view.W + 90); });
+    if (hook) {
+      hook.y += hook.dir * (hook.dir > 0 ? 340 : 420) * S * dt;
+      if (hook.y > view.H - 30 * S) { hook.y = view.H - 30 * S; hook.dir = -1; }
+      if (!hook.fish && hook.dir !== 0) {
+        for (var i = 0; i < fish.length; i++) {
+          var f = fish[i];
+          if (Math.abs(f.x - boatX) < f.k.len * S * 0.6 && Math.abs(f.y - hook.y) < 12 * S) {
+            if (f.k.jelly) { score += f.k.pts; shell.setScore(String(score)); pop(boatX, hook.y, String(f.k.pts), '#FF6B4A'); P.haptic('crash'); f.x += f.dir * 60; hook.dir = -1; break; }
+            hook.fish = f; f.on = true; hook.dir = -1; P.haptic('tap'); break;
+          }
+        }
+      }
+      if (hook.fish) { hook.fish.x = boatX; hook.fish.y = hook.y + 10 * S; }
+      if (hook.y <= surf()) {
+        if (hook.fish) { var F = hook.fish; score += F.k.pts; if (!F.k.junk) caught++; shell.setScore(String(score)); pop(boatX, surf() - 30 * S, F.k.junk ? 'сапог…' : '+' + F.k.pts, F.k.junk ? '#B9A8F0' : '#3DF5B0'); P.haptic(F.k.junk ? null : 'coin'); fish.splice(fish.indexOf(F), 1); }
+        hook = null;
+      }
+    }
+    pops.forEach(function (p) { p.t += dt; p.y -= 30 * dt; }); pops = pops.filter(function (p) { return p.t < 1; });
+  }
+  function pop(x, y, s, col) { pops.push({ x: x, y: y, s: s, col: col, t: 0 }); }
+  P.loop(function (dt) { if (shell.running) step(dt); draw(); });
+  function drawFish(c, f) {
+    var L = f.k.len * S, d = f.on ? 0 : f.dir;
+    c.save(); c.translate(f.x, f.y); if (f.on) c.rotate(-Math.PI / 2); else if (d < 0) c.scale(-1, 1);
+    c.fillStyle = f.k.col;
+    if (f.k.junk) { c.fillRect(-L * 0.4, -L * 0.5, L * 0.35, L * 0.7); c.fillRect(-L * 0.4, 0, L * 0.8, L * 0.3); c.restore(); return; }
+    if (f.k.jelly) { c.globalAlpha = 0.8; c.beginPath(); c.arc(0, 0, L * 0.5, Math.PI, 0); c.fill(); c.strokeStyle = f.k.col; c.lineWidth = 2; for (var i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(i * L * 0.18, 0); c.quadraticCurveTo(i * L * 0.18 + Math.sin(t * 4 + i) * 4, L * 0.4, i * L * 0.18, L * 0.7); c.stroke(); } c.globalAlpha = 1; c.restore(); return; }
+    c.beginPath(); c.ellipse(0, 0, L * 0.5, L * 0.24, 0, 0, 7); c.fill();
+    c.beginPath(); c.moveTo(-L * 0.42, 0); c.lineTo(-L * 0.72, -L * 0.22); c.lineTo(-L * 0.72, L * 0.22); c.fill();
+    c.fillStyle = '#120630'; c.beginPath(); c.arc(L * 0.28, -L * 0.05, Math.max(1.5, L * 0.05), 0, 7); c.fill();
+    c.restore();
+  }
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H, sy = surf();
+    var sky = c.createLinearGradient(0, 0, 0, sy); sky.addColorStop(0, '#5B3FD0'); sky.addColorStop(1, '#6FD3FF'); c.fillStyle = sky; c.fillRect(0, 0, W, sy);
+    var sea = c.createLinearGradient(0, sy, 0, H); sea.addColorStop(0, '#1F6FB5'); sea.addColorStop(1, '#0B1A4A'); c.fillStyle = sea; c.fillRect(0, sy, W, H - sy);
+    c.fillStyle = 'rgba(255,255,255,.12)'; for (var x = 0; x < W; x += 40) c.fillRect(x + (t * 20) % 40, sy + 4, 20, 2);
+    fish.forEach(function (f) { if (!f.on) drawFish(c, f); });
+    if (hook) { c.strokeStyle = '#F4F1FF'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(boatX, sy - 10 * S); c.lineTo(boatX, hook.y); c.stroke(); c.strokeStyle = '#F4F1FF'; c.lineWidth = 2.5; c.beginPath(); c.arc(boatX - 4 * S, hook.y, 5 * S, 0, Math.PI); c.stroke(); if (hook.fish) drawFish(c, hook.fish); }
+    c.fillStyle = '#FF6B4A'; c.beginPath(); c.moveTo(boatX - 50 * S, sy - 16 * S); c.lineTo(boatX + 50 * S, sy - 16 * S); c.lineTo(boatX + 36 * S, sy + 4 * S); c.lineTo(boatX - 36 * S, sy + 4 * S); c.fill();
+    c.fillStyle = '#FFD3B0'; c.beginPath(); c.arc(boatX - 12 * S, sy - 34 * S, 9 * S, 0, 7); c.fill(); c.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; c.fillRect(boatX - 20 * S, sy - 26 * S, 16 * S, 12 * S);
+    c.strokeStyle = '#9C5A3C'; c.lineWidth = 3 * S; c.beginPath(); c.moveTo(boatX - 8 * S, sy - 22 * S); c.lineTo(boatX, sy - 52 * S); c.stroke(); c.strokeStyle = '#F4F1FF'; c.lineWidth = 1; c.beginPath(); c.moveTo(boatX, sy - 52 * S); c.lineTo(boatX, sy - 10 * S); c.stroke();
+    pops.forEach(function (p) { c.globalAlpha = 1 - p.t; c.fillStyle = p.col; c.font = '800 20px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText(p.s, p.x, p.y); }); c.globalAlpha = 1;
+  }
+  canvas.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, bx: boatX, moved: false }; });
+  window.addEventListener('pointermove', function (e) { if (!drag) return; var dx = e.clientX - drag.x; if (Math.abs(dx) > 10) drag.moved = true; if (drag.moved && shell.running) boatX = P.clamp(drag.bx + dx, 50 * S, view.W - 50 * S); });
+  window.addEventListener('pointerup', function () { if (drag && !drag.moved) toggle(); drag = null; });
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'Space' || e.code === 'ArrowDown') { e.preventDefault(); toggle(); }
+    if (e.code === 'ArrowLeft' && shell.running) boatX = Math.max(50 * S, boatX - 30 * S);
+    if (e.code === 'ArrowRight' && shell.running) boatX = Math.min(view.W - 50 * S, boatX + 30 * S);
+  });
+})();
+</script>
+</body>
+</html>

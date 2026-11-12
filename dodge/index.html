@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Уворот</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Уворот. Веди пальцем по экрану"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var me = null, bs = [], warn = [], t = 0, patT = 0, S = 1, drag = null, keys = {}, fx = [], dead = false;
+  function fmtT(v) { return (v / 10).toFixed(1).replace('.', ',') + ' с'; }
+  var shell = P.shell({
+    id: 'dodge', title: 'Уворот', tagline: 'Сколько продержишься под градом пуль?',
+    rulesHtml: '<p>Веди пальцем где угодно — точка повторяет движение. Пули летят кольцами, веерами и стенами. Любое касание — конец. Чем дольше живёшь, тем гуще град.</p>',
+    startLabel: 'Держаться', countdown: true, overEyebrow: 'Попадание', formatScore: fmtT,
+    unit: function () { return ''; }, kbdHint: 'На компьютере: стрелки', onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { S = P.clamp(view.W / 390, 0.8, 1.3); if (!me) me = { x: view.W / 2, y: view.H * 0.6 }; });
+  function reset() { me = { x: view.W / 2, y: view.H * 0.6 }; bs = []; warn = []; fx = []; t = 0; patT = 1; dead = false; shell.setScore('0,0'); }
+  function sp() { return (130 + Math.min(150, t * 2.4)) * S; }
+  function shot(x, y, a, s, col) { bs.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, r: 6 * S, col: col || '#FF6B4A' }); }
+  function edge() { var W = view.W, H = view.H, s = P.rand(4); return s === 0 ? { x: Math.random() * W, y: 70 } : s === 1 ? { x: W + 10, y: 80 + Math.random() * (H - 90) } : s === 2 ? { x: Math.random() * W, y: H + 10 } : { x: -10, y: 80 + Math.random() * (H - 90) }; }
+  function pattern() {
+    var W = view.W, H = view.H, k = P.rand(t < 12 ? 3 : 5), s = sp();
+    if (k === 0) { var e = edge(), a0 = Math.atan2(me.y - e.y, me.x - e.x); for (var i = -2; i <= 2; i++) shot(e.x, e.y, a0 + i * 0.16, s); }
+    else if (k === 1) { var cx = 40 + Math.random() * (W - 80), cy = 120 + Math.random() * (H * 0.35); warn.push({ x: cx, y: cy, t: 0.7, fn: function (x, y) { var n = 14 + Math.min(10, t / 4 | 0); for (var j = 0; j < n; j++) shot(x, y, j / n * 6.283, s * 0.8, '#FF8AD8'); } }); }
+    else if (k === 2) { var gap = Math.random() * (W - 110 * S) + 30 * S; for (var x = 8; x < W; x += 22 * S) if (x < gap || x > gap + 90 * S) shot(x, 72, Math.PI / 2, s * 0.75, '#FFD84D'); }
+    else if (k === 3) { var c2 = { x: W / 2, y: H * 0.45 }, base = Math.random() * 6; for (var q = 0; q < 24; q++) (function (q) { setTimeout(function () { if (shell.running) shot(c2.x, c2.y, base + q * 0.5, s * 0.85, '#6FD3FF'); }, q * 70); })(q); }
+    else { var side2 = Math.random() < 0.5, gy = Math.random() * (H - 260) + 150; for (var y = 80; y < H; y += 24 * S) if (Math.abs(y - gy) > 50 * S) shot(side2 ? -10 : W + 10, y, side2 ? 0 : Math.PI, s * 0.7, '#FF9A6B'); }
+  }
+  function step(dt) {
+    t += dt; shell.setScore(fmtT(Math.floor(t * 10)).replace(' с', ''));
+    if (keys.l) me.x -= 300 * S * dt; if (keys.r) me.x += 300 * S * dt; if (keys.u) me.y -= 300 * S * dt; if (keys.d) me.y += 300 * S * dt;
+    me.x = P.clamp(me.x, 10, view.W - 10); me.y = P.clamp(me.y, 80, view.H - 10);
+    patT -= dt; if (patT <= 0) { pattern(); patT = Math.max(0.55, 1.7 - t * 0.02); }
+    warn.forEach(function (w) { w.t -= dt; if (w.t <= 0) { w.done = true; w.fn(w.x, w.y); } }); warn = warn.filter(function (w) { return !w.done; });
+    bs.forEach(function (b) { b.x += b.vx * dt; b.y += b.vy * dt; });
+    bs = bs.filter(function (b) { return b.x > -30 && b.y > 40 && b.x < view.W + 30 && b.y < view.H + 30; });
+    for (var i = 0; i < bs.length; i++) if (Math.hypot(bs[i].x - me.x, bs[i].y - me.y) < bs[i].r + 5 * S) {
+      dead = true; P.haptic('crash'); for (var k = 0; k < 30; k++) { var a = Math.random() * 6.28, s = 60 + Math.random() * 200; fx.push({ x: me.x, y: me.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.7 }); }
+      var sc = Math.floor(t * 10);
+      shell.end({ score: sc, delay: 700, phrase: 'В «Увороте» я продержался ' + fmtT(sc) + '. А ты?' }); return;
+    }
+  }
+  P.loop(function (dt) {
+    if (shell.running && !dead && me) step(dt);
+    fx.forEach(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }); fx = fx.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H;
+    c.fillStyle = '#140734'; c.fillRect(0, 0, W, H);
+    c.strokeStyle = 'rgba(59,30,140,.35)'; c.lineWidth = 1; for (var x = 0; x < W; x += 30) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
+    warn.forEach(function (w) { c.strokeStyle = 'rgba(255,138,216,' + (0.4 + 0.4 * Math.sin(w.t * 30)) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(w.x, w.y, 18 * S * (1 + w.t), 0, 7); c.stroke(); });
+    bs.forEach(function (b) { c.fillStyle = b.col; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 7); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(b.x, b.y, b.r * 0.4, 0, 7); c.fill(); });
+    if (me && !dead) { c.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; c.shadowColor = '#3DF5B0'; c.shadowBlur = 16; c.beginPath(); c.arc(me.x, me.y, 9 * S, 0, 7); c.fill(); c.shadowBlur = 0; c.fillStyle = '#fff'; c.beginPath(); c.arc(me.x, me.y, 3.5 * S, 0, 7); c.fill(); }
+    fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = '#3DF5B0'; c.fillRect(p.x - 2, p.y - 2, 4, 4); }); c.globalAlpha = 1;
+  }
+  canvas.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY, mx: me.x, my: me.y }; });
+  window.addEventListener('pointermove', function (e) { if (drag && shell.running) { me.x = P.clamp(drag.mx + (e.clientX - drag.x) * 1.25, 10, view.W - 10); me.y = P.clamp(drag.my + (e.clientY - drag.y) * 1.25, 80, view.H - 10); } });
+  window.addEventListener('pointerup', function () { drag = null; });
+  var KM = { ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd' };
+  window.addEventListener('keydown', function (e) { if (KM[e.code]) { e.preventDefault(); keys[KM[e.code]] = true; } });
+  window.addEventListener('keyup', function (e) { if (KM[e.code]) keys[KM[e.code]] = false; });
+})();
+</script>
+</body>
+</html>

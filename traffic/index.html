@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Светофор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Светофор. Нажимай на дорогу, чтобы переключить её свет"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['машина', 'машины', 'машин'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var cars = [], green = { h: true, v: false }, passed = 0, t = 0, spawnT = { h: 1, v: 1.6 }, S = 1, crash = null, fx = [];
+  var COLS = ['#FF6B4A', '#FFD84D', '#FF8AD8', '#6FD3FF', '#F4F1FF', '#FF9A6B', '#B9A8F0'];
+  var shell = P.shell({
+    id: 'traffic', title: 'Светофор', tagline: 'Ты регулируешь перекрёсток.',
+    rulesHtml: '<p>Нажми на дорогу — её светофор переключится. Две дороги с зелёным — машины могут столкнуться. Красный стоит долго — растёт пробка. Восемь машин в очереди или авария — конец.</p>',
+    startLabel: 'Регулировать', countdown: true, overEyebrow: 'Перекрёсток встал',
+    unit: function (n) { return P.plural(n, U); }, onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { S = P.clamp(view.W / 390, 0.8, 1.3); });
+  function geo() { var W = view.W, H = view.H, rw = 70 * S; return { cx: W / 2, cy: 80 + (H - 80) / 2, rw: rw }; }
+  function reset() { cars = []; green = { h: true, v: false }; passed = 0; t = 0; spawnT = { h: 0.6, v: 1.4 }; crash = null; fx = []; shell.setScore('0'); side(); }
+  function queue(axis) { return cars.filter(function (c) { return c.axis === axis && !c.inside && !c.past && c.v < 5; }).length; }
+  function side() { var q = Math.max(queue('h'), queue('v')); shell.setSide('пробка ' + q + '/8', q >= 6); }
+  function spawn(axis) {
+    var g = geo(), len = (34 + Math.random() * 12) * S;
+    var car = { axis: axis, len: len, wid: 22 * S, v: 0, vmax: (110 + Math.random() * 60 + Math.min(80, t * 0.9)) * S, col: P.pick(COLS), pos: -60 * S, lane: axis === 'h' ? g.cy + 12 * S : g.cx + 12 * S };
+    var last = cars.filter(function (c) { return c.axis === axis; }).sort(function (a, b) { return a.pos - b.pos; })[0];
+    if (last && last.pos < car.len + 12 * S) return false;
+    cars.push(car); return true;
+  }
+  function stopLine(axis) { var g = geo(); return (axis === 'h' ? g.cx : g.cy) - g.rw / 2 - 6 * S; }
+  function box(c) {
+    var g = geo();
+    if (c.axis === 'h') return { x: c.pos - c.len, y: c.lane - c.wid / 2, w: c.len, h: c.wid };
+    var y = view.H - c.pos; return { x: c.lane - c.wid / 2, y: y, w: c.wid, h: c.len };
+  }
+  function step(dt) {
+    t += dt;
+    ['h', 'v'].forEach(function (ax) {
+      spawnT[ax] -= dt;
+      if (spawnT[ax] <= 0) { spawn(ax); spawnT[ax] = Math.max(0.55, (2.3 - t * 0.02)) * (0.6 + Math.random() * 0.8); }
+    });
+    var g = geo();
+    var byAx = { h: [], v: [] }; cars.forEach(function (c) { byAx[c.axis].push(c); });
+    ['h', 'v'].forEach(function (ax) {
+      var list = byAx[ax].sort(function (a, b) { return b.pos - a.pos; }), sl = ax === 'h' ? stopLine('h') : view.H - (g.cy + g.rw / 2 + 6 * S);
+      list.forEach(function (c, i) {
+        var limit = Infinity;
+        if (i > 0) limit = list[i - 1].pos - list[i - 1].len - 10 * S;
+        var stopAt = ax === 'h' ? sl : sl;
+        if (!green[ax] && c.pos <= stopAt + 1) limit = Math.min(limit, stopAt);
+        var target = c.pos + c.vmax * dt;
+        if (target > limit) { c.v = Math.max(0, (limit - c.pos) / dt); c.pos = Math.max(c.pos, limit); } else { c.v = c.vmax; c.pos = target; }
+        var far = ax === 'h' ? view.W : view.H;
+        var front = c.pos, back = c.pos - c.len, zone0 = ax === 'h' ? g.cx - g.rw / 2 : view.H - (g.cy + g.rw / 2), zone1 = zone0 + g.rw;
+        c.inside = front > zone0 && back < zone1;
+        if (back > zone1 && !c.past) { c.past = true; passed++; shell.setScore(String(passed)); }
+        if (back > far + 20) c.gone = true;
+      });
+    });
+    cars = cars.filter(function (c) { return !c.gone; });
+    var ins = cars.filter(function (c) { return c.inside; });
+    for (var i = 0; i < ins.length; i++) for (var j = i + 1; j < ins.length; j++) if (ins[i].axis !== ins[j].axis) {
+      var a = box(ins[i]), b = box(ins[j]);
+      if (a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h) { end('Авария!', (a.x + b.x) / 2 + 10, (a.y + b.y) / 2 + 10); return; }
+    }
+    side();
+    if (queue('h') >= 8 || queue('v') >= 8) end('Пробка!', g.cx, g.cy);
+  }
+  function end(why, x, y) {
+    crash = { x: x, y: y }; P.haptic('crash');
+    for (var k = 0; k < 30; k++) { var a = Math.random() * 6.28, s = 40 + Math.random() * 180; fx.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.8, col: P.pick(['#FF6B4A', '#FFD84D', '#fff']) }); }
+    shell.end({ score: passed, delay: 900, eyebrow: why, phrase: 'В «Светофоре» я пропустил ' + passed + ' ' + P.plural(passed, U) + ' без аварий. Отрегулируешь лучше?' });
+  }
+  P.loop(function (dt) {
+    if (shell.running) step(dt);
+    fx.forEach(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }); fx = fx.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H, g = geo();
+    c.fillStyle = '#1E3A2A'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#3B3550'; c.fillRect(0, g.cy - g.rw / 2, W, g.rw); c.fillRect(g.cx - g.rw / 2, 0, g.rw, H);
+    c.fillStyle = 'rgba(244,241,255,.45)';
+    for (var x = 0; x < W; x += 34 * S) if (Math.abs(x - g.cx) > g.rw / 2 + 4) c.fillRect(x, g.cy - 1.5, 16 * S, 3);
+    for (var y = 0; y < H; y += 34 * S) if (Math.abs(y - g.cy) > g.rw / 2 + 4) c.fillRect(g.cx - 1.5, y, 3, 16 * S);
+    c.fillStyle = 'rgba(244,241,255,.8)'; c.fillRect(stopLine('h') + 4 * S, g.cy, 4 * S, g.rw / 2); c.fillRect(g.cx, g.cy + g.rw / 2 + 2 * S, g.rw / 2, 4 * S);
+    cars.forEach(function (car) {
+      var b = box(car); c.fillStyle = car.col; c.beginPath(); if (c.roundRect) c.roundRect(b.x, b.y, b.w, b.h, 6 * S); else c.rect(b.x, b.y, b.w, b.h); c.fill();
+      c.fillStyle = 'rgba(18,6,48,.55)'; if (car.axis === 'h') c.fillRect(b.x + b.w * 0.55, b.y + 3 * S, b.w * 0.22, b.h - 6 * S); else c.fillRect(b.x + 3 * S, b.y + b.h * 0.22, b.w - 6 * S, b.h * 0.22);
+    });
+    light(c, g.cx - g.rw / 2 - 30 * S, g.cy + g.rw / 2 + 10 * S, green.h, 'h');
+    light(c, g.cx + g.rw / 2 + 10 * S, g.cy + g.rw / 2 + 30 * S, green.v, 'v');
+    fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = p.col; c.fillRect(p.x - 3, p.y - 3, 6, 6); }); c.globalAlpha = 1;
+    c.font = '600 12px Onest, sans-serif'; c.fillStyle = 'rgba(244,241,255,.6)'; c.textAlign = 'center';
+    if (shell.running && t < 6) { c.fillText('нажми на дорогу — переключишь её свет', W / 2, 96); }
+  }
+  function light(c, x, y, on, ax) {
+    c.fillStyle = '#120630'; c.beginPath(); if (c.roundRect) c.roundRect(x, y, 20 * S, 40 * S, 6 * S); else c.rect(x, y, 20 * S, 40 * S); c.fill();
+    c.fillStyle = on ? 'rgba(255,107,74,.25)' : '#FF6B4A'; c.beginPath(); c.arc(x + 10 * S, y + 11 * S, 6 * S, 0, 7); c.fill();
+    c.fillStyle = on ? '#3DF5B0' : 'rgba(61,245,176,.2)'; c.beginPath(); c.arc(x + 10 * S, y + 29 * S, 6 * S, 0, 7); c.fill();
+    c.fillStyle = '#F4F1FF'; c.font = '700 10px Onest, sans-serif'; c.textAlign = 'center'; c.fillText(ax === 'h' ? '→' : '↑', x + 10 * S, y + 52 * S);
+  }
+  P.gestures(canvas, { tap: function (x, y) {
+    if (!shell.running) return;
+    var g = geo(), onH = Math.abs(y - g.cy) < g.rw * 0.9, onV = Math.abs(x - g.cx) < g.rw * 0.9;
+    if (onH && onV) return;
+    var ax = onH ? 'h' : onV ? 'v' : (Math.abs(y - g.cy) < Math.abs(x - g.cx) ? 'h' : 'v');
+    green[ax] = !green[ax]; P.haptic('tap');
+  } });
+  window.addEventListener('keydown', function (e) { if (!shell.running) return; if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { green.h = !green.h; e.preventDefault(); } if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { green.v = !green.v; e.preventDefault(); } });
+})();
+</script>
+</body>
+</html>

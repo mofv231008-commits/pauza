@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Ракеты</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Ракеты. Нажимай на небо, чтобы сбить ракету"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var cities = [], ms = [], booms = [], shots = [], fx = [], stars = [], score = 0, t = 0, spawnT = 0, cool = 0, downed = 0, S = 1;
+  var shell = P.shell({
+    id: 'missile', title: 'Ракеты', tagline: 'Ночь, город и ракеты сверху.',
+    rulesHtml: '<p>Нажимай на небо — туда летит перехватчик и взрывается. Ракеты, попавшие во взрыв, сгорают, а их взрыв сбивает соседние. Потеряешь все шесть домов — конец.</p>',
+    startLabel: 'Защищать', countdown: true, overEyebrow: 'Город пал',
+    unit: function (n) { return P.plural(n, U); }, onReset: reset
+  });
+  var view = P.canvas(canvas, stage, layout);
+  function gy() { return view.H - 56; }
+  function layout() {
+    S = P.clamp(view.W / 390, 0.8, 1.3);
+    stars = []; for (var i = 0; i < 70; i++) stars.push({ x: Math.random() * view.W, y: Math.random() * view.H * 0.8, r: Math.random() * 1.2 + 0.3 });
+    var xs = [0.08, 0.22, 0.36, 0.64, 0.78, 0.92];
+    if (!cities.length) cities = xs.map(function (k) { return { k: k, alive: true, h: 0.7 + Math.random() * 0.6 }; });
+  }
+  function reset() {
+    cities.forEach(function (c) { c.alive = true; });
+    ms = []; booms = []; shots = []; fx = []; score = 0; t = 0; spawnT = 1.2; cool = 0; downed = 0; shell.setScore('0'); side();
+  }
+  function side() { var n = cities.filter(function (c) { return c.alive; }).length; shell.setSide('🏠 ' + n, n <= 2); }
+  function cityX(c) { return c.k * view.W; }
+  function launch(x0, y0, split) {
+    var alive = cities.filter(function (c) { return c.alive; }), tg = Math.random() < 0.85 && alive.length ? P.pick(alive) : null;
+    var tx = tg ? cityX(tg) : view.W / 2, v = Math.min(150, 34 + t * 1.5) * S;
+    ms.push({ x0: x0, y0: y0, x: x0, y: y0, tx: tx, ty: gy(), v: v * (0.85 + Math.random() * 0.3), split: split });
+  }
+  function boom(x, y, max, own) { booms.push({ x: x, y: y, r: 0, max: max, t: 0, own: own }); }
+  function step(dt) {
+    t += dt; cool -= dt; spawnT -= dt;
+    if (spawnT <= 0) {
+      var n = 1 + (t > 25 ? 1 : 0) + (t > 55 && Math.random() < 0.5 ? 1 : 0);
+      for (var i = 0; i < n; i++) launch(Math.random() * view.W, -10, t > 18 && Math.random() < 0.25);
+      spawnT = Math.max(0.7, 2.4 - t * 0.025);
+    }
+    shots.forEach(function (s) {
+      var dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy), st = 720 * S * dt;
+      if (d <= st) { s.done = true; boom(s.tx, s.ty, 48 * S, true); } else { s.x += dx / d * st; s.y += dy / d * st; }
+    });
+    shots = shots.filter(function (s) { return !s.done; });
+    ms.forEach(function (m) {
+      var dx = m.tx - m.x0, dy = m.ty - m.y0, d = Math.hypot(dx, dy);
+      m.x += dx / d * m.v * dt; m.y += dy / d * m.v * dt;
+      if (m.split && m.y > view.H * 0.38) { m.dead = true; for (var k = 0; k < 3; k++) { launch(m.x, m.y, false); var n2 = ms[ms.length - 1]; n2.x0 = m.x; n2.y0 = m.y; } }
+      if (m.y >= m.ty) {
+        m.dead = true; boom(m.x, m.ty, 30 * S, false);
+        cities.forEach(function (c) { if (c.alive && Math.abs(cityX(c) - m.x) < 26 * S) { c.alive = false; P.haptic('crash'); for (var i = 0; i < 20; i++) fx.push(part(cityX(c), gy() - 10, '#FF6B4A')); } });
+        side();
+        if (!cities.some(function (c) { return c.alive; })) shell.end({ score: score, delay: 900, stats: 'сбито ракет: ' + downed, phrase: 'В «Ракетах» я сбил ' + downed + ' ракет и набрал ' + score + ' ' + P.plural(score, U) + '. Защитишь город дольше?' });
+      }
+    });
+    booms.forEach(function (b) {
+      b.t += dt; b.r = b.t < 0.32 ? b.max * b.t / 0.32 : b.t < 0.55 ? b.max : b.max * Math.max(0, 1 - (b.t - 0.55) / 0.3);
+      ms.forEach(function (m) {
+        if (!m.dead && Math.hypot(m.x - b.x, m.y - b.y) < b.r) { m.dead = true; downed++; score += m.split ? 50 : 25; shell.setScore(String(score)); boom(m.x, m.y, 30 * S, true); P.haptic('coin'); }
+      });
+    });
+    booms = booms.filter(function (b) { return b.t < 0.85; });
+    ms = ms.filter(function (m) { return !m.dead; });
+  }
+  function part(x, y, col) { var a = Math.random() * Math.PI * 2, s = (40 + Math.random() * 160) * S; return { x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 60 * S, life: 0.6 + Math.random() * 0.5, col: col }; }
+  P.loop(function (dt) {
+    if (shell.running) step(dt);
+    fx.forEach(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * S * dt; p.life -= dt; }); fx = fx.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H, g = gy();
+    var sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#0B0420'); sky.addColorStop(1, '#22105A'); c.fillStyle = sky; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#F4F1FF'; stars.forEach(function (s) { c.globalAlpha = 0.5; c.beginPath(); c.arc(s.x, s.y, s.r, 0, 7); c.fill(); }); c.globalAlpha = 1;
+    c.fillStyle = '#1A0C44'; c.fillRect(0, g, W, H - g);
+    cities.forEach(function (ct) {
+      var x = cityX(ct), w = 30 * S, h = 30 * S * ct.h;
+      if (!ct.alive) { c.fillStyle = '#3B1E8C'; c.fillRect(x - w / 2, g - 6 * S, w, 6 * S); return; }
+      c.fillStyle = '#3B1E8C'; c.fillRect(x - w / 2, g - h, w, h); c.fillStyle = '#5B3FD0'; c.fillRect(x - w / 2 + 4 * S, g - h - 8 * S, w * 0.45, 8 * S);
+      c.fillStyle = '#FFD84D'; for (var i = 0; i < 3; i++) for (var j = 0; j < Math.floor(h / (9 * S)); j++) if ((i + j) % 2 === 0) c.fillRect(x - w / 2 + 4 * S + i * 8 * S, g - h + 4 * S + j * 9 * S, 4 * S, 4 * S);
+    });
+    c.fillStyle = '#3DF5B0'; c.beginPath(); c.moveTo(W / 2 - 18 * S, g); c.lineTo(W / 2, g - 22 * S); c.lineTo(W / 2 + 18 * S, g); c.fill();
+    c.lineWidth = 2 * S;
+    ms.forEach(function (m) {
+      var gr = c.createLinearGradient(m.x0, m.y0, m.x, m.y); gr.addColorStop(0, 'rgba(255,107,74,0)'); gr.addColorStop(1, 'rgba(255,107,74,.9)');
+      c.strokeStyle = gr; c.beginPath(); c.moveTo(m.x0, m.y0); c.lineTo(m.x, m.y); c.stroke();
+      c.fillStyle = m.split ? '#FF8AD8' : '#FFD84D'; c.beginPath(); c.arc(m.x, m.y, 3.2 * S, 0, 7); c.fill();
+    });
+    c.strokeStyle = 'rgba(61,245,176,.8)'; c.setLineDash([4 * S, 4 * S]);
+    shots.forEach(function (s) { c.beginPath(); c.moveTo(W / 2, g - 22 * S); c.lineTo(s.x, s.y); c.stroke(); c.save(); c.setLineDash([]); c.strokeStyle = 'rgba(61,245,176,.5)'; c.beginPath(); c.arc(s.tx, s.ty, 6 * S, 0, 7); c.stroke(); c.restore(); });
+    c.setLineDash([]);
+    booms.forEach(function (b) {
+      var gr = c.createRadialGradient(b.x, b.y, 0, b.x, b.y, Math.max(1, b.r)); gr.addColorStop(0, '#fff'); gr.addColorStop(0.45, b.own ? '#FFD84D' : '#FF9A6B'); gr.addColorStop(1, 'rgba(255,107,74,0)');
+      c.fillStyle = gr; c.beginPath(); c.arc(b.x, b.y, Math.max(0, b.r), 0, 7); c.fill();
+    });
+    fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = p.col; c.fillRect(p.x - 2, p.y - 2, 4, 4); }); c.globalAlpha = 1;
+  }
+  function fire(x, y) {
+    if (!shell.running || cool > 0 || y > gy() - 30) return;
+    cool = 0.28; shots.push({ x: view.W / 2, y: gy() - 22 * S, tx: x, ty: y });
+  }
+  canvas.addEventListener('pointerdown', function (e) { var r = canvas.getBoundingClientRect(); fire(e.clientX - r.left, e.clientY - r.top); });
+})();
+</script>
+</body>
+</html>

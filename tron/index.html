@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Световой след</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Световой след. Свайпай, чтобы поворачивать"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['победа', 'победы', 'побед'], COLS = 30;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var R = 44, cs = 12, top = 76, grid = [], riders = [], acc = 0, wins = 0, round = 1, pause = 0, msg = '', fx = [];
+  var DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0], BOTC = ['#FF6B4A', '#FFD84D', '#FF8AD8'];
+  var shell = P.shell({
+    id: 'tron', title: 'Световой след', tagline: 'Мотоциклы оставляют стену света.',
+    rulesHtml: '<p>Свайпай, чтобы повернуть. За тобой тянется стена — и за ботами тоже. Врежешься в любую — конец. Останься последним, и начнётся раунд быстрее и с ботами посильнее.</p>',
+    startLabel: 'Газ', countdown: true, overEyebrow: 'Авария',
+    unit: function (n) { return P.plural(n, U); }, kbdHint: 'На компьютере: стрелки', onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { cs = view.W / COLS; R = Math.max(30, Math.floor((view.H - top - 16) / cs)); });
+  function reset() { wins = 0; round = 1; shell.setScore('0'); startRound(); }
+  function startRound() {
+    grid = []; for (var y = 0; y < R; y++) { grid.push([]); for (var x = 0; x < COLS; x++) grid[y].push(0); }
+    var nb = Math.min(3, round);
+    riders = [{ x: Math.floor(COLS / 2), y: R - 4, d: 0, nd: 0, me: true, col: '#3DF5B0', alive: true, id: 1 }];
+    var starts = [[Math.floor(COLS / 2), 3, 2], [3, Math.floor(R / 2), 1], [COLS - 4, Math.floor(R / 2), 3]];
+    for (var i = 0; i < nb; i++) riders.push({ x: starts[i][0], y: starts[i][1], d: starts[i][2], nd: starts[i][2], col: BOTC[i], alive: true, id: i + 2 });
+    riders.forEach(function (r) { grid[r.y][r.x] = r.id; });
+    acc = 0; pause = 1.1; msg = 'Раунд ' + round; shell.setSide('ботов: ' + nb);
+  }
+  function free(x, y) { return x >= 0 && y >= 0 && x < COLS && y < R && !grid[y][x]; }
+  function space(x, y, cap) {
+    if (!free(x, y)) return 0;
+    var seen = {}, st = [[x, y]], n = 0; seen[y * COLS + x] = 1;
+    while (st.length && n < cap) { var p = st.pop(); n++; for (var d = 0; d < 4; d++) { var nx = p[0] + DX[d], ny = p[1] + DY[d], k = ny * COLS + nx; if (!seen[k] && free(nx, ny)) { seen[k] = 1; st.push([nx, ny]); } } }
+    return n;
+  }
+  function think(r) {
+    var opts = [r.d, (r.d + 1) % 4, (r.d + 3) % 4], best = r.d, bestV = -1;
+    opts.forEach(function (d, i) {
+      var v = space(r.x + DX[d], r.y + DY[d], 140 + round * 20) + (i === 0 ? 3 : 0) + Math.random() * (round > 3 ? 1 : 6);
+      var me = riders[0]; if (me.alive && round > 1) v -= Math.hypot(r.x + DX[d] - me.x - DX[me.d] * 3, r.y + DY[d] - me.y - DY[me.d] * 3) * 0.3;
+      if (v > bestV) { bestV = v; best = d; }
+    });
+    r.nd = best;
+  }
+  function tick() {
+    riders.forEach(function (r) { if (!r.alive) return; if (!r.me) think(r); r.d = r.nd; r.tx = r.x + DX[r.d]; r.ty = r.y + DY[r.d]; });
+    riders.forEach(function (r) {
+      if (!r.alive) return;
+      var crash = !free(r.tx, r.ty) || riders.some(function (o) { return o !== r && o.alive && o.tx === r.tx && o.ty === r.ty; });
+      if (crash) { r.alive = false; boom(r); }
+    });
+    riders.forEach(function (r) { if (r.alive) { r.x = r.tx; r.y = r.ty; grid[r.y][r.x] = r.id; } });
+    var me = riders[0], bots = riders.filter(function (r) { return !r.me && r.alive; });
+    if (!me.alive) { P.haptic('crash'); shell.end({ score: wins, delay: 900, stats: 'раунд ' + round, phrase: 'В «Световом следе» я выиграл ' + wins + ' ' + P.plural(wins, ['раунд', 'раунда', 'раундов']) + ' подряд. Обойдёшь?' }); return; }
+    shell.setSide('ботов: ' + bots.length);
+    if (!bots.length) { wins++; round++; shell.setScore(String(wins)); P.haptic('win'); pause = 1.4; msg = 'Победа!'; setTimeout(function () { if (shell.running) startRound(); }, 900); riders.forEach(function (r) { r.alive = r.me; }); riders[0].frozen = true; }
+  }
+  function boom(r) { for (var i = 0; i < 18; i++) { var a = Math.random() * 6.28, s = 40 + Math.random() * 160; fx.push({ x: (r.x + 0.5) * cs, y: (r.y + 0.5) * cs, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.6, col: r.col }); } }
+  P.loop(function (dt) {
+    if (shell.running && riders.length) {
+      if (pause > 0) pause -= dt;
+      else if (!riders[0].frozen) { acc += dt; var st = Math.max(0.045, 0.095 - round * 0.008); while (acc >= st && shell.running) { acc -= st; tick(); } }
+    }
+    fx.forEach(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }); fx = fx.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H;
+    c.fillStyle = '#0B0420'; c.fillRect(0, 0, W, H);
+    c.save(); c.translate(0, top);
+    c.strokeStyle = 'rgba(59,30,140,.45)'; c.lineWidth = 1;
+    for (var x = 0; x <= COLS; x += 2) { c.beginPath(); c.moveTo(x * cs, 0); c.lineTo(x * cs, R * cs); c.stroke(); }
+    for (var y = 0; y <= R; y += 2) { c.beginPath(); c.moveTo(0, y * cs); c.lineTo(COLS * cs, y * cs); c.stroke(); }
+    c.strokeStyle = '#3B1E8C'; c.lineWidth = 2; c.strokeRect(1, 1, COLS * cs - 2, R * cs - 2);
+    var cols = {}; riders.forEach(function (r) { cols[r.id] = r.col; });
+    for (y = 0; y < grid.length; y++) for (x = 0; x < COLS; x++) { var v = grid[y][x]; if (v) { c.fillStyle = cols[v]; c.globalAlpha = 0.75; c.fillRect(x * cs + 1, y * cs + 1, cs - 2, cs - 2); } }
+    c.globalAlpha = 1;
+    riders.forEach(function (r) { if (!r.alive && !r.me) return; c.fillStyle = '#fff'; c.shadowColor = r.col; c.shadowBlur = 12; c.fillRect(r.x * cs, r.y * cs, cs, cs); c.shadowBlur = 0; });
+    fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = p.col; c.fillRect(p.x - 2, p.y - 2, 4, 4); }); c.globalAlpha = 1;
+    c.restore();
+    if (pause > 0 && msg && shell.running) { c.globalAlpha = Math.min(1, pause * 2); c.fillStyle = '#F4F1FF'; c.font = '800 28px Unbounded, "Arial Black", sans-serif'; c.textAlign = 'center'; c.fillText(msg, W / 2, H / 2); c.globalAlpha = 1; }
+  }
+  function turnTo(d) { var me = riders[0]; if (!shell.running || !me || !me.alive) return; if (d === (me.d + 2) % 4) return; me.nd = d; }
+  P.gestures(canvas, { swipe: function (d) { turnTo({ up: 0, right: 1, down: 2, left: 3 }[d]); }, tap: function (x) { var me = riders[0]; if (me) turnTo(x < view.W / 2 ? (me.d + 3) % 4 : (me.d + 1) % 4); } });
+  P.arrows(function (d) { turnTo({ up: 0, right: 1, down: 2, left: 3 }[d]); });
+})();
+</script>
+</body>
+</html>

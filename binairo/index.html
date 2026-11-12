@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Бинарио</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Бинарио. Нажимай на клетку, чтобы поставить солнце или луну"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 6, H2 = N / 2;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var sol = [], fixed = [], cur = [], t = 0, done = false, moves = 0, S = 1;
+  var shell = P.shell({
+    id: 'binairo', title: 'Бинарио', tagline: 'Японская логика из солнц и лун.',
+    rulesHtml: '<p>Заполни поле солнцами и лунами. В каждой строке и в каждом столбце их поровну. Больше двух одинаковых подряд нельзя. Одинаковых строк и столбцов тоже нельзя. Нажми на клетку: солнце → луна → пусто.</p>',
+    overEyebrow: 'Решено', overTone: 'good', countdown: false, lowerIsBetter: true,
+    formatScore: function (v) { return P.clock(v); }, onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { S = P.clamp(view.W / 390, 0.8, 1.3); });
+  function ok(g, y, x) {
+    var v = g[y][x], r0 = 0, r1 = 0, c0 = 0, c1 = 0, i;
+    for (i = 0; i < N; i++) { if (g[y][i] === 0) r0++; if (g[y][i] === 1) r1++; if (g[i][x] === 0) c0++; if (g[i][x] === 1) c1++; }
+    if (r0 > H2 || r1 > H2 || c0 > H2 || c1 > H2) return false;
+    for (i = 0; i < N - 2; i++) {
+      if (g[y][i] !== null && g[y][i] === g[y][i + 1] && g[y][i] === g[y][i + 2]) return false;
+      if (g[i][x] !== null && g[i][x] === g[i + 1][x] && g[i][x] === g[i + 2][x]) return false;
+    }
+    var rowFull = g[y].every(function (q) { return q !== null; });
+    if (rowFull) for (var yy = 0; yy < N; yy++) if (yy !== y && g[yy].join() === g[y].join()) return false;
+    var col = g.map(function (r) { return r[x]; });
+    if (col.every(function (q) { return q !== null; })) for (var xx = 0; xx < N; xx++) if (xx !== x) { var o = g.map(function (r) { return r[xx]; }); if (o.join() === col.join()) return false; }
+    return v !== undefined;
+  }
+  function solve(g, idx, limit, rand) {
+    while (idx < N * N && g[Math.floor(idx / N)][idx % N] !== null) idx++;
+    if (idx >= N * N) return 1;
+    var y = Math.floor(idx / N), x = idx % N, vals = rand ? P.shuffle([0, 1]) : [0, 1], n = 0;
+    for (var k = 0; k < 2; k++) {
+      g[y][x] = vals[k];
+      if (ok(g, y, x)) { n += solve(g, idx + 1, limit - n, rand); if (n >= limit) { if (!rand) g[y][x] = null; return n; } }
+      g[y][x] = null;
+    }
+    return n;
+  }
+  function blank() { var g = []; for (var y = 0; y < N; y++) { g.push([]); for (var x = 0; x < N; x++) g[y].push(null); } return g; }
+  function make() {
+    var g = blank(); solve(g, 0, 1, true); sol = g.map(function (r) { return r.slice(); });
+    var puz = g.map(function (r) { return r.slice(); }), cells = [];
+    for (var i = 0; i < N * N; i++) cells.push(i);
+    P.shuffle(cells).forEach(function (i) {
+      var y = Math.floor(i / N), x = i % N, keep = puz[y][x]; puz[y][x] = null;
+      var test = puz.map(function (r) { return r.slice(); });
+      if (solve(test, 0, 2, false) !== 1) puz[y][x] = keep;
+    });
+    fixed = puz.map(function (r) { return r.map(function (v) { return v !== null; }); });
+    cur = puz.map(function (r) { return r.slice(); });
+  }
+  function reset() { make(); t = 0; done = false; moves = 0; shell.setScore('0:00'); }
+  function bad() {
+    var b = blank().map(function (r) { return r.map(function () { return false; }); });
+    for (var y = 0; y < N; y++) for (var x = 0; x < N - 2; x++) {
+      if (cur[y][x] !== null && cur[y][x] === cur[y][x + 1] && cur[y][x] === cur[y][x + 2]) b[y][x] = b[y][x + 1] = b[y][x + 2] = true;
+      if (cur[x][y] !== null && cur[x][y] === cur[x + 1][y] && cur[x][y] === cur[x + 2][y]) b[x][y] = b[x + 1][y] = b[x + 2][y] = true;
+    }
+    return b;
+  }
+  function counts(line) { var a = 0, z = 0; line.forEach(function (v) { if (v === 0) z++; if (v === 1) a++; }); return [z, a]; }
+  function check() {
+    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) if (cur[y][x] === null) return;
+    for (y = 0; y < N; y++) for (x = 0; x < N; x++) if (!ok(cur, y, x)) return;
+    done = true; P.haptic('win');
+    var s = Math.max(1, Math.round(t));
+    shell.end({ score: s, delay: 500, stats: 'нажатий: ' + moves, phrase: 'Решил «Бинарио» за ' + P.clock(s) + '. Быстрее сможешь?' });
+  }
+  P.loop(function (dt) { if (shell.running && !done) { t += dt; shell.setScore(P.clock(t)); } draw(); });
+  function geo() { var size = Math.min(view.W - 72, view.H - 210), cs = size / N; return { cs: cs, x: (view.W - size) / 2 - 12, y: 100 + (view.H - 150 - size) / 2, size: size }; }
+  function icon(c, x, y, r, v) {
+    if (v === 0) { c.fillStyle = '#FFD84D'; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.strokeStyle = '#FFD84D'; c.lineWidth = r * 0.18; for (var k = 0; k < 8; k++) { var a = k * Math.PI / 4; c.beginPath(); c.moveTo(x + Math.cos(a) * r * 1.2, y + Math.sin(a) * r * 1.2); c.lineTo(x + Math.cos(a) * r * 1.45, y + Math.sin(a) * r * 1.45); c.stroke(); } }
+    else { c.fillStyle = '#6FD3FF'; c.beginPath(); c.arc(x, y, r * 1.1, 0, 7); c.fill(); c.fillStyle = '#3B1E8C'; c.beginPath(); c.arc(x + r * 0.45, y - r * 0.3, r * 0.95, 0, 7); c.fill(); }
+  }
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H, G = geo(), b = cur.length ? bad() : null;
+    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    if (!cur.length) return;
+    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
+      var px = G.x + x * G.cs, py = G.y + y * G.cs;
+      c.fillStyle = fixed[y][x] ? '#140734' : '#3B1E8C'; c.beginPath(); if (c.roundRect) c.roundRect(px + 3, py + 3, G.cs - 6, G.cs - 6, 10); else c.rect(px + 3, py + 3, G.cs - 6, G.cs - 6); c.fill();
+      if (b[y][x]) { c.strokeStyle = '#FF6B4A'; c.lineWidth = 3; c.stroke(); }
+      if (cur[y][x] !== null) icon(c, px + G.cs / 2, py + G.cs / 2, G.cs * 0.22, cur[y][x]);
+    }
+    c.font = '600 ' + Math.round(11 * S) + 'px Onest, sans-serif'; c.textAlign = 'center';
+    for (var i = 0; i < N; i++) {
+      var rc = counts(cur[i]), cc = counts(cur.map(function (r) { return r[i]; }));
+      c.fillStyle = rc[0] > H2 || rc[1] > H2 ? '#FF6B4A' : 'rgba(185,168,240,.7)'; c.fillText(rc[0] + '·' + rc[1], G.x + G.size + 14, G.y + (i + 0.55) * G.cs);
+      c.fillStyle = cc[0] > H2 || cc[1] > H2 ? '#FF6B4A' : 'rgba(185,168,240,.7)'; c.fillText(cc[0] + '·' + cc[1], G.x + (i + 0.5) * G.cs, G.y + G.size + 18);
+    }
+  }
+  P.gestures(canvas, { tap: function (x, y) {
+    if (!shell.running || done) return;
+    var G = geo(), gx = Math.floor((x - G.x) / G.cs), gy = Math.floor((y - G.y) / G.cs);
+    if (gx < 0 || gy < 0 || gx >= N || gy >= N || fixed[gy][gx]) return;
+    cur[gy][gx] = cur[gy][gx] === null ? 0 : cur[gy][gx] === 0 ? 1 : null; moves++; P.haptic('tap'); check();
+  } });
+  make();
+})();
+</script>
+</body>
+</html>

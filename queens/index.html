@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Ферзи</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Ферзи. Нажимай на клетку: крестик, потом ферзь"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 7, COLS = ['#FFD84D', '#FF8AD8', '#6FD3FF', '#3DF5B0', '#FF9A6B', '#B9A8F0', '#F4F1FF', '#9BE15D'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var reg = [], st = [], t = 0, done = false, S = 1, taps = 0;
+  var shell = P.shell({
+    id: 'queens', title: 'Ферзи', tagline: 'Логическая задачка с цветными областями.',
+    rulesHtml: '<p>Поставь по одному ферзю в каждую строку, каждый столбец и каждую цветную область. Ферзи не могут касаться друг друга, даже углами. Нажми на клетку один раз — крестик для пометки, ещё раз — ферзь.</p>',
+    overEyebrow: 'Решено', overTone: 'good', countdown: false, lowerIsBetter: true,
+    formatScore: function (v) { return P.clock(v); }, onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { S = P.clamp(view.W / 390, 0.8, 1.3); });
+  function perm() {
+    var col = [], used = [];
+    function bt(r) {
+      if (r === N) return true;
+      var opts = P.shuffle([0, 1, 2, 3, 4, 5, 6].slice(0, N));
+      for (var i = 0; i < opts.length; i++) { var c = opts[i]; if (used[c] || (r > 0 && Math.abs(col[r - 1] - c) < 2)) continue; col[r] = c; used[c] = true; if (bt(r + 1)) return true; used[c] = false; }
+      return false;
+    }
+    bt(0); return col;
+  }
+  function grow(col) {
+    var g = []; for (var y = 0; y < N; y++) { g.push([]); for (var x = 0; x < N; x++) g[y].push(-1); }
+    var front = []; col.forEach(function (c, r) { g[r][c] = r; front.push([c, r, r]); });
+    var left = N * N - N;
+    while (left > 0) {
+      var i = P.rand(front.length), f = front[i], d = P.shuffle([[1, 0], [-1, 0], [0, 1], [0, -1]]), moved = false;
+      for (var k = 0; k < 4; k++) { var nx = f[0] + d[k][0], ny = f[1] + d[k][1]; if (nx >= 0 && ny >= 0 && nx < N && ny < N && g[ny][nx] < 0) { g[ny][nx] = f[2]; front.push([nx, ny, f[2]]); left--; moved = true; break; } }
+      if (!moved) front.splice(i, 1);
+    }
+    return g;
+  }
+  function count(g, limit) {
+    var n = 0, cu = [], ru = [], pc = [];
+    function bt(r) {
+      if (n >= limit) return;
+      if (r === N) { n++; return; }
+      for (var c = 0; c < N; c++) { var q = g[r][c]; if (cu[c] || ru[q] || (r > 0 && Math.abs(pc[r - 1] - c) < 2)) continue; cu[c] = ru[q] = true; pc[r] = c; bt(r + 1); cu[c] = ru[q] = false; }
+    }
+    bt(0); return n;
+  }
+  function make() { for (var i = 0; i < 400; i++) { var g = grow(perm()); if (count(g, 2) === 1) { reg = g; return; } } reg = g; }
+  function reset() { make(); st = reg.map(function (r) { return r.map(function () { return 0; }); }); t = 0; done = false; taps = 0; shell.setScore('0:00'); }
+  function conflicts() {
+    var qs = [], bad = {};
+    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) if (st[y][x] === 2) qs.push([x, y]);
+    for (var i = 0; i < qs.length; i++) for (var j = i + 1; j < qs.length; j++) {
+      var a = qs[i], b = qs[j];
+      if (a[0] === b[0] || a[1] === b[1] || reg[a[1]][a[0]] === reg[b[1]][b[0]] || (Math.abs(a[0] - b[0]) <= 1 && Math.abs(a[1] - b[1]) <= 1)) { bad[a] = bad[b] = true; }
+    }
+    return { qs: qs, bad: bad };
+  }
+  function check() {
+    var c = conflicts();
+    if (c.qs.length === N && !Object.keys(c.bad).length) { done = true; P.haptic('win'); var s = Math.max(1, Math.round(t)); shell.end({ score: s, delay: 500, stats: 'нажатий: ' + taps, phrase: 'Расставил «Ферзей» за ' + P.clock(s) + '. Быстрее сможешь?' }); }
+  }
+  P.loop(function (dt) { if (shell.running && !done) { t += dt; shell.setScore(P.clock(t)); } draw(); });
+  function geo() { var size = Math.min(view.W - 24, view.H - 180), cs = size / N; return { cs: cs, x: (view.W - size) / 2, y: 100 + (view.H - 130 - size) / 2, size: size }; }
+  function crown(c, x, y, s, col) {
+    c.fillStyle = col; c.beginPath(); c.moveTo(x - s, y + s * 0.6); c.lineTo(x - s, y - s * 0.4); c.lineTo(x - s * 0.5, y + s * 0.05); c.lineTo(x, y - s * 0.7); c.lineTo(x + s * 0.5, y + s * 0.05); c.lineTo(x + s, y - s * 0.4); c.lineTo(x + s, y + s * 0.6); c.closePath(); c.fill();
+  }
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H, G = geo();
+    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    if (!reg.length) return;
+    var cf = conflicts();
+    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
+      var px = G.x + x * G.cs, py = G.y + y * G.cs;
+      c.fillStyle = COLS[reg[y][x]]; c.fillRect(px, py, G.cs + 0.5, G.cs + 0.5);
+      if (st[y][x] === 1) { c.strokeStyle = 'rgba(18,6,48,.45)'; c.lineWidth = 2.5; var m = G.cs * 0.32; c.beginPath(); c.moveTo(px + m, py + m); c.lineTo(px + G.cs - m, py + G.cs - m); c.moveTo(px + G.cs - m, py + m); c.lineTo(px + m, py + G.cs - m); c.stroke(); }
+      if (st[y][x] === 2) crown(c, px + G.cs / 2, py + G.cs / 2, G.cs * 0.28, cf.bad[[x, y]] ? '#FF3B2A' : '#120630');
+    }
+    c.strokeStyle = 'rgba(18,6,48,.18)'; c.lineWidth = 1;
+    for (var i = 1; i < N; i++) { c.beginPath(); c.moveTo(G.x + i * G.cs, G.y); c.lineTo(G.x + i * G.cs, G.y + G.size); c.moveTo(G.x, G.y + i * G.cs); c.lineTo(G.x + G.size, G.y + i * G.cs); c.stroke(); }
+    c.strokeStyle = '#120630'; c.lineWidth = 3;
+    for (y = 0; y < N; y++) for (x = 0; x < N; x++) {
+      var px2 = G.x + x * G.cs, py2 = G.y + y * G.cs;
+      if (x < N - 1 && reg[y][x] !== reg[y][x + 1]) { c.beginPath(); c.moveTo(px2 + G.cs, py2); c.lineTo(px2 + G.cs, py2 + G.cs); c.stroke(); }
+      if (y < N - 1 && reg[y][x] !== reg[y + 1][x]) { c.beginPath(); c.moveTo(px2, py2 + G.cs); c.lineTo(px2 + G.cs, py2 + G.cs); c.stroke(); }
+    }
+    c.strokeRect(G.x, G.y, G.size, G.size);
+    c.fillStyle = '#B9A8F0'; c.font = '500 ' + Math.round(13 * S) + 'px Onest, sans-serif'; c.textAlign = 'center'; c.fillText('ферзей: ' + cf.qs.length + ' из ' + N, W / 2, G.y + G.size + 26);
+  }
+  P.gestures(canvas, { tap: function (x, y) {
+    if (!shell.running || done) return;
+    var G = geo(), gx = Math.floor((x - G.x) / G.cs), gy = Math.floor((y - G.y) / G.cs);
+    if (gx < 0 || gy < 0 || gx >= N || gy >= N) return;
+    st[gy][gx] = (st[gy][gx] + 1) % 3; taps++; P.haptic('tap'); check();
+  } });
+  make(); st = reg.map(function (r) { return r.map(function () { return 0; }); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Территория</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Территория. Свайпай, чтобы вести курсор"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'], COLS = 32;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var g = [], R = 48, cs = 10, top = 74, pl = null, balls = [], level = 1, lives = 3, score = 0, pct = 0, acc = 0, dir = -1, fx = [];
+  var DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+  var shell = P.shell({
+    id: 'xonix', title: 'Территория', tagline: 'Отрежь у поля три четверти.',
+    rulesHtml: '<p>Свайпай — курсор едет в ту сторону. Уйдя с края, он тянет след. Вернись на свою землю — и кусок без мячей станет твоим. Мяч, задевший след, отнимает жизнь. Захвати 75% — следующий уровень.</p>',
+    startLabel: 'Захватывать', countdown: true, overEyebrow: 'Жизни кончились',
+    unit: function (n) { return P.plural(n, U); }, kbdHint: 'На компьютере: стрелки', onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { cs = view.W / COLS; R = Math.max(30, Math.floor((view.H - top - 20) / cs)); if (!g.length) build(); });
+  function build() {
+    g = []; for (var y = 0; y < R; y++) { g.push([]); for (var x = 0; x < COLS; x++) g[y].push(x < 2 || y < 2 || x >= COLS - 2 || y >= R - 2 ? 1 : 0); }
+    pl = { x: Math.floor(COLS / 2), y: 0 }; dir = -1;
+    balls = []; for (var i = 0; i < 1 + level; i++) balls.push({ x: (4 + Math.random() * (COLS - 8)) * cs, y: (4 + Math.random() * (R - 8)) * cs, vx: (Math.random() < 0.5 ? -1 : 1), vy: (Math.random() < 0.5 ? -1 : 1) });
+    pct = 0;
+  }
+  function reset() { level = 1; lives = 3; score = 0; build(); shell.setScore('0'); side(); }
+  function side() { shell.setSide('♥ ' + lives + ' · ' + Math.floor(pct) + '%/75', lives <= 1); }
+  function at(x, y) { return x < 0 || y < 0 || x >= COLS || y >= R ? 1 : g[y][x]; }
+  function capture() {
+    var seen = [], stack = [];
+    for (var y = 0; y < R; y++) { seen.push([]); for (var x = 0; x < COLS; x++) { if (g[y][x] === 2) g[y][x] = 1; seen[y].push(false); } }
+    balls.forEach(function (b) { var bx = Math.floor(b.x / cs), by = Math.floor(b.y / cs); if (at(bx, by) === 0) stack.push([bx, by]); });
+    while (stack.length) { var p = stack.pop(), px = p[0], py = p[1]; if (px < 0 || py < 0 || px >= COLS || py >= R || seen[py][px] || g[py][px] !== 0) continue; seen[py][px] = true; stack.push([px + 1, py], [px - 1, py], [px, py + 1], [px, py - 1]); }
+    var gained = 0, inner = 0, filled = 0;
+    for (y = 2; y < R - 2; y++) for (x = 2; x < COLS - 2; x++) { if (g[y][x] === 0 && !seen[y][x]) { g[y][x] = 1; gained++; } inner++; if (g[y][x] === 1) filled++; }
+    pct = filled / inner * 100; score += gained * level; shell.setScore(String(score)); side();
+    if (gained > 30) P.haptic('coin');
+    if (pct >= 75) { score += 1000 * level; level++; shell.setScore(String(score)); P.haptic('win'); build(); side(); }
+  }
+  function die() {
+    lives--; P.haptic('crash');
+    for (var y = 0; y < R; y++) for (var x = 0; x < COLS; x++) if (g[y][x] === 2) { g[y][x] = 0; if (Math.random() < 0.15) fx.push({ x: (x + 0.5) * cs, y: (y + 0.5) * cs, life: 0.5 }); }
+    var back = trailStart || { x: pl.x, y: 0 }; pl.x = back.x; pl.y = back.y; dir = -1; trailStart = null; side();
+    if (lives <= 0) shell.end({ score: score, delay: 600, stats: 'уровень ' + level + ' · захвачено ' + Math.floor(pct) + '%', phrase: 'В «Территории» я дошёл до уровня ' + level + ' и набрал ' + score + ' ' + P.plural(score, U) + '. Отхватишь больше?' });
+  }
+  var trailStart = null;
+  function stepPlayer() {
+    if (dir < 0) return;
+    var nx = pl.x + DX[dir], ny = pl.y + DY[dir];
+    if (nx < 0 || ny < 0 || nx >= COLS || ny >= R) { dir = -1; return; }
+    var cur = g[pl.y][pl.x], nxt = g[ny][nx];
+    if (nxt === 2) { die(); return; }
+    if (cur === 1 && nxt === 0) trailStart = { x: pl.x, y: pl.y };
+    pl.x = nx; pl.y = ny;
+    if (nxt === 0) g[ny][nx] = 2;
+    else if (cur === 2 && nxt === 1) { capture(); dir = -1; trailStart = null; }
+  }
+  function step(dt) {
+    acc += dt;
+    var stepT = 0.055;
+    while (acc >= stepT) { acc -= stepT; stepPlayer(); if (!shell.running) return; }
+    var sp = (7 + level * 0.8) * cs;
+    balls.forEach(function (b) {
+      var nx = b.x + b.vx * sp * dt, ny = b.y + b.vy * sp * dt, r = cs * 0.45;
+      if (at(Math.floor((nx + b.vx * r) / cs), Math.floor(b.y / cs)) === 1) { b.vx *= -1; nx = b.x; }
+      if (at(Math.floor(b.x / cs), Math.floor((ny + b.vy * r) / cs)) === 1) { b.vy *= -1; ny = b.y; }
+      b.x = nx; b.y = ny;
+      var cx = Math.floor(b.x / cs), cy = Math.floor(b.y / cs);
+      for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+        if (at(cx + dx, cy + dy) === 2 && Math.hypot((cx + dx + 0.5) * cs - b.x, (cy + dy + 0.5) * cs - b.y) < cs * 0.95) { die(); return; }
+      }
+      if (g[pl.y][pl.x] === 2 && Math.hypot((pl.x + 0.5) * cs - b.x, (pl.y + 0.5) * cs - b.y) < cs) die();
+    });
+  }
+  P.loop(function (dt) {
+    if (shell.running && pl) step(dt);
+    fx.forEach(function (p) { p.life -= dt; }); fx = fx.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H;
+    c.fillStyle = '#0E0526'; c.fillRect(0, 0, W, H);
+    if (!pl) return;
+    c.save(); c.translate(0, top);
+    c.fillStyle = '#140734'; c.fillRect(0, 0, COLS * cs, R * cs);
+    for (var y = 0; y < R; y++) for (var x = 0; x < COLS; x++) {
+      var v = g[y][x];
+      if (v === 1) { c.fillStyle = (x + y) % 2 ? '#3B1E8C' : '#40228F'; c.fillRect(x * cs, y * cs, cs + 0.5, cs + 0.5); }
+      else if (v === 2) { c.fillStyle = '#FFD84D'; c.fillRect(x * cs + cs * 0.2, y * cs + cs * 0.2, cs * 0.6, cs * 0.6); }
+    }
+    balls.forEach(function (b, i) { c.fillStyle = i % 2 ? '#FF8AD8' : '#FF6B4A'; c.beginPath(); c.arc(b.x, b.y, cs * 0.5, 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.5)'; c.beginPath(); c.arc(b.x - cs * 0.15, b.y - cs * 0.15, cs * 0.15, 0, 7); c.fill(); });
+    c.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; c.fillRect(pl.x * cs - 1, pl.y * cs - 1, cs + 2, cs + 2);
+    c.fillStyle = '#120630'; c.fillRect(pl.x * cs + cs * 0.3, pl.y * cs + cs * 0.3, cs * 0.4, cs * 0.4);
+    fx.forEach(function (p) { c.globalAlpha = p.life * 2; c.fillStyle = '#FF6B4A'; c.fillRect(p.x - 3, p.y - 3, 6, 6); }); c.globalAlpha = 1;
+    c.restore();
+  }
+  P.gestures(canvas, { swipe: function (d) { if (!shell.running) return; var nd = { up: 0, right: 1, down: 2, left: 3 }[d]; if (dir >= 0 && nd === (dir + 2) % 4 && g[pl.y][pl.x] === 2) return; dir = nd; } });
+  P.arrows(function (d) { if (!shell.running) return; var nd = { up: 0, right: 1, down: 2, left: 3 }[d]; if (dir >= 0 && nd === (dir + 2) % 4 && g[pl.y][pl.x] === 2) return; dir = nd; });
+})();
+</script>
+</body>
+</html>
