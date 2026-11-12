@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Чего не хватает</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:18px}
+.sub{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac);min-height:1.4em;text-align:center}
+.set{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:var(--w,300px);min-height:calc(var(--w,300px) * .7);padding:12px;border-radius:18px;background:#22105A;align-content:center}
+.set svg{display:block;width:100%;aspect-ratio:1}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:var(--w,300px)}
+.opts button{aspect-ratio:1;border:0;border-radius:16px;background:var(--road);cursor:pointer;touch-action:manipulation;padding:10px}
+.opts button.right{background:var(--mint)}.opts button.wrong{background:var(--coral)}
+.opts svg{display:block;width:100%;height:100%}
+.bar{width:var(--w,300px);height:6px;border-radius:3px;background:rgba(244,241,255,.12);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--sun);transform-origin:left}
+.stage[data-state="paused"] .set,.stage[data-state="countdown"] .set{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="sub" id="sub">Запомни фигуры</p>
+    <div class="set" id="set"></div>
+    <div class="bar" id="barWrap"><i id="bar"></i></div>
+    <div class="opts" id="opts"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['раунд', 'раунда', 'раундов'], LIVES = 3;
+  var COLS = ['#FF6B4A', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8', '#B9A8F0'];
+  var SHAPES = {
+    circle: '<circle cx="20" cy="20" r="13"/>', square: '<rect x="8" y="8" width="24" height="24" rx="5"/>', tri: '<path d="M20 6 L34 32 H6 Z"/>',
+    star: '<path d="M20 5l4.2 9 9.8 1.2-7.2 6.7 1.9 9.7L20 26.8l-8.7 4.8 1.9-9.7L6 15.2l9.8-1.2z"/>',
+    heart: '<path d="M20 33 C6 24 5 14 10.5 10 C15 7 19 10 20 13 C21 10 25 7 29.5 10 C35 14 34 24 20 33Z"/>',
+    drop: '<path d="M20 5 C28 16 31 21 31 25 a11 11 0 0 1 -22 0 C9 21 12 16 20 5Z"/>',
+    moon: '<path d="M26 6 a14 14 0 1 0 8 22 a11 11 0 1 1 -8 -22Z"/>', diamond: '<path d="M20 5 L34 20 L20 35 L6 20 Z"/>'
+  };
+  var NAMES = Object.keys(SHAPES);
+  var stage = document.getElementById('stage'), setEl = document.getElementById('set'), optsEl = document.getElementById('opts'), sub = document.getElementById('sub'), bar = document.getElementById('bar');
+  var items, gone, phase, showT, showMax, score, lives, size;
+
+  var shell = P.shell({
+    id: 'missing', title: 'Чего не хватает', tagline: 'Запомни фигуры и найди пропавшую.',
+    rulesHtml: '<p>Запомни набор фигур. Потом он появится снова, перемешанный и без одной фигуры. Выбери, какая пропала. С каждым раундом фигур больше. Три ошибки — конец игры.</p>',
+    countdown: true, overEyebrow: 'Память подвела',
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  function svg(it) { return '<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="' + it.c + '">' + SHAPES[it.s] + '</g></svg>'; }
+  function label(it) { return { circle: 'круг', square: 'квадрат', tri: 'треугольник', star: 'звезда', heart: 'сердце', drop: 'капля', moon: 'месяц', diamond: 'ромб' }[it.s]; }
+  function round() {
+    size = Math.min(9, 4 + Math.floor(score / 2));
+    var pool = []; NAMES.forEach(function (s) { COLS.forEach(function (c) { pool.push({ s: s, c: c }); }); });
+    P.shuffle(pool);
+    var usedShapes = {}; items = [];
+    for (var i = 0; i < pool.length && items.length < size; i++) { var key = pool[i].s; if ((usedShapes[key] || 0) < 2) { usedShapes[key] = (usedShapes[key] || 0) + 1; items.push(pool[i]); } }
+    setEl.innerHTML = items.map(svg).join('');
+    optsEl.textContent = ''; optsEl.style.visibility = 'hidden';
+    phase = 'show'; showMax = 1.4 + size * 0.45; showT = showMax;
+    sub.textContent = 'Запомни ' + size + ' ' + P.plural(size, ['фигуру', 'фигуры', 'фигур']);
+  }
+  function quiz() {
+    phase = 'ask';
+    var k = P.rand(items.length); gone = items[k];
+    var rest = items.filter(function (_, i) { return i !== k; });
+    setEl.innerHTML = P.shuffle(rest.slice()).map(svg).join('');
+    var opts = P.shuffle([gone].concat(P.shuffle(rest.slice()).slice(0, 3)));
+    optsEl.textContent = ''; optsEl.style.visibility = 'visible';
+    opts.forEach(function (it) {
+      var b = document.createElement('button'); b.type = 'button'; b.innerHTML = svg(it); b.setAttribute('aria-label', label(it));
+      b.addEventListener('click', function () { answer(b, it); });
+      optsEl.appendChild(b);
+    });
+    sub.textContent = 'Какой фигуры не хватает?';
+  }
+  function answer(btn, it) {
+    if (!shell.running || phase !== 'ask') return;
+    phase = 'wait';
+    if (it === gone) { score++; shell.setScore(String(score)); btn.className = 'right'; P.haptic('win'); sub.textContent = 'Верно!'; }
+    else {
+      lives--; side(); btn.className = 'wrong'; P.haptic('crash'); sub.textContent = 'Не та';
+      Array.prototype.forEach.call(optsEl.children, function (b) { if (b.innerHTML === svg(gone)) b.className = 'right'; });
+      if (lives <= 0) { shell.end({ score: score, delay: 1000, stats: 'последний раунд: ' + size + ' ' + P.plural(size, ['фигура', 'фигуры', 'фигур']), phrase: 'В «Чего не хватает» у меня ' + score + ' ' + P.plural(score, U) + '.' }); return; }
+    }
+    setTimeout(function () { if (shell.running) round(); }, 900);
+  }
+  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (i < lives ? '#3DF5B0' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function reset() { score = 0; lives = LIVES; shell.setScore('0'); side(); round(); }
+  P.loop(function (dt) {
+    if (!shell.running || phase !== 'show') { if (phase !== 'show') bar.style.transform = 'scaleX(0)'; return; }
+    showT -= dt; bar.style.transform = 'scaleX(' + Math.max(0, showT / showMax).toFixed(3) + ')';
+    if (showT <= 0) quiz();
+  });
+  function layout() { var r = stage.getBoundingClientRect(); var w = Math.floor(Math.min(r.width - 32, (r.height - 220) / 1.05, 400)); stage.style.setProperty('--w', w + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); score = 0; round();
+})();
+</script>
+</body>
+</html>

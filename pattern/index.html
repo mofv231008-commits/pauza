@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Узор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:18px}
+.sub{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac);min-height:1.4em;text-align:center}
+.grid{--size:320px;--n:3;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:8px;width:var(--size);height:var(--size);flex:none}
+.grid button{border:0;border-radius:12px;background:var(--road);cursor:pointer;touch-action:manipulation;transition:background-color .12s,transform .12s;padding:0}
+.grid button.lit{background:var(--sun);transform:scale(1.03)}
+.grid button.ok{background:var(--mint)}
+.grid button.bad{background:var(--coral)}
+.grid button.missed{box-shadow:inset 0 0 0 3px var(--sun)}
+.stage[data-state="paused"] .grid,.stage[data-state="countdown"] .grid{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="sub" id="sub">Запомни узор</p>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['клетка', 'клетки', 'клеток'], LIVES = 3;
+  var stage = document.getElementById('stage'), grid = document.getElementById('grid'), sub = document.getElementById('sub');
+  var level, n, k, target, picked, phase, showT, lives, best, els;
+
+  var shell = P.shell({
+    id: 'pattern', title: 'Узор', tagline: 'Запомни, какие клетки загорелись.',
+    rulesHtml: '<p>Несколько клеток вспыхнут на секунду. Когда погаснут, нажми на все такие же. С каждым уровнем клеток больше, а поле шире. Три ошибки — конец игры. Рекорд — самый большой узор, который ты повторил.</p>',
+    countdown: true, overEyebrow: 'Узор забыт',
+    unit: function (v) { return P.plural(v, U); },
+    onReset: reset
+  });
+  function setup() {
+    k = 3 + level; n = k <= 4 ? 3 : k <= 7 ? 4 : k <= 11 ? 5 : 6;
+    grid.style.setProperty('--n', n); grid.textContent = ''; els = [];
+    for (var i = 0; i < n * n; i++) {
+      var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', 'Клетка ' + (i + 1));
+      (function (j) { b.addEventListener('pointerdown', function (e) { e.preventDefault(); tap(j); }); })(i);
+      grid.appendChild(b); els.push(b);
+    }
+    target = P.shuffle(Array.from({ length: n * n }, function (_, i) { return i; })).slice(0, k);
+    picked = []; phase = 'show'; showT = 0.9 + k * 0.12;
+    target.forEach(function (i) { els[i].className = 'lit'; });
+    sub.textContent = 'Запомни ' + k + ' ' + P.plural(k, ['клетку', 'клетки', 'клеток']);
+  }
+  function tap(i) {
+    if (!shell.running || phase !== 'input' || picked.indexOf(i) !== -1) return;
+    picked.push(i);
+    if (target.indexOf(i) !== -1) {
+      els[i].className = 'ok'; P.haptic('tap');
+      if (picked.filter(function (j) { return target.indexOf(j) !== -1; }).length === k) {
+        phase = 'wait'; best = k; shell.setScore(String(best)); P.haptic('win'); sub.textContent = 'Точно!'; level++;
+        setTimeout(function () { if (shell.running) setup(); }, 700);
+      }
+    } else {
+      els[i].className = 'bad'; phase = 'wait'; lives--; side(); P.haptic('crash'); sub.textContent = 'Не та клетка';
+      target.forEach(function (j) { if (picked.indexOf(j) === -1) els[j].className = 'missed'; });
+      if (lives <= 0) { shell.end({ score: best, delay: 1100, stats: 'уровень ' + (level + 1), phrase: 'Я запоминаю узор из ' + best + ' ' + P.plural(best, U) + ' в игре «Узор». А ты?' }); return; }
+      setTimeout(function () { if (shell.running) setup(); }, 1100);
+    }
+  }
+  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (i < lives ? '#3DF5B0' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function reset() { level = 0; lives = LIVES; best = 0; shell.setScore('0'); side(); setup(); }
+  P.loop(function (dt) {
+    if (!shell.running || phase !== 'show') return;
+    showT -= dt;
+    if (showT <= 0) { phase = 'input'; els.forEach(function (e) { e.className = ''; }); sub.textContent = 'Повтори узор'; }
+  });
+  function layout() { var r = stage.getBoundingClientRect(); grid.style.setProperty('--size', Math.floor(Math.min(r.width - 32, r.height - 200, 440)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); level = 0; setup(); phase = 'idle';
+})();
+</script>
+</body>
+</html>

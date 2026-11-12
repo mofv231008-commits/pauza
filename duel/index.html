@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Дуэль</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Дуэль на реакцию вдвоём. Жми на свою половину после сигнала"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var WIN = 3;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var pts = [0, 0], phase = 'idle', waitT = 0, goT = 0, last = null, nextT = 0, times = [];
+
+  var shell = P.shell({
+    id: 'duel', title: 'Дуэль', tagline: 'Кто быстрее среагирует на сигнал.',
+    rulesHtml: '<p>Игра для двоих на одном телефоне. Красные жмут на верхнюю половину, зелёные — на нижнюю. Ждите, пока экран не загорится жёлтым, и жмите первыми. Нажал раньше сигнала — очко сопернику. До трёх побед.</p>',
+    startLabel: 'К барьеру', countdown: true,
+    unit: function (n) { return P.plural(n, ['победа', 'победы', 'побед']); },
+    kbdHint: 'На компьютере: A — красные, L — зелёные',
+    onReset: reset, onRun: function () { if (phase === 'idle') arm(); }
+  });
+  var view = P.canvas(canvas, stage, function () { draw(); });
+  function reset() { pts = [0, 0]; phase = 'idle'; last = null; times = []; shell.setScore('0 : 0'); shell.setSide(null); }
+  function arm() { phase = 'wait'; waitT = 1.5 + Math.random() * 3; last = null; }
+  function point(side, why) {
+    pts[side]++; last = { side: side, why: why };
+    shell.setScore(pts[0] + ' : ' + pts[1]);
+    P.haptic(why === 'early' ? 'crash' : 'win');
+    if (pts[side] >= WIN) {
+      phase = 'done';
+      var best = times.length ? Math.min.apply(null, times) : 0;
+      shell.end({ score: Math.max(pts[0], pts[1]), record: false, delay: 900, haptic: 'win', eyebrow: side ? 'Победили зелёные' : 'Победили красные', tone: 'good',
+        stats: 'счёт ' + pts[0] + ' : ' + pts[1] + (best ? ' · лучшая реакция ' + best + ' мс' : ''), phrase: 'Сыграем в «Дуэль» на реакцию? Посмотрим, кто быстрее.' });
+      return;
+    }
+    phase = 'between'; nextT = 1.4;
+  }
+  function hit(side) {
+    if (!shell.running) return;
+    if (phase === 'wait') point(1 - side, 'early');
+    else if (phase === 'go') { var ms = Math.round(goT * 1000); times.push(ms); last = null; point(side, ms); }
+  }
+  P.loop(function (dt) {
+    if (shell.running) {
+      if (phase === 'wait') { waitT -= dt; if (waitT <= 0) { phase = 'go'; goT = 0; } }
+      else if (phase === 'go') goT += dt;
+      else if (phase === 'between') { nextT -= dt; if (nextT <= 0) arm(); }
+    }
+    draw();
+  });
+  function half(ctx, y, h, color, label, rot) {
+    var W = view.W;
+    ctx.fillStyle = color; ctx.fillRect(0, y, W, h);
+    ctx.save(); ctx.translate(W / 2, y + h / 2); if (rot) ctx.rotate(Math.PI);
+    ctx.fillStyle = phase === 'go' ? '#120630' : '#F4F1FF'; ctx.textAlign = 'center';
+    ctx.font = '800 26px Unbounded, "Arial Black", sans-serif'; ctx.fillText(label[0], 0, 0);
+    if (label[1]) { ctx.font = '600 15px Onest, system-ui, sans-serif'; ctx.fillText(label[1], 0, 30); }
+    ctx.restore();
+  }
+  function label(side) {
+    if (phase === 'go') return ['ЖМИ!', ''];
+    if (phase === 'wait') return ['Ждите…', 'не нажимай раньше сигнала'];
+    if (last) {
+      var me = last.side === side;
+      if (last.why === 'early') return me ? ['+1', 'соперник поспешил'] : ['Рано!', 'очко сопернику'];
+      return me ? ['+1', last.why + ' мс'] : ['Медленнее', ''];
+    }
+    return [side ? 'Зелёные' : 'Красные', 'жмите после сигнала'];
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, mid = H / 2;
+    var go = phase === 'go';
+    half(ctx, 0, mid, go ? '#FFD84D' : '#3A1236', label(0), true);
+    half(ctx, mid, H - mid, go ? '#FFD84D' : '#0F3A36', label(1), false);
+    ctx.fillStyle = 'rgba(244,241,255,0.15)'; ctx.fillRect(0, mid - 1, W, 2);
+    ctx.font = '800 18px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+    for (var i = 0; i < WIN; i++) {
+      ctx.fillStyle = i < pts[0] ? '#FF6B4A' : 'rgba(244,241,255,0.2)'; ctx.beginPath(); ctx.arc(W / 2 - 24 + i * 24, mid - 22, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = i < pts[1] ? '#3DF5B0' : 'rgba(244,241,255,0.2)'; ctx.beginPath(); ctx.arc(W / 2 - 24 + i * 24, mid + 22, 7, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var r = canvas.getBoundingClientRect(); hit(e.clientY - r.top > r.height / 2 ? 1 : 0); });
+  window.addEventListener('keydown', function (e) { if (e.repeat) return; if (e.code === 'KeyA') hit(0); if (e.code === 'KeyL') hit(1); });
+})();
+</script>
+</body>
+</html>

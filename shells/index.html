@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Напёрстки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#22105A}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Напёрстки. Следи за стаканом с шариком и нажми на него"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['раунд', 'раунда', 'раундов'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var cups, ballCup, phase, t, swaps, cur, round, lift, msg, pick;
+
+  var shell = P.shell({
+    id: 'shells', title: 'Напёрстки', tagline: 'Следи за шариком под стаканом.',
+    rulesHtml: '<p>Шарик спрячут под один из трёх стаканов, и стаканы перемешаются. Следи внимательно и нажми на стакан с шариком. С каждым раундом перестановок больше и они быстрее. Одна ошибка — конец игры.</p>',
+    countdown: true, overEyebrow: 'Шарик ускользнул',
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { draw(); });
+  function slotX(s) { return view.W * (0.2 + s * 0.3); }
+  function baseY() { return view.H * 0.56; }
+  function CW() { return Math.min(view.W * 0.22, 110); }
+  function reset() { round = 0; shell.setScore('0'); start(); }
+  function start() {
+    cups = [{ slot: 0, x: 0, y: 0 }, { slot: 1, x: 0, y: 0 }, { slot: 2, x: 0, y: 0 }];
+    cups.forEach(function (c) { c.x = slotX(c.slot); c.y = 0; });
+    ballCup = P.rand(3); phase = 'reveal'; t = 0; lift = 1; msg = 'Шарик здесь'; pick = -1;
+    var n = 4 + round * 2, dur = Math.max(0.17, 0.5 - round * 0.04);
+    swaps = [];
+    for (var i = 0; i < n; i++) { var a = P.rand(3), b; do { b = P.rand(3); } while (b === a); swaps.push({ a: a, b: b, dur: dur }); }
+    cur = null;
+  }
+  function cupAtSlot(s) { return cups.findIndex(function (c) { return c.slot === s; }); }
+  P.loop(function (dt) {
+    if (!cups) { draw(); return; }
+    if (phase === 'result') lift = Math.min(1, lift + dt * 4);
+    if (shell.running) {
+      t += dt;
+      if (phase === 'reveal') { if (t > 1.1) { lift = Math.max(0, lift - dt * 4); if (lift === 0) { phase = 'swap'; t = 0; msg = 'Следи за шариком'; } } }
+      else if (phase === 'swap') {
+        if (!cur && swaps.length) { var s = swaps.shift(); cur = { ca: cupAtSlot(s.a), cb: cupAtSlot(s.b), sa: s.a, sb: s.b, dur: s.dur, t: 0 }; }
+        if (cur) {
+          cur.t += dt; var k = Math.min(1, cur.t / cur.dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+          var A = cups[cur.ca], B = cups[cur.cb];
+          A.x = slotX(cur.sa) + (slotX(cur.sb) - slotX(cur.sa)) * e; B.x = slotX(cur.sb) + (slotX(cur.sa) - slotX(cur.sb)) * e;
+          A.y = -Math.sin(e * Math.PI) * CW() * 0.35; B.y = Math.sin(e * Math.PI) * CW() * 0.25;
+          if (k >= 1) { A.slot = cur.sb; B.slot = cur.sa; A.y = B.y = 0; cur = null; }
+        } else { phase = 'pick'; msg = 'Где шарик?'; }
+      } else if (phase === 'result') {
+        if (t > 1.1) {
+          if (pick === ballCup) { round++; shell.setScore(String(round)); start(); }
+        }
+      }
+    }
+    draw();
+  });
+  function choose(slot) {
+    if (!shell.running || phase !== 'pick') return;
+    pick = cupAtSlot(slot); phase = 'result'; t = 0; lift = 0;
+    if (pick === ballCup) { msg = 'Угадано!'; P.haptic('win'); }
+    else {
+      msg = 'Шарик был под другим'; P.haptic('crash');
+      shell.end({ score: round, delay: 1200, stats: 'перестановок в последнем раунде: ' + (4 + round * 2), phrase: 'В «Напёрстках» у меня ' + round + ' ' + P.plural(round, U) + ' подряд.' });
+    }
+  }
+  function cupPath(ctx, x, y, w) {
+    var h = w * 1.05;
+    ctx.beginPath(); ctx.moveTo(x - w * 0.5, y); ctx.lineTo(x - w * 0.34, y - h); ctx.quadraticCurveTo(x, y - h - w * 0.12, x + w * 0.34, y - h); ctx.lineTo(x + w * 0.5, y); ctx.closePath();
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, w = CW(), by = baseY();
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#3B1E8C'; ctx.beginPath(); ctx.ellipse(W / 2, by + 6, W * 0.46, w * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+    if (!cups) return;
+    var bc = cups[ballCup], showBall = phase === 'reveal' || (phase === 'result');
+    var order = cups.map(function (c, i) { return i; }).sort(function (a, b) { return cups[b].y - cups[a].y; });
+    if (showBall) { ctx.fillStyle = P.gold() ? '#FFD84D' : '#FF6B4A'; ctx.beginPath(); ctx.arc(bc.x, by - w * 0.2, w * 0.18, 0, Math.PI * 2); ctx.fill(); }
+    order.forEach(function (i) {
+      var c = cups[i], up = (phase === 'reveal' || (phase === 'result' && (i === pick || i === ballCup))) ? lift * w * 0.8 : 0;
+      ctx.fillStyle = 'rgba(18,6,48,0.35)'; ctx.beginPath(); ctx.ellipse(c.x, by + 4, w * 0.5, w * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+      cupPath(ctx, c.x, by + c.y - up, w); ctx.fillStyle = '#FF9A6B'; ctx.fill();
+      ctx.fillStyle = 'rgba(18,6,48,0.15)'; ctx.fillRect(c.x + w * 0.12, by + c.y - up - w * 0.98, w * 0.14, w * 0.96);
+      ctx.fillStyle = '#FF6B4A'; ctx.fillRect(c.x - w * 0.45, by + c.y - up - w * 0.3, w * 0.9, w * 0.08);
+    });
+    if (msg && shell.state !== 'start') { ctx.fillStyle = '#F4F1FF'; ctx.font = '600 18px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(msg, W / 2, H * 0.25); }
+  }
+  canvas.addEventListener('pointerdown', function (e) {
+    var r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    if (y < baseY() - CW() * 1.6 || y > baseY() + CW() * 0.5) return;
+    var best = 0, bd = Infinity;
+    for (var s = 0; s < 3; s++) { var d = Math.abs(slotX(s) - x); if (d < bd) { bd = d; best = s; } }
+    if (bd < CW() * 0.8) choose(best);
+  });
+  window.addEventListener('keydown', function (e) { var m = /^Digit([1-3])$/.exec(e.code); if (m) choose(Number(m[1]) - 1); });
+  round = 0; start(); phase = 'idle'; lift = 0;
+})();
+</script>
+</body>
+</html>

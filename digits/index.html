@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Запомни число</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:18px}
+.sub{margin:0;color:var(--lilac);font-size:15px;min-height:1.4em;text-align:center}
+.num{margin:0;font-family:var(--font-display);font-weight:800;font-size:clamp(28px,9vw,44px);letter-spacing:.08em;min-height:1.3em;text-align:center;word-break:break-all;max-width:100%;font-variant-numeric:tabular-nums}
+.num.typed{color:var(--mint)}.num.bad{color:var(--coral)}
+.bar{width:min(100%,300px);height:6px;border-radius:3px;background:rgba(244,241,255,.12);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--sun);transform-origin:left;transform:scaleX(0)}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(100%,300px)}
+.keys button{min-height:54px;border:0;border-radius:14px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:22px;cursor:pointer;touch-action:manipulation}
+.keys .go{background:var(--mint);color:var(--ink);font-size:15px}
+.keys .del{font-size:15px}
+.keys[aria-disabled="true"]{opacity:.35;pointer-events:none}
+.stage[data-state="paused"] .num,.stage[data-state="countdown"] .num{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="sub" id="sub">Запомни число</p>
+    <p class="num" id="num"></p>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="keys" id="keys" aria-disabled="true"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['цифра', 'цифры', 'цифр'], LIVES = 3;
+  var numEl = document.getElementById('num'), sub = document.getElementById('sub'), keys = document.getElementById('keys'), bar = document.getElementById('bar');
+  var len, secret, typed, phase, showT, showMax, lives, best;
+
+  var shell = P.shell({
+    id: 'digits', title: 'Запомни число', tagline: 'Сколько цифр ты удержишь в голове?',
+    rulesHtml: '<p>На экране на пару секунд появится число. Когда оно скроется, набери его. Каждый раз число на одну цифру длиннее. Три ошибки — конец игры. Рекорд — самое длинное число, которое ты набрал без ошибки.</p>',
+    countdown: true, overEyebrow: 'Память устала',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: цифры и Enter',
+    onReset: reset
+  });
+  '123456789'.split('').concat(['del', '0', 'go']).forEach(function (k) {
+    var b = document.createElement('button'); b.type = 'button';
+    b.textContent = k === 'del' ? 'Стереть' : k === 'go' ? 'Готово' : k;
+    if (k === 'del') b.className = 'del'; if (k === 'go') b.className = 'go';
+    b.addEventListener('click', function () { press(k); });
+    keys.appendChild(b);
+  });
+  function newRound() {
+    secret = ''; for (var i = 0; i < len; i++) secret += (i === 0 ? 1 + P.rand(9) : P.rand(10));
+    typed = ''; phase = 'show'; showMax = 1 + len * 0.45; showT = showMax;
+    numEl.className = 'num'; numEl.textContent = secret.replace(/(\d{3})(?=\d)/g, '$1 ');
+    sub.textContent = 'Запомни число из ' + len + ' ' + P.plural(len, U);
+    keys.setAttribute('aria-disabled', 'true');
+  }
+  function press(k) {
+    if (!shell.running || phase !== 'input') return;
+    if (k === 'del') typed = typed.slice(0, -1);
+    else if (k === 'go') return check();
+    else if (typed.length < len) typed += k;
+    numEl.textContent = typed || '…'; numEl.className = 'num typed'; P.haptic('tap');
+    if (typed.length === len) check();
+  }
+  function check() {
+    phase = 'wait';
+    if (typed === secret) {
+      best = len; shell.setScore(String(best)); P.haptic('win'); sub.textContent = 'Верно!';
+      len++;
+    } else {
+      lives--; side(); P.haptic('crash'); numEl.className = 'num bad';
+      sub.textContent = 'Было ' + secret;
+      if (lives <= 0) {
+        shell.end({ score: best, delay: 1200, stats: 'последнее число: ' + secret, phrase: 'Я запоминаю число из ' + best + ' ' + P.plural(best, U) + '. А ты?' });
+        return;
+      }
+    }
+    setTimeout(function () { if (shell.running) newRound(); }, 1100);
+  }
+  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (i < lives ? '#3DF5B0' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function reset() { len = 3; lives = LIVES; best = 0; shell.setScore('0'); side(); newRound(); }
+  P.loop(function (dt) {
+    if (!shell.running || phase !== 'show') return;
+    showT -= dt;
+    bar.style.transform = 'scaleX(' + Math.max(0, showT / showMax).toFixed(3) + ')';
+    if (showT <= 0) { phase = 'input'; numEl.textContent = '…'; sub.textContent = 'Набери число'; keys.setAttribute('aria-disabled', 'false'); }
+  });
+  window.addEventListener('keydown', function (e) {
+    var m = /^(?:Digit|Numpad)(\d)$/.exec(e.code);
+    if (m) press(m[1]); else if (e.code === 'Backspace') press('del'); else if (e.code === 'Enter') press('go');
+  });
+  numEl.textContent = '583 1';
+})();
+</script>
+</body>
+</html>

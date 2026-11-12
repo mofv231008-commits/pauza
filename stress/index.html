@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Ударения</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:22px}
+.sub{margin:0;color:var(--lilac);font-size:15px;text-align:center}
+.opts{display:grid;gap:14px;width:min(100%,340px)}
+.opts button{min-height:76px;border:0;border-radius:20px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:clamp(24px,7.5vw,32px);cursor:pointer;touch-action:manipulation;letter-spacing:.02em}
+.opts button b{color:var(--sun);font-weight:800}
+.opts button.right{background:var(--mint);color:var(--ink)}.opts button.right b{color:var(--ink)}
+.opts button.wrong{background:var(--coral);color:var(--ink)}.opts button.wrong b{color:var(--ink)}
+.stage[data-state="paused"] .opts,.stage[data-state="countdown"] .opts{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="sub">Где ударение правильное?</p>
+    <div class="opts" id="opts"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['слово', 'слова', 'слов'];
+  /* Верный вариант первым. Большая буква — ударная гласная. Слова из орфоэпического минимума ЕГЭ. */
+  var DATA = [
+    ['звонИт', 'звОнит'], ['тОрты', 'тортЫ'], ['бАнты', 'бантЫ'], ['каталОг', 'катАлог'], ['договОр', 'дОговор'], ['квартАл', 'квАртал'],
+    ['красИвее', 'красивЕе'], ['срЕдства', 'средствА'], ['щавЕль', 'щАвель'], ['свЁкла', 'свеклА'], ['обеспЕчение', 'обеспечЕние'], ['облегчИть', 'облЕгчить'],
+    ['углубИть', 'углУбить'], ['включИт', 'вклЮчит'], ['мЕстностей', 'местностЕй'], ['жалюзИ', 'жАлюзи'], ['баловАть', 'бАловать'], ['кухОнный', 'кУхонный'],
+    ['оптОвый', 'Оптовый'], ['кремЕнь', 'крЕмень'], ['аэропОрты', 'аэропортЫ'], ['шАрфы', 'шарфЫ'], ['лЕкторы', 'лекторА'], ['дозвонИтся', 'дозвОнится'],
+    ['нАчал', 'начАл'], ['понялА', 'пОняла'], ['взялА', 'взЯла'], ['позвонИшь', 'позвОнишь'], ['ворвалАсь', 'ворвАлась'], ['сирОты', 'сИроты'],
+    ['портфЕль', 'пОртфель'], ['зАнятый', 'занЯтый'], ['создАл', 'сОздал'], ['ходАтайство', 'ходатАйство'], ['экспЕрт', 'Эксперт'], ['газопровОд', 'газопрОвод'],
+    ['откУпорить', 'откупОрить'], ['закУпорить', 'закупОрить'], ['исчЕрпать', 'исчерпАть'], ['клАла', 'клалА'], ['крАлась', 'кралАсь'], ['слИвовый', 'сливОвый'],
+    ['дефИс', 'дЕфис'], ['некролОг', 'некрОлог'], ['диспансЕр', 'диспАнсер'], ['граждАнство', 'грАжданство'], ['мозаИчный', 'мозАичный'], ['новостЕй', 'нОвостей'],
+    ['кровоточАщий', 'кровотОчащий'], ['прИнял', 'принЯл'], ['тамОжня', 'тАможня'], ['лгалА', 'лгАла'], ['вручИт', 'врУчит'], ['навЕрх', 'нАверх'],
+    ['донЕльзя', 'дОнельзя'], ['Искра', 'искрА'], ['корЫсть', 'кОрысть'], ['мЕльком', 'мелькОм'], ['дОнизу', 'донИзу'], ['дОверху', 'довЕрху'],
+    ['завИдно', 'зАвидно'], ['зАгодя', 'загОдя'], ['нефтепровОд', 'нефтепрОвод'], ['ободрИт', 'обОдрит']
+  ];
+  var optsEl = document.getElementById('opts');
+  var cur, score, wrong, busy, order, pos, seenWrong = [];
+
+  var shell = P.shell({
+    id: 'stress', title: 'Ударения', tagline: 'Выбери, как правильно ставить ударение.',
+    rulesHtml: '<p>Два варианта одного слова, ударная гласная выделена. Выбери правильный. Слова взяты из орфоэпического минимума ЕГЭ. Ошибка отнимает 3 секунды, на всё 60 секунд.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1 и 2',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  function pretty(w) { return w.replace(/[А-ЯЁ]/g, function (ch) { return '<b>' + ch.toLowerCase() + '́</b>'; }); }
+  function ask() {
+    if (pos >= order.length) { order = P.shuffle(order); pos = 0; }
+    cur = DATA[order[pos++]];
+    var opts = P.shuffle([0, 1]);
+    optsEl.textContent = '';
+    opts.forEach(function (k) {
+      var b = document.createElement('button'); b.type = 'button'; b.innerHTML = pretty(cur[k]);
+      b.setAttribute('aria-label', cur[k].toLowerCase() + ', ударение на ' + (cur[k].search(/[А-ЯЁ]/) + 1) + '-й букве');
+      b.addEventListener('click', function () { answer(b, k === 0); });
+      optsEl.appendChild(b);
+    });
+    busy = false;
+  }
+  function answer(btn, ok) {
+    if (!shell.running || busy) return;
+    busy = true;
+    if (ok) { score++; shell.setScore(String(score)); btn.className = 'right'; P.haptic('coin'); setTimeout(function () { if (shell.running) ask(); }, 350); }
+    else {
+      wrong++; seenWrong.push(cur[0]); btn.className = 'wrong'; P.haptic('crash'); timer.add(-3);
+      Array.prototype.forEach.call(optsEl.children, function (b) { if (b !== btn) b.className = 'right'; });
+      setTimeout(function () { if (shell.running) ask(); }, 1000);
+    }
+  }
+  function reset() { score = 0; wrong = 0; seenWrong = []; order = P.shuffle(DATA.map(function (_, i) { return i; })); pos = 0; shell.setScore('0'); timer.reset(); ask(); }
+  function finish() {
+    busy = true;
+    shell.end({ score: score, delay: 300, stats: wrong ? 'запомни: ' + seenWrong.slice(-3).join(', ') : 'без единой ошибки', phrase: 'В «Ударениях» у меня ' + score + ' ' + P.plural(score, U) + ' за минуту. А ты знаешь, где ударение в слове «звонит»?' });
+  }
+  window.addEventListener('keydown', function (e) { var m = /^Digit([12])$/.exec(e.code); if (m && optsEl.children[m[1] - 1]) optsEl.children[m[1] - 1].click(); });
+  order = [0]; pos = 0; ask(); timer.show();
+})();
+</script>
+</body>
+</html>

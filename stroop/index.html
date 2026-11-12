@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Цвет слова</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:26px}
+.sub{margin:0;color:var(--lilac);font-size:15px;text-align:center}
+.sub b{color:var(--paper)}
+.word{margin:0;font-family:var(--font-display);font-weight:800;font-size:clamp(40px,13vw,64px);text-transform:uppercase;min-height:1.2em}
+.opts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;width:min(100%,340px)}
+.opts button{min-height:64px;border:0;border-radius:18px;font-family:var(--font-display);font-weight:600;font-size:17px;color:var(--ink);cursor:pointer;touch-action:manipulation}
+.opts button.flash{outline:4px solid var(--paper)}
+.stage[data-state="paused"] .word,.stage[data-state="countdown"] .word{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="sub" id="sub">Нажми на <b>цвет букв</b>, а не на слово</p>
+    <p class="word" id="word">красный</p>
+    <div class="opts" id="opts"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['ответ', 'ответа', 'ответов'];
+  var C = [{ n: 'красный', c: '#FF6B4A' }, { n: 'зелёный', c: '#3DF5B0' }, { n: 'жёлтый', c: '#FFD84D' }, { n: 'голубой', c: '#6FD3FF' }];
+  var wordEl = document.getElementById('word'), optsEl = document.getElementById('opts'), sub = document.getElementById('sub');
+  var ink, score, wrong, streak, busy, mode;
+
+  var shell = P.shell({
+    id: 'stroop', title: 'Цвет слова', tagline: 'Мозг читает слово, а надо видеть цвет.',
+    rulesHtml: '<p>На экране название цвета, написанное другим цветом. Нажми кнопку того цвета, <b>которым написаны буквы</b>. Иногда задание меняется: тогда выбирай то, что написано. Ошибка отнимает 2 секунды, на всё 45 секунд.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1–4',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 45, finish, document.getElementById('timebar'));
+  C.forEach(function (col, k) {
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = col.n; b.style.background = col.c;
+    b.addEventListener('click', function () { answer(k, b); });
+    optsEl.appendChild(b);
+  });
+  var meaning;
+  function next() {
+    meaning = P.rand(4); do { ink = P.rand(4); } while (ink === meaning);
+    if (score >= 8 && Math.random() < 0.3) mode = 'word'; else mode = 'ink';
+    wordEl.textContent = C[meaning].n; wordEl.style.color = C[ink].c;
+    sub.innerHTML = mode === 'ink' ? 'Нажми на <b>цвет букв</b>, а не на слово' : 'Теперь нажми на <b>то, что написано</b>';
+    busy = false;
+  }
+  function answer(k, b) {
+    if (!shell.running || busy) return;
+    var right = mode === 'ink' ? ink : meaning;
+    if (k === right) { score++; shell.setScore(String(score)); P.haptic('tap'); next(); }
+    else {
+      wrong++; P.haptic('crash'); timer.add(-2); busy = true;
+      b.classList.add('flash'); setTimeout(function () { b.classList.remove('flash'); if (shell.running) next(); }, 350);
+    }
+  }
+  function reset() { score = 0; wrong = 0; shell.setScore('0'); timer.reset(); next(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong, phrase: 'В «Цвете слова» у меня ' + score + ' ' + P.plural(score, U) + ' за 45 секунд. Мозг сопротивлялся.' }); }
+  window.addEventListener('keydown', function (e) { var m = /^Digit([1-4])$/.exec(e.code); if (m) answer(m[1] - 1, optsEl.children[m[1] - 1]); });
+  wordEl.style.color = C[2].c; timer.show();
+})();
+</script>
+</body>
+</html>

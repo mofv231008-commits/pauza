@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Сколько точек</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:18px}
+.sub{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac);min-height:1.4em}
+.box{position:relative;width:var(--w,300px);height:var(--w,300px);border-radius:20px;background:#22105A;flex:none;overflow:hidden}
+.box i{position:absolute;border-radius:50%;transform:translate(-50%,-50%)}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:var(--w,300px)}
+.opts button{min-height:58px;border:0;border-radius:16px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:800;font-size:22px;cursor:pointer;touch-action:manipulation}
+.opts button.right{background:var(--mint);color:var(--ink)}.opts button.wrong{background:var(--coral);color:var(--ink)}
+.opts[aria-disabled="true"]{opacity:.35;pointer-events:none}
+.stage[data-state="paused"] .box,.stage[data-state="countdown"] .box{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="sub" id="sub">Сколько точек?</p>
+    <div class="box" id="box"></div>
+    <div class="opts" id="opts" aria-disabled="true"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['ответ', 'ответа', 'ответов'];
+  var stage = document.getElementById('stage'), box = document.getElementById('box'), optsEl = document.getElementById('opts'), sub = document.getElementById('sub');
+  var count, score, wrong, phase, showT, wait;
+
+  var shell = P.shell({
+    id: 'dots', title: 'Сколько точек', tagline: 'Сосчитай точки за долю секунды.',
+    rulesHtml: '<p>Точки появятся меньше чем на секунду. Выбери, сколько их было. С каждым верным ответом точек больше, а показ короче. Ошибка отнимает 3 секунды, на всё 45 секунд.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1–4',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 45, finish, document.getElementById('timebar'));
+  function show() {
+    var lo = 4 + Math.floor(score / 3), hi = lo + 5;
+    count = lo + P.rand(hi - lo + 1);
+    box.textContent = '';
+    var w = box.clientWidth || 300, pts = [], r = Math.max(8, w * 0.035);
+    for (var i = 0; i < count; i++) {
+      var x, y, t = 0;
+      do { x = r * 2 + Math.random() * (w - r * 4); y = r * 2 + Math.random() * (w - r * 4); t++; } while (t < 80 && pts.some(function (p) { return Math.hypot(p[0] - x, p[1] - y) < r * 2.6; }));
+      pts.push([x, y]);
+      var d = document.createElement('i'); d.style.left = x + 'px'; d.style.top = y + 'px'; d.style.width = d.style.height = r * 2 + 'px';
+      d.style.background = P.pick(['#FF6B4A', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8']);
+      box.appendChild(d);
+    }
+    phase = 'show'; showT = Math.max(0.35, 0.9 - score * 0.03); optsEl.setAttribute('aria-disabled', 'true');
+    sub.textContent = 'Смотри!';
+    var opts = [count], deltas = P.shuffle([-3, -2, -1, 1, 2, 3]);
+    for (var k = 0; opts.length < 4; k++) { var v = count + deltas[k]; if (v > 0) opts.push(v); }
+    opts.sort(function (a, b) { return a - b; });
+    optsEl.textContent = '';
+    opts.forEach(function (v) { var b = document.createElement('button'); b.type = 'button'; b.textContent = v; b.addEventListener('click', function () { answer(v, b); }); optsEl.appendChild(b); });
+  }
+  function answer(v, b) {
+    if (!shell.running || phase !== 'ask') return;
+    phase = 'wait';
+    if (v === count) { score++; shell.setScore(String(score)); b.className = 'right'; P.haptic('coin'); sub.textContent = 'Верно, ' + count; }
+    else { wrong++; b.className = 'wrong'; P.haptic('crash'); timer.add(-3); sub.textContent = 'Было ' + count; Array.prototype.forEach.call(optsEl.children, function (x) { if (Number(x.textContent) === count) x.className = 'right'; }); }
+    wait = 0.7;
+  }
+  function reset() { score = 0; wrong = 0; shell.setScore('0'); timer.reset(); wait = 0; phase = 'idle'; show(); }
+  function finish() { phase = 'wait'; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong, phrase: 'В «Сколько точек» у меня ' + score + ' ' + P.plural(score, U) + ' за 45 секунд.' }); }
+  P.loop(function (dt) {
+    if (!shell.running) return;
+    if (phase === 'show') { showT -= dt; if (showT <= 0) { box.textContent = ''; phase = 'ask'; sub.textContent = 'Сколько точек было?'; optsEl.setAttribute('aria-disabled', 'false'); } }
+    else if (phase === 'wait' && wait > 0) { wait -= dt; if (wait <= 0) show(); }
+  });
+  window.addEventListener('keydown', function (e) { var m = /^Digit([1-4])$/.exec(e.code); if (m && optsEl.children[m[1] - 1]) optsEl.children[m[1] - 1].click(); });
+  function layout() { var r = stage.getBoundingClientRect(); stage.style.setProperty('--w', Math.floor(Math.min(r.width - 32, r.height - 260, 420)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); score = 0;
+})();
+</script>
+</body>
+</html>

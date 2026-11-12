@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Перетягивание</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Перетягивание каната вдвоём. Каждый жмёт на свою половину экрана"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var STEP = 0.034;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var pos = 0, shown = 0, taps = [0, 0], pulses = [], done = false;
+
+  var shell = P.shell({
+    id: 'tug', title: 'Перетягивание', tagline: 'Канат на двоих: кто быстрее жмёт.',
+    rulesHtml: '<p>Игра для двоих на одном телефоне. Положите телефон между собой. Красные жмут на верхнюю половину, зелёные — на нижнюю. Каждое нажатие тянет канат к себе. Кто дотянет метку до своего края, тот победил.</p>',
+    startLabel: 'Тянуть', countdown: true,
+    unit: function (n) { return P.plural(n, ['нажатие', 'нажатия', 'нажатий']); },
+    kbdHint: 'На компьютере: A — красные, L — зелёные',
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { draw(); });
+  function reset() { pos = 0; shown = 0; taps = [0, 0]; pulses = []; done = false; shell.setScore('0 : 0'); shell.setSide(null); }
+  function pull(side, x, y) {
+    if (!shell.running || done) return;
+    taps[side]++; pos += side ? STEP : -STEP;
+    pulses.push({ x: x, y: y, side: side, life: 0.35 });
+    shell.setScore(taps[0] + ' : ' + taps[1]);
+    if (Math.abs(pos) >= 1) {
+      done = true;
+      var green = pos > 0;
+      shell.end({ score: taps[0] + taps[1], record: false, delay: 600, haptic: 'win', eyebrow: green ? 'Победили зелёные' : 'Победили красные', tone: 'good',
+        stats: 'нажатий: красные ' + taps[0] + ', зелёные ' + taps[1], phrase: 'Сыграем в «Перетягивание» на одном телефоне? Посмотрим, кто сильнее.' });
+    }
+  }
+  P.loop(function (dt) {
+    shown += (pos - shown) * Math.min(1, dt * 14);
+    pulses.forEach(function (p) { p.life -= dt; }); pulses = pulses.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, mid = H / 2;
+    ctx.fillStyle = '#3A1236'; ctx.fillRect(0, 0, W, mid);
+    ctx.fillStyle = '#0F3A36'; ctx.fillRect(0, mid, W, H - mid);
+    var top = 90, bottom = H - 40, span = (bottom - top) / 2, my = mid + shown * span;
+    ctx.fillStyle = '#FF6B4A'; ctx.fillRect(0, top - 4, W, 4);
+    ctx.fillStyle = '#3DF5B0'; ctx.fillRect(0, bottom, W, 4);
+    ctx.strokeStyle = '#FF9A6B'; ctx.lineWidth = 8; ctx.setLineDash([14, 8]);
+    ctx.beginPath(); ctx.moveTo(W / 2, top); ctx.lineTo(W / 2, bottom); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.roundRect(W / 2 - 34, my - 12, 68, 24, 12); ctx.fill();
+    ctx.fillStyle = 'rgba(244,241,255,0.12)'; ctx.fillRect(0, mid - 1, W, 2);
+    pulses.forEach(function (p) { ctx.globalAlpha = p.life * 2.5; ctx.strokeStyle = p.side ? '#3DF5B0' : '#FF6B4A'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(p.x, p.y, 30 + (0.35 - p.life) * 120, 0, Math.PI * 2); ctx.stroke(); });
+    ctx.globalAlpha = 1;
+    ctx.font = '800 22px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+    ctx.save(); ctx.translate(W / 2, mid * 0.55); ctx.rotate(Math.PI); ctx.fillStyle = '#FF6B4A'; ctx.fillText('КРАСНЫЕ: ЖМИ!', 0, 0); ctx.restore();
+    ctx.fillStyle = '#3DF5B0'; ctx.fillText('ЗЕЛЁНЫЕ: ЖМИ!', W / 2, mid + (H - mid) * 0.45);
+  }
+  canvas.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    var r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    pull(y > r.height / 2 ? 1 : 0, x, y);
+  });
+  window.addEventListener('keydown', function (e) { if (e.repeat) return; if (e.code === 'KeyA') pull(0, view.W / 2, view.H * 0.25); if (e.code === 'KeyL') pull(1, view.W / 2, view.H * 0.75); });
+})();
+</script>
+</body>
+</html>
