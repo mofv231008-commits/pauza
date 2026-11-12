@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Парковка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Парковка. Двигай машины пальцем и выведи красную"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['парковка', 'парковки', 'парковок'], TOP = 70, N = 6, ROW = 2;
+  var CC = ['#3DF5B0', '#6FD3FF', '#FFD84D', '#FF8AD8', '#B9A8F0', '#14A0C8', '#E9C38A', '#1FB97F', '#4F6BFF', '#F4F1FF', '#C08CFF', '#9BE36B'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var cars = [], solved = 0, moves = 0, best = 0, drag = null, phase = 'play', phaseT = 0, cs = 50, ox = 0, oy = 0, exitX = 0;
+
+  var shell = P.shell({
+    id: 'parking', title: 'Парковка', tagline: 'Расставь машины и выпусти красную.',
+    rulesHtml: '<p>Красной машине нужно выехать через проём справа. Машины ездят только вперёд и назад вдоль своей длины. Двигай их пальцем, чтобы освободить проезд. Каждая парковка решается, и с каждой задачей она хитрее. Две минуты.</p>',
+    startLabel: 'Выезжать', countdown: false, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 120, finish);
+  var view = P.canvas(canvas, stage, fit);
+  function fit() { cs = Math.floor(Math.min((view.W - 60) / N, (view.H - TOP - 90) / N, 80)); ox = Math.floor((view.W - cs * N) / 2) - 8; oy = TOP + 40 + Math.floor((view.H - TOP - 60 - cs * N) / 2); }
+  function occ(cs_, skip) {
+    var g = new Array(N * N).fill(-1);
+    cs_.forEach(function (c, i) { if (i === skip) return; for (var k = 0; k < c.len; k++) g[(c.y + (c.h ? 0 : k)) * N + c.x + (c.h ? k : 0)] = i; });
+    return g;
+  }
+  function solve(list) {
+    var key = function (s) { return s.join(','); }, start = list.map(function (c) { return c.h ? c.x : c.y; });
+    var seen = {}, q = [start], dist = [0], head = 0; seen[key(start)] = 1;
+    while (head < q.length && q.length < 16000) {
+      var s = q[head], d = dist[head]; head++;
+      if (s[0] === N - 2) return d;
+      var g = new Array(N * N).fill(false);
+      list.forEach(function (c, i) { for (var k = 0; k < c.len; k++) { var x = c.h ? s[i] + k : c.x, y = c.h ? c.y : s[i] + k; g[y * N + x] = true; } });
+      for (var i = 0; i < list.length; i++) {
+        var c = list[i];
+        [-1, 1].forEach(function (dir) {
+          var p = s[i];
+          while (true) {
+            var np = p + dir, edge = dir < 0 ? np : np + c.len - 1;
+            if (np < 0 || np + c.len > N) break;
+            var cell = c.h ? c.y * N + edge : edge * N + c.x; if (g[cell]) break;
+            p = np; var ns = s.slice(); ns[i] = p; var k2 = key(ns);
+            if (!seen[k2]) { seen[k2] = 1; q.push(ns); dist.push(d + 1); }
+          }
+        });
+      }
+    }
+    return -1;
+  }
+  function generate() {
+    var want = Math.min(14, 3 + solved * 2), bestL = null, bestM = -1, t0 = performance.now();
+    for (var att = 0; att < 250 && (att < 5 || performance.now() - t0 < 350); att++) {
+      var list = [{ x: P.rand(3), y: ROW, len: 2, h: true, red: true }], n = 6 + Math.min(5, solved) + P.rand(3);
+      for (var t = 0; t < 80 && list.length < n + 1; t++) {
+        var len = Math.random() < 0.7 ? 2 : 3, h = Math.random() < 0.45;
+        var x = h ? P.rand(N - len + 1) : P.rand(N), y = h ? P.rand(N) : P.rand(N - len + 1);
+        if (h && y === ROW) continue;
+        var c = { x: x, y: y, len: len, h: h }, g = occ(list), ok = true;
+        for (var k = 0; k < len; k++) if (g[(y + (h ? 0 : k)) * N + x + (h ? k : 0)] !== -1) ok = false;
+        if (ok) list.push(c);
+      }
+      var m = solve(list);
+      if (m > bestM && m <= 30) { bestM = m; bestL = list; }
+      if (m >= want) break;
+    }
+    if (!bestL || bestM < 1) { bestL = [{ x: 0, y: ROW, len: 2, h: true, red: true }, { x: 3, y: 0, len: 3, h: false }, { x: 4, y: 3, len: 3, h: false }]; bestM = solve(bestL); }
+    cars = bestL.map(function (c, i) { c.col = c.red ? '#FF6B4A' : CC[(i - 1) % CC.length]; c.off = 0; return c; });
+    best = bestM; moves = 0; phase = 'play'; exitX = 0;
+  }
+  function reset() { solved = 0; generate(); fit(); shell.setScore('0'); timer.reset(); }
+  function finish() { phase = 'over'; drag = null; shell.end({ score: solved, delay: 300, phrase: 'В «Парковке» я вывожу красную машину ' + solved + ' ' + P.plural(solved, ['раз', 'раза', 'раз']) + ' за две минуты.' }); }
+  function range(i) {
+    var c = cars[i], g = occ(cars, i), lo = c.h ? c.x : c.y, hi = lo;
+    while (lo - 1 >= 0 && g[c.h ? c.y * N + lo - 1 : (lo - 1) * N + c.x] === -1) lo--;
+    while (hi + c.len < N && g[c.h ? c.y * N + hi + c.len : (hi + c.len) * N + c.x] === -1) hi++;
+    return [lo, hi];
+  }
+  P.loop(function (dt) {
+    if (phase === 'exit') { exitX += dt * 12; if (exitX > 6) { phase = 'won'; phaseT = 0.5; } }
+    else if (phase === 'won' && shell.running) { phaseT -= dt; if (phaseT <= 0) { generate(); fit(); } }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!cars.length) return;
+    ctx.fillStyle = '#3B1E8C'; ctx.beginPath(); ctx.roundRect(ox - 10, oy - 10, cs * N + 20, cs * N + 20, 14); ctx.fill();
+    ctx.fillStyle = '#22105A'; ctx.fillRect(ox, oy, cs * N, cs * N);
+    ctx.fillStyle = '#22105A'; ctx.fillRect(ox + cs * N, oy + ROW * cs + 4, 14, cs - 8);
+    ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.moveTo(ox + cs * N + 16, oy + ROW * cs + cs * 0.3); ctx.lineTo(ox + cs * N + 28, oy + ROW * cs + cs / 2); ctx.lineTo(ox + cs * N + 16, oy + ROW * cs + cs * 0.7); ctx.fill();
+    ctx.strokeStyle = 'rgba(185,168,240,.12)'; ctx.lineWidth = 1;
+    for (var i = 1; i < N; i++) { ctx.beginPath(); ctx.moveTo(ox + i * cs, oy); ctx.lineTo(ox + i * cs, oy + N * cs); ctx.stroke(); ctx.beginPath(); ctx.moveTo(ox, oy + i * cs); ctx.lineTo(ox + N * cs, oy + i * cs); ctx.stroke(); }
+    cars.forEach(function (c, i) {
+      var off = drag && drag.i === i ? drag.pos - (c.h ? c.x : c.y) : 0;
+      if (c.red && phase !== 'play') off = exitX;
+      var x = ox + (c.x + (c.h ? off : 0)) * cs + 4, y = oy + (c.y + (c.h ? 0 : off)) * cs + 4, w = (c.h ? c.len : 1) * cs - 8, h = (c.h ? 1 : c.len) * cs - 8;
+      ctx.fillStyle = c.red && P.gold() ? '#FFD84D' : c.col; ctx.beginPath(); ctx.roundRect(x, y, w, h, cs * 0.18); ctx.fill();
+      ctx.fillStyle = 'rgba(18,6,48,.35)';
+      if (c.h) { ctx.fillRect(x + w * 0.62, y + h * 0.15, w * 0.14, h * 0.7); ctx.fillRect(x + w * 0.12, y + h * 0.15, w * 0.1, h * 0.7); }
+      else { ctx.fillRect(x + w * 0.15, y + h * 0.12, w * 0.7, h * 0.12); ctx.fillRect(x + w * 0.15, y + h * 0.7, w * 0.7, h * 0.1); }
+    });
+    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(phase === 'play' ? 'Задача ' + (solved + 1) + ' · ходов ' + moves + ' · лучшее решение ' + best : 'Выехала!', W / 2, oy - 22);
+  }
+  function cellPt(e) { var r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left - ox) / cs, y: (e.clientY - r.top - oy) / cs }; }
+  canvas.addEventListener('pointerdown', function (e) {
+    if (!shell.running || phase !== 'play') return;
+    var p = cellPt(e), cx = Math.floor(p.x), cy = Math.floor(p.y);
+    if (cx < 0 || cy < 0 || cx >= N || cy >= N) return;
+    var i = occ(cars)[cy * N + cx]; if (i < 0) return;
+    var c = cars[i], rg = range(i);
+    drag = { i: i, start: c.h ? p.x : p.y, base: c.h ? c.x : c.y, pos: c.h ? c.x : c.y, lo: rg[0], hi: rg[1] };
+    canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!drag) return; var p = cellPt(e), c = cars[drag.i];
+    drag.pos = P.clamp(drag.base + ((c.h ? p.x : p.y) - drag.start), drag.lo, drag.hi);
+  });
+  function release() {
+    if (!drag) return; var c = cars[drag.i], np = Math.round(drag.pos);
+    if (np !== drag.base) { if (c.h) c.x = np; else c.y = np; moves++; P.haptic('tap'); }
+    drag = null;
+    if (cars[0].x === N - 2 && phase === 'play') { solved++; shell.setScore(String(solved)); P.haptic('win'); phase = 'exit'; exitX = 0; }
+  }
+  canvas.addEventListener('pointerup', release); canvas.addEventListener('pointercancel', release);
+})();
+</script>
+</body>
+</html>

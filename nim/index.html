@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Спички</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.take{position:absolute;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);min-width:200px;min-height:54px;border:0;border-radius:18px;background:var(--mint);color:var(--ink);font-family:var(--font-display);font-weight:600;font-size:15px;cursor:pointer;touch-action:manipulation;z-index:1}
+.take:disabled{background:var(--road);color:var(--lilac);cursor:default}
+.stage[data-state="start"] .take,.stage[data-state="over"] .take{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Спички. Нажми на спичку, чтобы выбрать её и все справа от неё"></canvas><button class="take" type="button" id="take" disabled>Выбери спички</button></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['победа', 'победы', 'побед'], TOP = 70, KEY = 'pz_streak_nim';
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game'), takeBtn = document.getElementById('take');
+  var heaps = [], pick = null, busy = false, note = '', burn = [], memo = {}, rowH = 80, mw = 14;
+
+  var shell = P.shell({
+    id: 'nim', title: 'Спички', tagline: 'Кто возьмёт последнюю спичку — проиграл.',
+    rulesHtml: '<p>Спички лежат в несколько рядов. За ход можно взять сколько угодно спичек, но только из одного ряда: нажми на спичку — выберутся она и все справа, потом жми «Взять». Кому достанется последняя спичка, тот проиграл. Компьютер считает хорошо, но иногда ошибается. Рекорд — серия побед подряд.</p>',
+    startLabel: 'Разложить', countdown: false,
+    unit: function (n) { return P.plural(n, U) + ' подряд'; },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () {});
+  function key(h) { return h.slice().sort().join(','); }
+  function win(h) {
+    var k = key(h); if (k in memo) return memo[k];
+    if (h.every(function (x) { return !x; })) return (memo[k] = true);
+    for (var i = 0; i < h.length; i++) for (var t = 1; t <= h[i]; t++) { var n = h.slice(); n[i] -= t; if (!win(n)) return (memo[k] = true); }
+    return (memo[k] = false);
+  }
+  function deal() {
+    var rows = 3 + P.rand(2);
+    do { heaps = []; for (var i = 0; i < rows; i++) heaps.push(1 + P.rand(7)); } while (heaps.reduce(function (a, b) { return a + b; }, 0) < 9);
+    heaps.sort(function (a, b) { return a - b; });
+  }
+  function reset() { deal(); pick = null; busy = false; burn = []; note = 'Твой ход'; ui(); shell.setScore(String(P.store.get(KEY, 0))); shell.setSide('серия'); }
+  function ui() { var n = pick ? heaps[pick.r] - pick.j : 0; takeBtn.disabled = !n || busy; takeBtn.textContent = n ? 'Взять ' + n + ' ' + P.plural(n, ['спичку', 'спички', 'спичек']) : 'Выбери спички'; }
+  function total() { return heaps.reduce(function (a, b) { return a + b; }, 0); }
+  function take(r, n, who) { for (var k = 0; k < n; k++) burn.push({ r: r, j: heaps[r] - 1 - k, life: 0.45, who: who }); heaps[r] -= n; }
+  function finish(res) {
+    busy = true; ui();
+    var s = res === 'win' ? P.store.get(KEY, 0) + 1 : 0; P.store.set(KEY, s);
+    var eyebrow = res === 'win' ? 'Победа: последняя спичка досталась компьютеру' : 'Последняя спичка — твоя';
+    note = res === 'win' ? 'Победа' : 'Проигрыш';
+    shell.end({ score: s, delay: 900, eyebrow: eyebrow, tone: res === 'win' ? 'good' : null, record: res === 'win', haptic: res === 'win' ? 'win' : 'crash',
+      stats: res === 'win' ? '' : 'серия обнулилась',
+      phrase: res === 'win' ? 'В «Спички» у меня ' + s + ' ' + P.plural(s, U) + ' подряд над компьютером.' : 'Сыграем в «Спички»? Кто берёт последнюю — проиграл.' });
+  }
+  function aiMove() {
+    var slip = Math.max(0.08, 0.35 - P.store.get(KEY, 0) * 0.05), moves = [];
+    heaps.forEach(function (h, i) { for (var t = 1; t <= h; t++) moves.push([i, t]); });
+    var good = moves.filter(function (m) { var n = heaps.slice(); n[m[0]] -= m[1]; return !win(n); });
+    if (good.length && Math.random() > slip) return P.pick(good);
+    var notLast = moves.filter(function (m) { return total() - m[1] > 0; });
+    return P.pick(notLast.length ? notLast : moves);
+  }
+  takeBtn.addEventListener('click', function () {
+    if (!shell.running || busy || !pick) return;
+    var n = heaps[pick.r] - pick.j; take(pick.r, n, 1); pick = null; P.haptic('tap');
+    if (!total()) { ui(); return finish('lose'); }
+    busy = true; note = 'Компьютер думает…'; ui();
+    setTimeout(function () {
+      if (!shell.running) return;
+      var m = aiMove(); take(m[0], m[1], 2); note = 'Компьютер взял ' + m[1] + ' · твой ход';
+      if (!total()) return finish('win');
+      busy = false; ui();
+    }, 600);
+  });
+  P.loop(function (dt) { burn.forEach(function (b) { b.life -= dt; }); burn = burn.filter(function (b) { return b.life > 0; }); draw(); });
+  function geo() { var rows = heaps.length, avail = view.H - TOP - 160; rowH = Math.min(110, avail / Math.max(1, rows)); mw = Math.min(30, (view.W - 40) / 8); }
+  function stick(ctx, x, y, h, alpha, col) {
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = col || '#E9C38A'; ctx.beginPath(); ctx.roundRect(x - 3, y, 6, h, 3); ctx.fill();
+    ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.ellipse(x, y + 2, 5, 7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    if (!heaps.length) return;
+    geo();
+    var top = TOP + 60;
+    heaps.forEach(function (h, r) {
+      var y = top + r * rowH, sh = rowH * 0.62, x0 = W / 2 - 3.5 * mw;
+      ctx.fillStyle = 'rgba(244,241,255,.05)'; ctx.beginPath(); ctx.roundRect(x0 - mw * 0.6, y - 8, mw * 8.2, sh + 16, 12); ctx.fill();
+      for (var j = 0; j < h; j++) { var sel = pick && pick.r === r && j >= pick.j; stick(ctx, x0 + j * mw, y + (sel ? -8 : 0), sh, 1, sel ? '#FFD84D' : null); }
+      burn.filter(function (b) { return b.r === r; }).forEach(function (b) { stick(ctx, x0 + b.j * mw, y - (0.45 - b.life) * 60, sh, b.life / 0.45, b.who === 2 ? '#FF9A6B' : '#3DF5B0'); });
+      ctx.fillStyle = 'rgba(244,241,255,.45)'; ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.fillText(String(h), x0 + mw * 7.4, y + sh / 2 + 4);
+    });
+    ctx.fillStyle = 'rgba(244,241,255,.85)'; ctx.font = '600 15px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(note, W / 2, TOP + 30);
+  }
+  canvas.addEventListener('pointerdown', function (e) {
+    if (!shell.running || busy) return;
+    var rc = canvas.getBoundingClientRect(), px = e.clientX - rc.left, py = e.clientY - rc.top, top = TOP + 60, x0 = view.W / 2 - 3.5 * mw;
+    var r = Math.floor((py - top + 10) / rowH); if (r < 0 || r >= heaps.length) return;
+    var j = Math.round((px - x0) / mw); j = P.clamp(j, 0, heaps[r] - 1); if (!heaps[r]) return;
+    if (px < x0 - mw || px > x0 + mw * (heaps[r] - 0.4)) return;
+    pick = { r: r, j: j }; P.haptic('tap'); ui();
+  });
+  deal(); note = 'Твой ход'; ui();
+})();
+</script>
+</body>
+</html>

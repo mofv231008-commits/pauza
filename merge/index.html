@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Слияние</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Слияние. Нажми на столбец, чтобы бросить в него кубик"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'], TOP = 70, C = 5, R = 7;
+  var COL = ['#120630', '#6FD3FF', '#3DF5B0', '#FFD84D', '#FF9A6B', '#FF6B4A', '#FF8AD8', '#B9A8F0', '#4F6BFF', '#1FB97F', '#E0402A', '#C08CFF', '#F4F1FF', '#FFC93A', '#14A0C8', '#D4508F'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var g = [], next = 1, after = 1, score = 0, maxE = 1, busy = false, pops = [], cs = 60, ox = 0, oy = 0, dead = false;
+
+  var shell = P.shell({
+    id: 'merge', title: 'Слияние', tagline: 'Бросай кубики, одинаковые сливаются в больший.',
+    rulesHtml: '<p>Нажми на столбец — кубик упадёт вниз. Если рядом с ним такой же, они сольются в один, вдвое больше. Слил сразу три — получишь вчетверо больше. Цепочки слияний приносят много очков. Столбцы заполнились до верха — конец.</p>',
+    startLabel: 'Бросать', countdown: false, overEyebrow: 'Мест больше нет',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1–5',
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { cs = Math.floor(Math.min((view.W - 24) / C, (view.H - TOP - 120) / R, 84)); ox = Math.floor((view.W - cs * C) / 2); oy = TOP + 90 + Math.floor((view.H - TOP - 110 - cs * R) / 2); });
+  function rollE() { var hi = Math.max(2, Math.min(6, maxE - 1)), w = []; for (var e = 1; e <= hi; e++) w.push(Math.pow(0.55, e - 1)); var s = w.reduce(function (a, b) { return a + b; }, 0), r = Math.random() * s; for (e = 1; e <= hi; e++) { r -= w[e - 1]; if (r <= 0) return e; } return 1; }
+  function reset() { g = []; for (var i = 0; i < R; i++) g.push(new Array(C).fill(0)); score = 0; maxE = 3; next = rollE(); after = rollE(); busy = false; dead = false; pops = []; shell.setScore('0'); }
+  function val(e) { return Math.pow(2, e); }
+  function fmt(v) { return v >= 100000 ? Math.round(v / 1000) + 'K' : v >= 10000 ? (v / 1000).toFixed(1).replace('.0', '') + 'K' : String(v); }
+  function gravity() { for (var c = 0; c < C; c++) { var col = []; for (var r = R - 1; r >= 0; r--) if (g[r][c]) col.push(g[r][c]); for (r = R - 1; r >= 0; r--) g[r][c] = col[R - 1 - r] || 0; } }
+  function resolve(anchor) {
+    var guard = 0;
+    while (guard++ < 60) {
+      var best = null;
+      var check = function (r, c) {
+        var e = g[r][c]; if (!e) return null;
+        var nb = [[0, -1], [0, 1], [1, 0], [-1, 0]].filter(function (d) { var rr = r + d[0], cc = c + d[1]; return rr >= 0 && rr < R && cc >= 0 && cc < C && g[rr][cc] === e; });
+        return nb.length ? { r: r, c: c, nb: nb } : null;
+      };
+      if (anchor) best = check(anchor.r, anchor.c);
+      for (var r = R - 1; r >= 0 && !best; r--) for (var c = 0; c < C && !best; c++) best = check(r, c);
+      if (!best) return;
+      var ne = g[best.r][best.c] + best.nb.length;
+      best.nb.forEach(function (d) { g[best.r + d[0]][best.c + d[1]] = 0; });
+      g[best.r][best.c] = ne; score += val(ne); maxE = Math.max(maxE, ne); shell.setScore(String(score));
+      pops.push({ r: best.r, c: best.c, life: 0.25 }); P.haptic(best.nb.length > 1 ? 'win' : 'coin');
+      var col = best.c, rowsBelowEmpty = 0; for (var k = best.r + 1; k < R; k++) if (!g[k][col]) rowsBelowEmpty++;
+      gravity();
+      anchor = { r: best.r + rowsBelowEmpty, c: col };
+    }
+  }
+  function drop(c) {
+    if (!shell.running || busy || dead) return;
+    var r = -1; for (var k = R - 1; k >= 0; k--) if (!g[k][c]) { r = k; break; }
+    if (r === -1) { if (g[0][c] === next) { g[0][c] = 0; r = 0; } else { P.haptic('crash'); return; } }
+    g[r][c] = next; P.haptic('tap');
+    resolve({ r: r, c: c });
+    next = after; after = rollE();
+    var canPlace = false; for (k = 0; k < C; k++) if (!g[0][k] || g[0][k] === next) canPlace = true;
+    if (!canPlace) { dead = true; shell.end({ score: score, delay: 700, stats: 'лучший кубик: ' + fmt(val(maxE)), phrase: 'В «Слиянии» я набираю ' + score + ' ' + P.plural(score, U) + ' и собираю кубик ' + fmt(val(maxE)) + '.' }); }
+  }
+  P.loop(function (dt) { pops.forEach(function (p) { p.life -= dt; }); pops = pops.filter(function (p) { return p.life > 0; }); draw(); });
+  function tile(ctx, e, x, y, s, scale) {
+    var m = s * 0.06 + (1 - scale) * s * 0.3;
+    ctx.fillStyle = COL[Math.min(e, COL.length - 1)]; ctx.beginPath(); ctx.roundRect(x + m, y + m, s - m * 2, s - m * 2, s * 0.18); ctx.fill();
+    var t = fmt(val(e)); ctx.fillStyle = e === 12 ? '#120630' : (e >= 7 && e !== 13 ? '#F4F1FF' : '#120630');
+    ctx.font = '800 ' + Math.round(s * (t.length > 3 ? 0.26 : 0.34)) + 'px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, x + s / 2, y + s / 2 + 1);
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!g.length) return;
+    ctx.fillStyle = '#22105A'; ctx.beginPath(); ctx.roundRect(ox - 6, oy - 6, cs * C + 12, cs * R + 12, 14); ctx.fill();
+    for (var c = 0; c < C; c++) { ctx.fillStyle = c % 2 ? 'rgba(244,241,255,.03)' : 'rgba(244,241,255,.06)'; ctx.fillRect(ox + c * cs, oy, cs, cs * R); }
+    ctx.fillStyle = 'rgba(255,107,74,.5)'; ctx.fillRect(ox, oy + cs - 1, cs * C, 2);
+    for (var r = 0; r < R; r++) for (c = 0; c < C; c++) if (g[r][c]) { var pp = pops.filter(function (p) { return p.r === r && p.c === c; })[0]; tile(ctx, g[r][c], ox + c * cs, oy + r * cs, cs, pp ? 1 + pp.life : 1); }
+    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('сейчас', W / 2 - cs * 0.7, oy - 62); ctx.fillText('потом', W / 2 + cs * 0.8, oy - 62);
+    tile(ctx, next, W / 2 - cs * 0.7 - cs * 0.5, oy - 56, cs, 1);
+    ctx.globalAlpha = 0.6; tile(ctx, after, W / 2 + cs * 0.8 - cs * 0.35, oy - 48, cs * 0.7, 1); ctx.globalAlpha = 1;
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var rc = canvas.getBoundingClientRect(), c = Math.floor((e.clientX - rc.left - ox) / cs); if (c >= 0 && c < C) drop(c); });
+  window.addEventListener('keydown', function (e) { var m = /^(?:Digit|Numpad)([1-5])$/.exec(e.code); if (m) drop(Number(m[1]) - 1); });
+  reset();
+})();
+</script>
+</body>
+</html>

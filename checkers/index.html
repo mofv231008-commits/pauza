@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Шашки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:var(--shoulder)}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Шашки. Нажми на свою шашку, потом на клетку"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['победа', 'победы', 'побед'], TOP = 70, KEY = 'pz_streak_checkers', DIRS = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var b = [], legal = [], sel = -1, prefix = [], busy = false, quiet = 0, plies = 0, lastAi = null, note = '', cs = 40, ox = 0, oy = 0;
+
+  var shell = P.shell({
+    id: 'checkers', title: 'Шашки', tagline: 'Русские шашки против компьютера.',
+    rulesHtml: '<p>Ты играешь белыми и ходишь первым. Простые шашки ходят вперёд по диагонали, а бьют и вперёд, и назад. Бить обязательно, и если можно бить дальше — бьёшь дальше. Дошёл до последнего ряда — шашка становится дамкой и ходит на любое расстояние. Рекорд — серия побед подряд.</p>',
+    startLabel: 'Расставить', countdown: false,
+    unit: function (n) { return P.plural(n, U) + ' подряд'; },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { cs = Math.floor(Math.min((view.W - 20) / 8, (view.H - TOP - 80) / 8, 70)); ox = Math.floor((view.W - cs * 8) / 2); oy = TOP + 40 + Math.floor((view.H - TOP - 60 - cs * 8) / 2); });
+  function init() { b = new Array(64).fill(0); for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) if ((r + c) % 2) { if (r < 3) b[r * 8 + c] = -1; else if (r > 4) b[r * 8 + c] = 1; } }
+  function on(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+  function caps(bd, from, piece) {
+    var out = [], side = Math.sign(piece);
+    function dfs(pos, pc, taken, path) {
+      var r = pos >> 3, c = pos & 7, found = false;
+      DIRS.forEach(function (d) {
+        if (Math.abs(pc) === 1) {
+          var er = r + d[0], ec = c + d[1], lr = r + 2 * d[0], lc = c + 2 * d[1];
+          if (!on(lr, lc)) return;
+          var e = er * 8 + ec, l = lr * 8 + lc;
+          if (Math.sign(bd[e]) === -side && taken.indexOf(e) === -1 && (bd[l] === 0 || l === from)) {
+            found = true;
+            var np = (side > 0 && lr === 0) || (side < 0 && lr === 7) ? 2 * side : pc;
+            dfs(l, np, taken.concat([e]), path.concat([l]));
+          }
+        } else {
+          var rr = r + d[0], cc = c + d[1];
+          while (on(rr, cc) && (bd[rr * 8 + cc] === 0 || rr * 8 + cc === from)) { rr += d[0]; cc += d[1]; }
+          if (!on(rr, cc)) return;
+          var en = rr * 8 + cc; if (Math.sign(bd[en]) !== -side || taken.indexOf(en) !== -1) return;
+          var lands = [], ar = rr + d[0], ac = cc + d[1];
+          while (on(ar, ac) && (bd[ar * 8 + ac] === 0 || ar * 8 + ac === from)) { lands.push(ar * 8 + ac); ar += d[0]; ac += d[1]; }
+          if (!lands.length) return;
+          found = true;
+          var t2 = taken.concat([en]), cont = lands.filter(function (L) { return more(bd, from, L, pc, t2); });
+          (cont.length ? cont : lands).forEach(function (L) { dfs(L, pc, t2, path.concat([L])); });
+        }
+      });
+      if (!found && path.length > 1) out.push({ path: path, taken: taken, end: pc });
+    }
+    dfs(from, piece, [], [from]);
+    return out;
+  }
+  function more(bd, from, pos, pc, taken) {
+    var side = Math.sign(pc), r = pos >> 3, c = pos & 7;
+    return DIRS.some(function (d) {
+      var rr = r + d[0], cc = c + d[1];
+      while (on(rr, cc) && (bd[rr * 8 + cc] === 0 || rr * 8 + cc === from)) { rr += d[0]; cc += d[1]; }
+      if (!on(rr, cc)) return false;
+      var en = rr * 8 + cc; if (Math.sign(bd[en]) !== -side || taken.indexOf(en) !== -1) return false;
+      var ar = rr + d[0], ac = cc + d[1]; return on(ar, ac) && (bd[ar * 8 + ac] === 0 || ar * 8 + ac === from);
+    });
+  }
+  function gen(bd, side) {
+    var cp = [], qm = [];
+    for (var i = 0; i < 64; i++) {
+      var p = bd[i]; if (Math.sign(p) !== side) continue;
+      cp.push.apply(cp, caps(bd, i, p));
+    }
+    if (cp.length) return cp;
+    for (i = 0; i < 64; i++) {
+      p = bd[i]; if (Math.sign(p) !== side) continue;
+      var r = i >> 3, c = i & 7;
+      DIRS.forEach(function (d) {
+        if (Math.abs(p) === 1) {
+          if (d[0] !== -side) return;
+          var nr = r + d[0], nc = c + d[1];
+          if (on(nr, nc) && !bd[nr * 8 + nc]) qm.push({ path: [i, nr * 8 + nc], taken: [], end: (side > 0 && nr === 0) || (side < 0 && nr === 7) ? 2 * side : p });
+        } else {
+          var rr = r + d[0], cc = c + d[1];
+          while (on(rr, cc) && !bd[rr * 8 + cc]) { qm.push({ path: [i, rr * 8 + cc], taken: [], end: p }); rr += d[0]; cc += d[1]; }
+        }
+      });
+    }
+    return qm;
+  }
+  function apply(bd, m) { var nb = bd.slice(); nb[m.path[0]] = 0; m.taken.forEach(function (t) { nb[t] = 0; }); nb[m.path[m.path.length - 1]] = m.end; return nb; }
+  function evalB(bd) { var s = 0; for (var i = 0; i < 64; i++) { var p = bd[i]; if (!p) continue; var r = i >> 3, v = Math.abs(p) === 2 ? 3.2 : 1 + (p < 0 ? r : 7 - r) * 0.04; s += p < 0 ? v : -v; } return s; }
+  function search(bd, side, depth, a, bt) {
+    var ms = gen(bd, side);
+    if (!ms.length) return -100 - depth;
+    if (depth === 0) return evalB(bd) * (side < 0 ? 1 : -1);
+    for (var i = 0; i < ms.length; i++) {
+      var v = -search(apply(bd, ms[i]), -side, depth - 1, -bt, -a);
+      if (v > a) a = v; if (a >= bt) break;
+    }
+    return a;
+  }
+  function aiMove() {
+    var ms = P.shuffle(gen(b, -1)), best = null, bv = -Infinity, pieces = b.filter(Boolean).length, depth = pieces < 8 ? 7 : 5;
+    ms.forEach(function (m) { var v = -search(apply(b, m), 1, depth - 1, -Infinity, Infinity) + Math.random() * 0.05; if (v > bv) { bv = v; best = m; } });
+    return best;
+  }
+  function count(side) { return b.filter(function (p) { return Math.sign(p) === side; }).length; }
+  function reset() { init(); legal = gen(b, 1); sel = -1; prefix = []; busy = false; quiet = 0; plies = 0; lastAi = null; note = 'Твой ход'; shell.setScore(String(P.store.get(KEY, 0))); shell.setSide('серия'); }
+  function finish(result) {
+    busy = true;
+    var s = result === 'win' ? P.store.get(KEY, 0) + 1 : 0; P.store.set(KEY, s);
+    var eyebrow = result === 'win' ? 'Победа' : result === 'lose' ? 'Компьютер победил' : 'Ничья';
+    note = eyebrow;
+    shell.end({ score: s, delay: 900, eyebrow: eyebrow, tone: result === 'win' ? 'good' : null, record: result === 'win', haptic: result === 'win' ? 'win' : 'crash',
+      stats: 'ходов: ' + Math.ceil(plies / 2) + (result === 'win' ? '' : ' · серия обнулилась'),
+      phrase: result === 'win' ? 'В «Шашки» у меня ' + s + ' ' + P.plural(s, U) + ' подряд над компьютером.' : 'Сыграем в «Шашки»? Компьютер дамку просто так не отдаёт.' });
+  }
+  function done(m) {
+    plies++; quiet = m.taken.length || Math.abs(b[m.path[m.path.length - 1]]) === 1 ? 0 : quiet + 1;
+  }
+  function playerMove(m) {
+    b = apply(b, m); done(m); sel = -1; prefix = []; P.haptic(m.taken.length ? 'coin' : 'tap');
+    if (!gen(b, -1).length) return finish('win');
+    if (quiet >= 30) return finish('draw');
+    busy = true; note = 'Компьютер думает…';
+    setTimeout(function () {
+      if (!shell.running) return;
+      var am = aiMove(); b = apply(b, am); done(am); lastAi = { path: am.path, life: 1.2 };
+      legal = gen(b, 1);
+      if (!legal.length) return finish('lose');
+      if (quiet >= 30) return finish('draw');
+      busy = false; note = legal[0].taken.length ? 'Нужно бить' : 'Твой ход';
+    }, 350);
+  }
+  function tap(px, py) {
+    if (!shell.running || busy) return;
+    var c = Math.floor((px - ox) / cs), r = Math.floor((py - oy) / cs); if (!on(r, c)) return;
+    var i = r * 8 + c;
+    if (prefix.length) {
+      var opts = legal.filter(function (m) { return m.path.slice(0, prefix.length).join() === prefix.join() && m.path[prefix.length] === i; });
+      if (opts.length) {
+        prefix = prefix.concat([i]);
+        var full = opts.filter(function (m) { return m.path.length === prefix.length; });
+        if (full.length) return playerMove(full[0]);
+        P.haptic('tap'); return;
+      }
+      if (prefix.length > 1) return;
+    }
+    if (legal.some(function (m) { return m.path[0] === i; })) { sel = i; prefix = [i]; P.haptic('tap'); return; }
+    if (Math.sign(b[i]) === 1) { note = legal.length && legal[0].taken.length ? 'Нужно бить другой шашкой' : 'Этой шашке некуда ходить'; P.haptic('crash'); }
+    sel = -1; prefix = [];
+  }
+  P.loop(function (dt) { if (lastAi) { lastAi.life -= dt; if (lastAi.life <= 0) lastAi = null; } draw(); });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    if (!b.length) return;
+    for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) { ctx.fillStyle = (r + c) % 2 ? '#3B1E8C' : '#B9A8F0'; ctx.fillRect(ox + c * cs, oy + r * cs, cs, cs); }
+    if (lastAi) { ctx.globalAlpha = Math.min(1, lastAi.life * 2) * 0.5; ctx.fillStyle = '#FF9A6B'; lastAi.path.forEach(function (q) { ctx.fillRect(ox + (q & 7) * cs, oy + (q >> 3) * cs, cs, cs); }); ctx.globalAlpha = 1; }
+    var cur = prefix.length ? prefix[prefix.length - 1] : -1, takenNow = [];
+    if (prefix.length > 1) { var m0 = legal.filter(function (m) { return m.path.slice(0, prefix.length).join() === prefix.join(); })[0]; if (m0) takenNow = m0.taken.slice(0, prefix.length - 1); }
+    if (!busy && shell.running) {
+      var starts = {}; legal.forEach(function (m) { starts[m.path[0]] = 1; });
+      if (!prefix.length && legal.length && legal[0].taken.length) Object.keys(starts).forEach(function (q) { ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 3; ctx.strokeRect(ox + (q & 7) * cs + 2, oy + (q >> 3) * cs + 2, cs - 4, cs - 4); });
+      legal.forEach(function (m) { if (prefix.length && m.path.slice(0, prefix.length).join() === prefix.join() && m.path[prefix.length] !== undefined) { var q = m.path[prefix.length]; ctx.fillStyle = 'rgba(61,245,176,.55)'; ctx.beginPath(); ctx.arc(ox + ((q & 7) + 0.5) * cs, oy + ((q >> 3) + 0.5) * cs, cs * 0.16, 0, Math.PI * 2); ctx.fill(); } });
+    }
+    for (var i = 0; i < 64; i++) {
+      var p = b[i]; if (!p) continue;
+      var pos = i === sel && cur !== -1 ? cur : i;
+      if (cur !== -1 && i !== sel && pos === cur) continue;
+      var x = ox + ((pos & 7) + 0.5) * cs, y = oy + ((pos >> 3) + 0.5) * cs;
+      ctx.globalAlpha = takenNow.indexOf(i) !== -1 ? 0.35 : 1;
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(x + 2, y + 3, cs * 0.38, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = p > 0 ? (P.gold() ? '#FFD84D' : '#F4F1FF') : '#FF6B4A'; ctx.beginPath(); ctx.arc(x, y, cs * 0.38, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = p > 0 ? 'rgba(18,6,48,.25)' : 'rgba(18,6,48,.35)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, cs * 0.26, 0, Math.PI * 2); ctx.stroke();
+      if (Math.abs(p) === 2) { ctx.fillStyle = p > 0 ? '#FF9A6B' : '#FFD84D'; ctx.beginPath(); ctx.moveTo(x - cs * 0.17, y + cs * 0.08); ctx.lineTo(x - cs * 0.17, y - cs * 0.1); ctx.lineTo(x - cs * 0.08, y - cs * 0.02); ctx.lineTo(x, y - cs * 0.14); ctx.lineTo(x + cs * 0.08, y - cs * 0.02); ctx.lineTo(x + cs * 0.17, y - cs * 0.1); ctx.lineTo(x + cs * 0.17, y + cs * 0.08); ctx.closePath(); ctx.fill(); }
+      if (i === sel) { ctx.strokeStyle = '#3DF5B0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, cs * 0.42, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = 'rgba(244,241,255,.85)'; ctx.font = '600 15px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(note, W / 2, oy - 14);
+    ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.fillStyle = 'rgba(244,241,255,.6)';
+    ctx.fillText('белых ' + count(1) + ' · красных ' + count(-1), W / 2, oy + cs * 8 + 22);
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var rc = canvas.getBoundingClientRect(); tap(e.clientX - rc.left, e.clientY - rc.top); });
+  init(); legal = gen(b, 1); note = 'Твой ход';
+})();
+</script>
+</body>
+</html>

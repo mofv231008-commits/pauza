@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Маджонг</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Маджонг. Убирай пары одинаковых свободных фишек"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['пара', 'пары', 'пар'], TOP = 70, KINDS = 14;
+  var CA = ['#FF6B4A', '#E0402A', '#FF8AD8', '#C0392B', '#FF9A6B', '#D4508F', '#B8864E'], CB = ['#1FB97F', '#3B6FE0', '#14A0C8', '#6A3FD0', '#2E9E5B', '#3B1E8C', '#0E8A8A'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var tiles = [], sel = -1, pairs = 0, boards = 0, phase = 'play', phaseT = 0, msg = null, tw = 50, th = 64, ox = 0, oy = 0, fades = [];
+
+  var shell = P.shell({
+    id: 'mahjong', title: 'Маджонг', tagline: 'Убирай одинаковые свободные фишки парами.',
+    rulesHtml: '<p>Нажми на две одинаковые фишки — они исчезнут. Брать можно только свободные: сверху ничего не лежит, и слева или справа есть пусто. Если ходов не осталось, фишки перемешаются сами, но это стоит 5 секунд. Две минуты, считаем убранные пары.</p>',
+    startLabel: 'Начать', countdown: false, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 120, finish);
+  var view = P.canvas(canvas, stage, fit);
+  function fit() { tw = Math.floor(Math.min((view.W - 30) / 6.2, (view.H - TOP - 70) / 6.2 / 1.28)); th = Math.floor(tw * 1.28); ox = Math.floor((view.W - tw * 6) / 2) + 6; oy = TOP + 34 + Math.floor((view.H - TOP - 50 - th * 6) / 2); }
+  function layout() { var L = []; for (var y = 0; y < 6; y++) for (var x = 0; x < 6; x++) L.push({ l: 0, x: x, y: y }); for (y = 1; y < 5; y++) for (x = 1; x < 5; x++) L.push({ l: 1, x: x, y: y }); for (y = 2; y < 4; y++) for (x = 2; x < 4; x++) L.push({ l: 2, x: x, y: y }); return L; }
+  function at(list, l, x, y) { for (var i = 0; i < list.length; i++) { var t = list[i]; if (!t.gone && t.l === l && t.x === x && t.y === y) return t; } return null; }
+  function free(list, t) { return !at(list, t.l + 1, t.x, t.y) && (!at(list, t.l, t.x - 1, t.y) || !at(list, t.l, t.x + 1, t.y)); }
+  function assign(pos, kinds) {
+    for (var att = 0; att < 60; att++) {
+      var left = pos.map(function (p) { return { l: p.l, x: p.x, y: p.y, gone: false, k: -1 }; }), ks = P.shuffle(kinds.slice()), ok = true;
+      for (var j = 0; j < ks.length; j++) {
+        var fr = left.filter(function (t) { return !t.gone && free(left, t); });
+        if (fr.length < 2) { ok = false; break; }
+        fr = P.shuffle(fr); fr[0].k = ks[j]; fr[1].k = ks[j]; fr[0].gone = fr[1].gone = true;
+      }
+      if (ok) return left.map(function (t) { t.gone = false; return t; });
+    }
+    return null;
+  }
+  function deal() { var kinds = []; for (var i = 0; i < 28; i++) kinds.push(i % KINDS); tiles = assign(layout(), kinds); sel = -1; phase = 'play'; }
+  function reshuffle() {
+    var rest = tiles.filter(function (t) { return !t.gone; }), cnt = {}, kinds = [];
+    rest.forEach(function (t) { cnt[t.k] = (cnt[t.k] || 0) + 1; });
+    Object.keys(cnt).forEach(function (k) { for (var i = 0; i < cnt[k] / 2; i++) kinds.push(Number(k)); });
+    var fresh = assign(rest, kinds); if (fresh) tiles = fresh; sel = -1;
+  }
+  function anyMove() {
+    var fr = tiles.filter(function (t) { return !t.gone && free(tiles, t); }), seen = {};
+    for (var i = 0; i < fr.length; i++) { if (seen[fr[i].k]) return true; seen[fr[i].k] = 1; }
+    return false;
+  }
+  function reset() { pairs = 0; boards = 0; msg = null; fades = []; deal(); fit(); shell.setScore('0'); timer.reset(); }
+  function finish() { phase = 'over'; shell.end({ score: pairs, delay: 300, stats: boards ? 'полностью разобрано полей: ' + boards : '', phrase: 'В «Маджонге» я убираю ' + pairs + ' ' + P.plural(pairs, U) + ' за две минуты.' }); }
+  function pos(t) { return { x: ox + t.x * tw - t.l * tw * 0.1, y: oy + t.y * th - t.l * th * 0.1 }; }
+  function tap(px, py) {
+    if (!shell.running || phase !== 'play') return;
+    var order = tiles.map(function (t, i) { return i; }).filter(function (i) { return !tiles[i].gone; }).sort(function (a, b) { return tiles[b].l - tiles[a].l; });
+    for (var j = 0; j < order.length; j++) {
+      var t = tiles[order[j]], p = pos(t);
+      if (px >= p.x && px < p.x + tw && py >= p.y && py < p.y + th) {
+        if (!free(tiles, t)) { msg = { text: 'Эта фишка зажата', life: 0.8 }; P.haptic('crash'); return; }
+        if (sel === order[j]) { sel = -1; return; }
+        if (sel !== -1 && tiles[sel].k === t.k) {
+          tiles[sel].gone = true; t.gone = true; fades.push({ a: pos(tiles[sel]), b: p, k: t.k, life: 0.3 }); sel = -1; pairs++; shell.setScore(String(pairs)); P.haptic('coin');
+          if (tiles.every(function (q) { return q.gone; })) { boards++; timer.add(15); phase = 'won'; phaseT = 1.1; msg = { text: 'Поле чисто! +15 с', life: 1.1 }; P.haptic('win'); }
+          else if (!anyMove()) { timer.add(-5); reshuffle(); msg = { text: 'Ходов нет — перемешано, −5 с', life: 1.4 }; }
+          return;
+        }
+        sel = order[j]; P.haptic('tap'); return;
+      }
+    }
+    sel = -1;
+  }
+  P.loop(function (dt) {
+    if (msg) { msg.life -= dt; if (msg.life <= 0) msg = null; }
+    fades.forEach(function (f) { f.life -= dt; }); fades = fades.filter(function (f) { return f.life > 0; });
+    if (phase === 'won' && shell.running) { phaseT -= dt; if (phaseT <= 0) deal(); }
+    draw();
+  });
+  function glyph(ctx, k, cx, cy, s) {
+    var sh = k % 7, col = k < 7 ? CA[sh] : CB[sh];
+    ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = s * 0.22; ctx.beginPath();
+    if (sh === 0) ctx.arc(cx, cy, s, 0, Math.PI * 2);
+    else if (sh === 1) ctx.rect(cx - s * 0.85, cy - s * 0.85, s * 1.7, s * 1.7);
+    else if (sh === 2) { ctx.moveTo(cx, cy - s); ctx.lineTo(cx + s, cy + s * 0.8); ctx.lineTo(cx - s, cy + s * 0.8); ctx.closePath(); }
+    else if (sh === 3) { ctx.moveTo(cx, cy - s * 1.1); ctx.lineTo(cx + s * 0.8, cy); ctx.lineTo(cx, cy + s * 1.1); ctx.lineTo(cx - s * 0.8, cy); ctx.closePath(); }
+    else if (sh === 4) { for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? s * 0.45 : s * 1.05; ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); } ctx.closePath(); }
+    else if (sh === 5) { ctx.arc(cx, cy, s, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, cy, s * 0.35, 0, Math.PI * 2); }
+    else { ctx.rect(cx - s * 0.3, cy - s, s * 0.6, s * 2); ctx.rect(cx - s, cy - s * 0.3, s * 2, s * 0.6); }
+    ctx.fill();
+    ctx.fillStyle = col; ctx.font = '800 ' + Math.round(s * 0.7) + 'px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(k < 7 ? '•' : '••', cx - s * 1.45, cy - s * 1.9);
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!tiles || !tiles.length) return;
+    var list = tiles.map(function (t, i) { return i; }).filter(function (i) { return !tiles[i].gone; }).sort(function (a, b) { var A = tiles[a], B = tiles[b]; return A.l - B.l || A.y - B.y || A.x - B.x; });
+    list.forEach(function (i) {
+      var t = tiles[i], p = pos(t), fr = free(tiles, t), d = Math.max(3, tw * 0.08);
+      ctx.fillStyle = '#B8A88A'; ctx.beginPath(); ctx.roundRect(p.x + d * 0.6, p.y + d * 0.6, tw - 2, th - 2, 6); ctx.fill();
+      ctx.fillStyle = i === sel ? '#FFF3C4' : fr ? '#F4F1FF' : '#CFC8E6'; ctx.beginPath(); ctx.roundRect(p.x, p.y, tw - 2, th - 2, 6); ctx.fill();
+      if (i === sel) { ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 3; ctx.stroke(); }
+      ctx.globalAlpha = fr ? 1 : 0.55; glyph(ctx, t.k, p.x + tw / 2 - 1, p.y + th / 2 + 2, tw * 0.24); ctx.globalAlpha = 1;
+    });
+    fades.forEach(function (f) { ctx.globalAlpha = f.life / 0.3; [f.a, f.b].forEach(function (p) { ctx.fillStyle = '#3DF5B0'; ctx.beginPath(); ctx.roundRect(p.x, p.y, tw - 2, th - 2, 6); ctx.fill(); }); });
+    ctx.globalAlpha = 1; ctx.textBaseline = 'alphabetic';
+    var left = tiles.filter(function (t) { return !t.gone; }).length;
+    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Фишек осталось: ' + left, W / 2, TOP + 22);
+    if (msg) { ctx.globalAlpha = Math.min(1, msg.life * 2); ctx.fillStyle = '#FFD84D'; ctx.font = '800 16px Unbounded, "Arial Black", sans-serif'; ctx.fillText(msg.text, W / 2, H - 22); ctx.globalAlpha = 1; }
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var r = canvas.getBoundingClientRect(); tap(e.clientX - r.left, e.clientY - r.top); });
+  deal();
+})();
+</script>
+</body>
+</html>

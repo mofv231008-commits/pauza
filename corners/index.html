@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Уголки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:var(--shoulder)}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Уголки. Нажми на свою фишку, потом на клетку"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['победа', 'победы', 'побед'], TOP = 70, KEY = 'pz_streak_corners', LIMIT = 80, D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var b = [], sel = -1, dests = [], busy = false, turns = 0, note = '', lastAi = null, cs = 40, ox = 0, oy = 0;
+
+  var shell = P.shell({
+    id: 'corners', title: 'Уголки', tagline: 'Перегони свои фишки в угол соперника первым.',
+    rulesHtml: '<p>Твои девять фишек — внизу слева, нужно перевести их все в правый верхний угол. Ходить можно на соседнюю клетку по прямой или прыгать через любую фишку на пустую клетку за ней, причём прыжки можно продолжать цепочкой. Кто первым займёт чужой угол, тот и выиграл. Рекорд — серия побед подряд.</p>',
+    startLabel: 'Расставить', countdown: false,
+    unit: function (n) { return P.plural(n, U) + ' подряд'; },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { cs = Math.floor(Math.min((view.W - 20) / 8, (view.H - TOP - 80) / 8, 70)); ox = Math.floor((view.W - cs * 8) / 2); oy = TOP + 40 + Math.floor((view.H - TOP - 60 - cs * 8) / 2); });
+  function on(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+  function inMe(i) { var r = i >> 3, c = i & 7; return r <= 2 && c >= 5; }
+  function inAi(i) { var r = i >> 3, c = i & 7; return r >= 5 && c <= 2; }
+  function init() { b = new Array(64).fill(0); for (var i = 0; i < 64; i++) { if (inAi(i)) b[i] = 1; if (inMe(i)) b[i] = -1; } }
+  function targets(bd, from) {
+    var out = [], r = from >> 3, c = from & 7;
+    D4.forEach(function (d) { var nr = r + d[0], nc = c + d[1]; if (on(nr, nc) && !bd[nr * 8 + nc]) out.push(nr * 8 + nc); });
+    var seen = {}, st = [from]; seen[from] = 1;
+    while (st.length) {
+      var q = st.pop(), qr = q >> 3, qc = q & 7;
+      D4.forEach(function (d) {
+        var mr = qr + d[0], mc = qc + d[1], lr = qr + 2 * d[0], lc = qc + 2 * d[1];
+        if (!on(lr, lc)) return;
+        var m = mr * 8 + mc, l = lr * 8 + lc;
+        if (bd[m] && m !== from && !bd[l] && !seen[l]) { seen[l] = 1; st.push(l); if (out.indexOf(l) === -1) out.push(l); }
+      });
+    }
+    return out;
+  }
+  function home(side) { var n = 0; for (var i = 0; i < 64; i++) if (b[i] === side && (side === 1 ? inMe(i) : inAi(i))) n++; return n; }
+  function cost(bd) {
+    var s = 0, worst = 0;
+    for (var i = 0; i < 64; i++) if (bd[i] === -1) { var r = i >> 3, c = i & 7, d = (7 - r) + c; if (inAi(i)) d = 0; s += d; worst = Math.max(worst, d); }
+    return s + worst * 0.6;
+  }
+  function aiMove() {
+    var best = null, bv = Infinity, base = cost(b);
+    for (var i = 0; i < 64; i++) {
+      if (b[i] !== -1) continue;
+      targets(b, i).forEach(function (t) {
+        var nb = b.slice(); nb[t] = -1; nb[i] = 0;
+        var v = cost(nb) + Math.random() * 0.4;
+        if (inAi(i) && !inAi(t)) v += 3;
+        if (v < bv) { bv = v; best = { from: i, to: t }; }
+      });
+    }
+    return best;
+  }
+  function reset() { init(); sel = -1; dests = []; busy = false; turns = 0; lastAi = null; note = 'Твой ход'; shell.setScore(String(P.store.get(KEY, 0))); shell.setSide('серия'); }
+  function finish(result) {
+    busy = true;
+    var s = result === 'win' ? P.store.get(KEY, 0) + 1 : 0; P.store.set(KEY, s);
+    var eyebrow = result === 'win' ? 'Победа' : result === 'lose' ? 'Компьютер успел первым' : 'Ничья';
+    note = eyebrow;
+    shell.end({ score: s, delay: 900, eyebrow: eyebrow, tone: result === 'win' ? 'good' : null, record: result === 'win', haptic: result === 'win' ? 'win' : 'crash',
+      stats: 'ходов: ' + turns + ' · в углу ' + home(1) + ' из 9' + (result === 'win' ? '' : ' · серия обнулилась'),
+      phrase: result === 'win' ? 'В «Уголки» у меня ' + s + ' ' + P.plural(s, U) + ' подряд над компьютером.' : 'Сыграем в «Уголки»? Компьютер прыгает ловко.' });
+  }
+  function tap(px, py) {
+    if (!shell.running || busy) return;
+    var c = Math.floor((px - ox) / cs), r = Math.floor((py - oy) / cs); if (!on(r, c)) return;
+    var i = r * 8 + c;
+    if (sel !== -1 && dests.indexOf(i) !== -1) {
+      b[i] = 1; b[sel] = 0; sel = -1; dests = []; turns++; P.haptic('tap');
+      if (home(1) === 9) return finish('win');
+      busy = true; note = 'Компьютер думает…';
+      setTimeout(function () {
+        if (!shell.running) return;
+        var m = aiMove();
+        if (m) { b[m.to] = -1; b[m.from] = 0; lastAi = { a: m.from, b: m.to, life: 1.2 }; }
+        if (home(-1) === 9) return finish('lose');
+        if (turns >= LIMIT) { var me = home(1), ai = home(-1); return finish(me > ai ? 'win' : me < ai ? 'lose' : 'draw'); }
+        busy = false; note = 'Твой ход · осталось ходов ' + (LIMIT - turns);
+      }, 320);
+      return;
+    }
+    if (b[i] === 1) { sel = i; dests = targets(b, i); P.haptic('tap'); if (!dests.length) note = 'Этой фишке некуда ходить'; return; }
+    sel = -1; dests = [];
+  }
+  P.loop(function (dt) { if (lastAi) { lastAi.life -= dt; if (lastAi.life <= 0) lastAi = null; } draw(); });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    if (!b.length) return;
+    for (var i = 0; i < 64; i++) {
+      var r = i >> 3, c = i & 7;
+      ctx.fillStyle = inMe(i) ? ((r + c) % 2 ? '#1F7A5A' : '#1A6A4E') : inAi(i) ? ((r + c) % 2 ? '#8A3A2A' : '#7A3224') : ((r + c) % 2 ? '#3B1E8C' : '#2E177A');
+      ctx.fillRect(ox + c * cs, oy + r * cs, cs, cs);
+    }
+    if (lastAi) { ctx.globalAlpha = Math.min(1, lastAi.life * 2) * 0.6; ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 3; [lastAi.a, lastAi.b].forEach(function (q) { ctx.strokeRect(ox + (q & 7) * cs + 3, oy + (q >> 3) * cs + 3, cs - 6, cs - 6); }); ctx.globalAlpha = 1; }
+    dests.forEach(function (q) { ctx.fillStyle = 'rgba(61,245,176,.6)'; ctx.beginPath(); ctx.arc(ox + ((q & 7) + 0.5) * cs, oy + ((q >> 3) + 0.5) * cs, cs * 0.15, 0, Math.PI * 2); ctx.fill(); });
+    for (i = 0; i < 64; i++) {
+      if (!b[i]) continue;
+      var x = ox + ((i & 7) + 0.5) * cs, y = oy + ((i >> 3) + 0.5) * cs;
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.roundRect(x - cs * 0.33 + 2, y - cs * 0.33 + 3, cs * 0.66, cs * 0.66, cs * 0.16); ctx.fill();
+      ctx.fillStyle = b[i] === 1 ? (P.gold() ? '#FFD84D' : '#3DF5B0') : '#FF6B4A'; ctx.beginPath(); ctx.roundRect(x - cs * 0.33, y - cs * 0.33, cs * 0.66, cs * 0.66, cs * 0.16); ctx.fill();
+      if (i === sel) { ctx.strokeStyle = '#F4F1FF'; ctx.lineWidth = 3; ctx.stroke(); }
+    }
+    ctx.fillStyle = 'rgba(244,241,255,.85)'; ctx.font = '600 14px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(note, W / 2, oy - 14);
+    ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.fillStyle = 'rgba(244,241,255,.6)';
+    ctx.fillText('в чужом углу: ты ' + home(1) + '/9 · компьютер ' + home(-1) + '/9', W / 2, oy + cs * 8 + 22);
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var rc = canvas.getBoundingClientRect(); tap(e.clientX - rc.left, e.clientY - rc.top); });
+  init(); note = 'Твой ход';
+})();
+</script>
+</body>
+</html>

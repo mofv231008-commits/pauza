@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Точки и квадраты</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:var(--shoulder)}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Точки и квадраты. Нажимай между двумя точками, чтобы провести линию"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['победа', 'победы', 'побед'], TOP = 70, N = 4, KEY = 'pz_streak_dotsboxes';
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var edges = [], boxes = [], turn = 1, busy = false, last = -1, note = '', cs = 60, ox = 0, oy = 0, pops = [];
+
+  var shell = P.shell({
+    id: 'dotsboxes', title: 'Точки и квадраты', tagline: 'Замыкай квадраты и ходи ещё раз.',
+    rulesHtml: '<p>По очереди проводите линии между соседними точками. Кто проведёт четвёртую сторону квадрата, забирает его и ходит ещё раз. Старайся не рисовать третью сторону — её замкнёт соперник. Квадратов больше — победа. Рекорд — серия побед подряд.</p>',
+    startLabel: 'Начать', countdown: false,
+    unit: function (n) { return P.plural(n, U) + ' подряд'; },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { cs = Math.floor(Math.min((view.W - 60) / N, (view.H - TOP - 140) / N, 100)); ox = Math.floor((view.W - cs * N) / 2); oy = TOP + 60 + Math.floor((view.H - TOP - 120 - cs * N) / 2); });
+  function build() {
+    edges = []; boxes = [];
+    for (var r = 0; r <= N; r++) for (var c = 0; c < N; c++) edges.push({ h: true, r: r, c: c, by: 0 });
+    for (r = 0; r < N; r++) for (c = 0; c <= N; c++) edges.push({ h: false, r: r, c: c, by: 0 });
+    for (r = 0; r < N; r++) for (c = 0; c < N; c++) boxes.push({ r: r, c: c, by: 0 });
+  }
+  function eIdx(h, r, c) { return h ? r * N + c : (N + 1) * N + r * (N + 1) + c; }
+  function sides(bx) { return [eIdx(true, bx.r, bx.c), eIdx(true, bx.r + 1, bx.c), eIdx(false, bx.r, bx.c), eIdx(false, bx.r, bx.c + 1)]; }
+  function count(st, bx) { return sides(bx).filter(function (e) { return st[e]; }).length; }
+  function boxesOf(e) { var E = edges[e], out = []; boxes.forEach(function (bx, i) { if (sides(bx).indexOf(e) !== -1) out.push(i); }); return out; }
+  function state() { return edges.map(function (e) { return e.by ? 1 : 0; }); }
+  function play(e, who) {
+    edges[e].by = who; last = e; var got = 0;
+    boxesOf(e).forEach(function (i) { if (!boxes[i].by && sides(boxes[i]).every(function (s) { return edges[s].by; })) { boxes[i].by = who; got++; pops.push({ i: i, life: 0.35 }); } });
+    return got;
+  }
+  function greedyTake(st) {
+    var taken = 0, again = true;
+    while (again) {
+      again = false;
+      for (var i = 0; i < boxes.length; i++) {
+        var bx = boxes[i], s = sides(bx), have = s.filter(function (e) { return st[e]; }).length;
+        if (have === 3) { s.forEach(function (e) { st[e] = 1; }); taken++; again = true; }
+      }
+    }
+    return taken;
+  }
+  function aiPick() {
+    var st = state(), free = []; st.forEach(function (v, i) { if (!v) free.push(i); });
+    for (var k = 0; k < free.length; k++) if (boxesOf(free[k]).some(function (i) { return count(st, boxes[i]) === 3; })) return free[k];
+    var safe = free.filter(function (e) { return boxesOf(e).every(function (i) { return count(st, boxes[i]) < 2; }); });
+    if (safe.length) return P.pick(safe);
+    var best = null, bv = Infinity;
+    P.shuffle(free).forEach(function (e) { var s2 = st.slice(); s2[e] = 1; var v = greedyTake(s2); if (v < bv) { bv = v; best = e; } });
+    return best;
+  }
+  function tally(w) { return boxes.filter(function (b) { return b.by === w; }).length; }
+  function reset() { build(); turn = 1; busy = false; last = -1; pops = []; note = 'Твой ход'; shell.setScore(String(P.store.get(KEY, 0))); shell.setSide('серия'); }
+  function over() { return boxes.every(function (b) { return b.by; }); }
+  function finish() {
+    busy = true;
+    var me = tally(1), ai = tally(2), res = me > ai ? 'win' : me < ai ? 'lose' : 'draw';
+    var s = res === 'win' ? P.store.get(KEY, 0) + 1 : 0; P.store.set(KEY, s);
+    var eyebrow = res === 'win' ? 'Победа' : res === 'lose' ? 'Компьютер победил' : 'Ничья';
+    note = eyebrow + ' · ' + me + ' : ' + ai;
+    shell.end({ score: s, delay: 900, eyebrow: eyebrow, tone: res === 'win' ? 'good' : null, record: res === 'win', haptic: res === 'win' ? 'win' : 'crash',
+      stats: 'квадратов: ' + me + ' против ' + ai + (res === 'win' ? '' : ' · серия обнулилась'),
+      phrase: res === 'win' ? 'В «Точки и квадраты» у меня ' + s + ' ' + P.plural(s, U) + ' подряд над компьютером.' : 'Сыграем в «Точки и квадраты»? Компьютер любит длинные цепочки.' });
+  }
+  function aiTurn() {
+    if (!shell.running) return;
+    var e = aiPick(), got = play(e, 2);
+    if (over()) return finish();
+    if (got) { setTimeout(aiTurn, 330); return; }
+    turn = 1; busy = false; note = 'Твой ход';
+  }
+  function tap(px, py) {
+    if (!shell.running || busy) return;
+    var best = -1, bd = cs * 0.38;
+    edges.forEach(function (e, i) {
+      if (e.by) return;
+      var x1 = ox + e.c * cs, y1 = oy + e.r * cs, x2 = e.h ? x1 + cs : x1, y2 = e.h ? y1 : y1 + cs;
+      var u = P.clamp(((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / (cs * cs), 0.1, 0.9), d = Math.hypot(x1 + (x2 - x1) * u - px, y1 + (y2 - y1) * u - py);
+      if (d < bd) { bd = d; best = i; }
+    });
+    if (best < 0) return;
+    var got = play(best, 1); P.haptic(got ? 'coin' : 'tap');
+    if (over()) return finish();
+    if (got) { note = 'Квадрат! Ходи ещё'; return; }
+    turn = 2; busy = true; note = 'Компьютер думает…'; setTimeout(aiTurn, 380);
+  }
+  P.loop(function (dt) { pops.forEach(function (p) { p.life -= dt; }); pops = pops.filter(function (p) { return p.life > 0; }); draw(); });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    if (!edges.length) return;
+    boxes.forEach(function (bx, i) {
+      if (!bx.by) return; var p = pops.filter(function (q) { return q.i === i; })[0], m = p ? p.life * cs * 0.6 : 6;
+      ctx.fillStyle = bx.by === 1 ? 'rgba(61,245,176,.35)' : 'rgba(255,107,74,.35)'; ctx.beginPath(); ctx.roundRect(ox + bx.c * cs + m, oy + bx.r * cs + m, cs - m * 2, cs - m * 2, 8); ctx.fill();
+      ctx.fillStyle = bx.by === 1 ? '#3DF5B0' : '#FF6B4A'; ctx.font = '800 ' + Math.round(cs * 0.3) + 'px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(bx.by === 1 ? 'Я' : 'К', ox + (bx.c + 0.5) * cs, oy + (bx.r + 0.5) * cs + 1);
+    });
+    ctx.lineCap = 'round';
+    edges.forEach(function (e, i) {
+      var x1 = ox + e.c * cs, y1 = oy + e.r * cs, x2 = e.h ? x1 + cs : x1, y2 = e.h ? y1 : y1 + cs;
+      ctx.strokeStyle = e.by === 1 ? (P.gold() ? '#FFD84D' : '#3DF5B0') : e.by === 2 ? '#FF6B4A' : 'rgba(185,168,240,.14)';
+      ctx.lineWidth = e.by ? (i === last ? 8 : 6) : 4; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    });
+    ctx.fillStyle = '#F4F1FF';
+    for (var r = 0; r <= N; r++) for (var c = 0; c <= N; c++) { ctx.beginPath(); ctx.arc(ox + c * cs, oy + r * cs, 6, 0, Math.PI * 2); ctx.fill(); }
+    ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(244,241,255,.85)'; ctx.font = '600 15px Unbounded, "Arial Black", sans-serif'; ctx.fillText(note, W / 2, oy - 30);
+    ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.fillStyle = '#3DF5B0'; ctx.fillText('ты: ' + tally(1), W / 2 - 50, oy + cs * N + 34);
+    ctx.fillStyle = '#FF6B4A'; ctx.fillText('компьютер: ' + tally(2), W / 2 + 50, oy + cs * N + 34);
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var rc = canvas.getBoundingClientRect(); tap(e.clientX - rc.left, e.clientY - rc.top); });
+  build(); note = 'Твой ход';
+})();
+</script>
+</body>
+</html>

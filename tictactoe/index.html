@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Крестики-нолики</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:16px}
+.modes{display:flex;gap:6px;padding:4px;border-radius:16px;background:rgba(244,241,255,.06)}
+.modes button{min-height:40px;padding:0 16px;border:0;border-radius:12px;background:none;color:var(--lilac);font-family:var(--font-display);font-weight:600;font-size:13px;cursor:pointer;touch-action:manipulation}
+.modes button.on{background:var(--road);color:var(--paper)}
+.turn{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac);min-height:1.4em}
+.board{--size:300px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:var(--size);height:var(--size)}
+.c{border:0;border-radius:18px;background:#3B1E8C;display:grid;place-items:center;cursor:pointer;touch-action:manipulation;padding:0}
+.c svg{width:62%;height:62%}
+.c.win{background:#5A3FB0;box-shadow:0 0 0 3px var(--sun) inset}
+.c.new svg{animation:pop .2s ease-out}
+@keyframes pop{from{transform:scale(.4);opacity:0}}
+.tally{margin:0;font-size:14px;color:var(--lilac)}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="modes" role="group" aria-label="Режим"><button type="button" class="on" data-m="ai">С компьютером</button><button type="button" data-m="duo">Вдвоём</button></div>
+    <p class="turn" id="turn">Твой ход</p>
+    <div class="board" id="board" role="grid" aria-label="Поле 3 на 3"></div>
+    <p class="tally" id="tally"></p>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['победа', 'победы', 'побед'], KEY = 'pz_streak_tictactoe', LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+  var XS = '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 8 L32 32 M32 8 L8 32" stroke="#3DF5B0" stroke-width="7" stroke-linecap="round"/></svg>';
+  var OS = '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="12" fill="none" stroke="#FF6B4A" stroke-width="7"/></svg>';
+  var stage = document.getElementById('stage'), boardEl = document.getElementById('board'), turnEl = document.getElementById('turn'), tally = document.getElementById('tally');
+  var g, cells = [], mode = 'ai', turn = 1, busy = false, last = -1, duoScore = [0, 0];
+
+  var shell = P.shell({
+    id: 'tictactoe', title: 'Крестики-нолики', tagline: 'С компьютером или с другом на одном телефоне.',
+    rulesHtml: '<p>Поставь три своих знака в ряд — по горизонтали, вертикали или диагонали. Против компьютера ты играешь крестиками и ходишь первым, рекорд — серия побед подряд, ничья серию не обнуляет. Режим «Вдвоём» — передавайте телефон друг другу.</p>',
+    startLabel: 'Играть', countdown: false,
+    unit: function (n) { return P.plural(n, U) + (mode === 'ai' ? ' подряд' : ''); },
+    onReset: reset
+  });
+  for (var i = 0; i < 9; i++) { var b = document.createElement('button'); b.type = 'button'; b.className = 'c'; b.setAttribute('aria-label', 'Клетка ' + (i + 1)); b.dataset.i = i; boardEl.appendChild(b); cells.push(b); }
+  boardEl.addEventListener('click', function (e) { var t = e.target.closest('.c'); if (t) move(Number(t.dataset.i)); });
+  document.querySelectorAll('.modes button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (mode === btn.dataset.m) return;
+      mode = btn.dataset.m; document.querySelectorAll('.modes button').forEach(function (x) { x.classList.toggle('on', x === btn); });
+      reset();
+    });
+  });
+  function winner(b) { for (var k = 0; k < LINES.length; k++) { var L = LINES[k]; if (b[L[0]] && b[L[0]] === b[L[1]] && b[L[1]] === b[L[2]]) return { p: b[L[0]], line: L }; } return null; }
+  function render(line) { g.forEach(function (v, i) { cells[i].innerHTML = v === 1 ? XS : v === 2 ? OS : ''; cells[i].className = 'c' + (line && line.indexOf(i) !== -1 ? ' win' : '') + (i === last ? ' new' : ''); }); }
+  function minimax(b, p) {
+    var w = winner(b); if (w) return w.p === 2 ? 10 : -10;
+    if (b.every(Boolean)) return 0;
+    var best = p === 2 ? -Infinity : Infinity;
+    for (var i = 0; i < 9; i++) if (!b[i]) { b[i] = p; var v = minimax(b, 3 - p); b[i] = 0; v += v > 0 ? -0.1 : v < 0 ? 0.1 : 0; best = p === 2 ? Math.max(best, v) : Math.min(best, v); }
+    return best;
+  }
+  function aiMove() {
+    var free = g.map(function (v, i) { return v ? -1 : i; }).filter(function (i) { return i >= 0; });
+    var streak = P.store.get(KEY, 0), slip = Math.max(0.06, 0.3 - streak * 0.04);
+    if (Math.random() < slip) return P.pick(free);
+    var best = -Infinity, pick = free[0];
+    P.shuffle(free).forEach(function (i) { g[i] = 2; var v = minimax(g, 1); g[i] = 0; if (v > best) { best = v; pick = i; } });
+    return pick;
+  }
+  function score() { tally.textContent = mode === 'ai' ? 'серия побед: ' + P.store.get(KEY, 0) : 'крестики ' + duoScore[0] + ' : ' + duoScore[1] + ' нолики'; }
+  function finish(res, line) {
+    busy = true; render(line);
+    if (mode === 'duo') {
+      if (res === 1) duoScore[0]++; if (res === 2) duoScore[1]++; score();
+      var eb = res === 1 ? 'Победили крестики' : res === 2 ? 'Победили нолики' : 'Ничья';
+      turnEl.textContent = eb;
+      shell.end({ score: Math.max(duoScore[0], duoScore[1]), record: false, delay: 800, eyebrow: eb, tone: res ? 'good' : null, haptic: 'win', stats: 'счёт: крестики ' + duoScore[0] + ' : ' + duoScore[1] + ' нолики', phrase: 'Сыграем в «Крестики-нолики» вдвоём? Счёт пока ' + duoScore[0] + ' : ' + duoScore[1] + '.' });
+      return;
+    }
+    var s = P.store.get(KEY, 0); if (res === 1) s++; else if (res === 2) s = 0; P.store.set(KEY, s); score();
+    var eyebrow = res === 1 ? 'Победа' : res === 2 ? 'Компьютер победил' : 'Ничья';
+    turnEl.textContent = eyebrow;
+    shell.end({ score: s, delay: 800, eyebrow: eyebrow, tone: res === 1 ? 'good' : null, record: res === 1, haptic: res === 1 ? 'win' : res === 2 ? 'crash' : null,
+      stats: res === 2 ? 'серия обнулилась' : res === 0 ? 'ничья серию не обнуляет' : '',
+      phrase: res === 1 ? 'В «Крестики-нолики» у меня ' + s + ' ' + P.plural(s, U) + ' подряд над компьютером.' : 'Сыграем в «Крестики-нолики»? Компьютер почти не ошибается.' });
+  }
+  function check() { var w = winner(g); if (w) { finish(w.p, w.line); return true; } if (g.every(Boolean)) { finish(0); return true; } return false; }
+  function move(i) {
+    if (!shell.running || busy || g[i]) return;
+    if (mode === 'duo') { g[i] = turn; last = i; P.haptic('tap'); render(); if (check()) return; turn = 3 - turn; turnEl.textContent = turn === 1 ? 'Ходят крестики' : 'Ходят нолики'; return; }
+    g[i] = 1; last = i; P.haptic('tap'); render(); if (check()) return;
+    busy = true; turnEl.textContent = 'Компьютер думает…';
+    setTimeout(function () { if (!shell.running) return; var m = aiMove(); g[m] = 2; last = m; render(); if (check()) return; busy = false; turnEl.textContent = 'Твой ход'; }, 350);
+  }
+  function reset() { g = new Array(9).fill(0); turn = 1; busy = false; last = -1; turnEl.textContent = mode === 'ai' ? 'Твой ход' : 'Ходят крестики'; render(); score(); shell.setScore(mode === 'ai' ? String(P.store.get(KEY, 0)) : duoScore[0] + ':' + duoScore[1]); shell.setSide(mode === 'ai' ? 'серия' : 'счёт'); }
+  window.addEventListener('keydown', function (e) { var m = /^(?:Digit|Numpad)([1-9])$/.exec(e.code); if (m) move(Number(m[1]) - 1); });
+  function layout() { var r = stage.getBoundingClientRect(); boardEl.style.setProperty('--size', Math.floor(Math.min(r.width - 40, r.height - 260, 420)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); g = [1, 0, 2, 0, 1, 0, 0, 2, 0]; render(); score();
+})();
+</script>
+</body>
+</html>
