@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Быки и коровы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:12px;justify-content:flex-start;padding-top:80px}
+.log{width:min(100%,360px);flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:2px}
+.row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:var(--road);font-variant-numeric:tabular-nums}
+.row .n{width:22px;color:var(--lilac);font-size:13px}
+.row .g{font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:.2em;flex:1}
+.row .r{display:flex;gap:8px;font-family:var(--font-display);font-weight:600;font-size:14px}
+.row .r .b{color:var(--mint)}.row .r .c{color:var(--sun)}
+.empty{margin:auto 0;color:var(--lilac);font-size:14px;text-align:center;line-height:1.5}
+.slots{display:flex;gap:8px}
+.slots span{width:52px;height:60px;border-radius:12px;border:2px solid var(--line);display:grid;place-items:center;font-family:var(--font-display);font-weight:800;font-size:28px;background:#22105A}
+.slots span.on{border-color:var(--mint)}
+.keys{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:min(100%,360px)}
+.keys button{min-height:48px;border:0;border-radius:12px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:20px;cursor:pointer;touch-action:manipulation}
+.keys button:disabled{opacity:.3}
+.keys .wide{grid-column:span 2;font-size:14px}
+.keys .go{background:var(--mint);color:var(--ink)}
+.keys .del{font-size:14px}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="log" id="log"><p class="empty">Загадано 4 разные цифры.<br><b style="color:#3DF5B0">Бык</b> — цифра на своём месте,<br><b style="color:#FFD84D">корова</b> — есть, но в другом месте.</p></div>
+    <div class="slots" id="slots"><span></span><span></span><span></span><span></span></div>
+    <div class="keys" id="keys"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var MAX = 12, U = ['попытка', 'попытки', 'попыток'];
+  var logEl = document.getElementById('log'), slots = document.querySelectorAll('#slots span'), keysEl = document.getElementById('keys');
+  var secret, cur = [], tries, digitBtns = {}, done;
+
+  var shell = P.shell({
+    id: 'bulls', title: 'Быки и коровы', tagline: 'Угадай 4-значный код за меньшее число попыток.',
+    rulesHtml: '<p>Компьютер загадал четыре разные цифры. Вводи свой вариант. «Бык» — цифра угадана и стоит на своём месте, «корова» — цифра есть в коде, но в другом месте. На всё 12 попыток. Рекорд — наименьшее число попыток.</p>',
+    countdown: false, lowerIsBetter: true, overEyebrow: 'Код разгадан', overTone: 'good',
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  '1234567890'.split('').forEach(function (d) {
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = d;
+    b.addEventListener('click', function () { add(d); });
+    keysEl.appendChild(b); digitBtns[d] = b;
+  });
+  var del = document.createElement('button'); del.type = 'button'; del.className = 'wide del'; del.textContent = 'Стереть'; del.addEventListener('click', back); keysEl.appendChild(del);
+  var go = document.createElement('button'); go.type = 'button'; go.className = 'wide go'; go.textContent = 'Проверить'; go.addEventListener('click', check); keysEl.appendChild(go);
+  var spacer = document.createElement('span'); keysEl.appendChild(spacer);
+  function paint() {
+    slots.forEach(function (s, i) { s.textContent = cur[i] || ''; s.classList.toggle('on', i === cur.length); });
+    Object.keys(digitBtns).forEach(function (d) { digitBtns[d].disabled = cur.indexOf(d) !== -1; });
+    go.disabled = cur.length !== 4;
+  }
+  function add(d) { if (!shell.running || done || cur.length >= 4 || cur.indexOf(d) !== -1) return; cur.push(d); P.haptic('tap'); paint(); }
+  function back() { if (!shell.running || done) return; cur.pop(); paint(); }
+  function check() {
+    if (!shell.running || done || cur.length !== 4) return;
+    tries++;
+    var bulls = 0, cows = 0;
+    cur.forEach(function (d, i) { if (secret[i] === d) bulls++; else if (secret.indexOf(d) !== -1) cows++; });
+    if (tries === 1) logEl.textContent = '';
+    var row = document.createElement('div'); row.className = 'row';
+    row.innerHTML = '<span class="n">' + tries + '</span><span class="g">' + cur.join('') + '</span><span class="r"><span class="b">' + bulls + ' Б</span><span class="c">' + cows + ' К</span></span>';
+    row.setAttribute('aria-label', 'Попытка ' + tries + ': ' + cur.join(' ') + ', быков ' + bulls + ', коров ' + cows);
+    logEl.appendChild(row); logEl.scrollTop = logEl.scrollHeight;
+    cur = []; paint();
+    shell.setScore(tries + ' / ' + MAX);
+    if (bulls === 4) {
+      done = true;
+      shell.end({ score: tries, delay: 500, haptic: 'win', stats: 'код ' + secret.join(''), phrase: 'В «Быках и коровах» я разгадываю код за ' + tries + ' ' + P.plural(tries, U) + '.' });
+    } else if (tries >= MAX) {
+      done = true;
+      shell.end({ score: tries, record: false, delay: 500, haptic: 'crash', eyebrow: 'Попытки закончились', tone: null, stats: 'был код ' + secret.join(''), phrase: 'Сыграем в «Быки и коровы»? Угадай код за 12 попыток.' });
+    } else P.haptic(bulls + cows ? 'coin' : 'tap');
+  }
+  function reset() {
+    secret = P.shuffle('0123456789'.split('')).slice(0, 4); cur = []; tries = 0; done = false;
+    logEl.innerHTML = '<p class="empty">Загадано 4 разные цифры.<br><b style="color:#3DF5B0">Бык</b> — цифра на своём месте,<br><b style="color:#FFD84D">корова</b> — есть, но в другом месте.</p>';
+    shell.setScore('0 / ' + MAX); paint();
+  }
+  window.addEventListener('keydown', function (e) {
+    var m = /^(?:Digit|Numpad)(\d)$/.exec(e.code);
+    if (m) add(m[1]); else if (e.code === 'Backspace') back(); else if (e.code === 'Enter') check();
+  });
+  paint();
+})();
+</script>
+</body>
+</html>

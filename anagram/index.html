@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Анаграммы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:22px}
+.hint{margin:0;font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--lilac);min-height:1.4em;text-align:center}
+.slots,.pool{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:100%}
+.slots button,.pool button{width:clamp(40px,12vw,54px);height:clamp(48px,14vw,62px);border:0;border-radius:12px;font-family:var(--font-display);font-weight:800;font-size:clamp(20px,6.5vw,28px);text-transform:uppercase;cursor:pointer;touch-action:manipulation;padding:0}
+.slots button{background:#22105A;color:var(--paper);border:2px dashed var(--line)}
+.slots button.full{border-style:solid;border-color:var(--mint)}
+.slots.bad button{border-color:var(--coral);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.pool button{background:var(--paper);color:var(--ink)}
+.pool button.used{visibility:hidden}
+.tools{display:flex;gap:10px}
+.tools button{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer}
+.stage[data-state="paused"] .pool,.stage[data-state="countdown"] .pool{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="hint" id="hint">Составь слово из всех букв</p>
+    <div class="slots" id="slots"></div>
+    <div class="pool" id="pool"></div>
+    <div class="tools"><button type="button" id="mix">Перемешать</button><button type="button" id="skip">Пропустить (−3 с)</button></div>
+  </div>
+</div>
+<script src="../shared/nouns.js"></script>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['слово', 'слова', 'слов'];
+  var WORDS = window.PauzaNouns.filter(function (w) { return w.length >= 5 && w.length <= 7; });
+  var SET = {}; window.PauzaNouns.forEach(function (w) { SET[w] = 1; });
+  var slotsEl = document.getElementById('slots'), poolEl = document.getElementById('pool'), hint = document.getElementById('hint');
+  var word, letters, picked, solved, busy, used = {}, skipped;
+
+  var shell = P.shell({
+    id: 'anagram', title: 'Анаграммы', tagline: 'Собери слово из перемешанных букв.',
+    rulesHtml: '<p>Буквы слова перемешаны. Нажимай на них по порядку, чтобы составить существительное. Нажатие на букву в слове возвращает её обратно. Чем дальше, тем длиннее слова. На всё 60 секунд.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере можно печатать буквы', pauseKeys: ['Escape'],
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  function sorted(w) { return w.split('').sort().join(''); }
+  function next() {
+    var maxLen = solved < 3 ? 5 : solved < 7 ? 6 : 7, w, tries = 0;
+    do { w = P.pick(WORDS); tries++; } while ((w.length > maxLen || used[w]) && tries < 500);
+    used[w] = 1; word = w;
+    do { letters = P.shuffle(w.split('')); } while (letters.join('') === w);
+    picked = []; busy = false; hint.textContent = w.length + ' букв, существительное'; render();
+  }
+  function render() {
+    slotsEl.className = 'slots'; slotsEl.textContent = '';
+    for (var i = 0; i < word.length; i++) {
+      var s = document.createElement('button'); s.type = 'button';
+      var k = picked[i];
+      s.textContent = k != null ? letters[k] : ''; s.className = k != null ? 'full' : '';
+      (function (pos) { s.addEventListener('click', function () { unpick(pos); }); })(i);
+      slotsEl.appendChild(s);
+    }
+    poolEl.textContent = '';
+    letters.forEach(function (ch, k) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = ch;
+      b.className = picked.indexOf(k) !== -1 ? 'used' : '';
+      b.addEventListener('click', function () { pick(k); });
+      poolEl.appendChild(b);
+    });
+  }
+  function pick(k) {
+    if (!shell.running || busy || picked.indexOf(k) !== -1) return;
+    picked.push(k); P.haptic('tap'); render();
+    if (picked.length === word.length) {
+      var guess = picked.map(function (j) { return letters[j]; }).join('');
+      if (guess === word || (SET[guess] && sorted(guess) === sorted(word))) {
+        solved++; shell.setScore(String(solved)); busy = true; P.haptic('win'); hint.textContent = 'Верно: ' + guess;
+        setTimeout(function () { if (shell.running) next(); }, 600);
+      } else {
+        busy = true; P.haptic('crash'); slotsEl.className = 'slots bad';
+        setTimeout(function () { picked = []; busy = false; render(); }, 450);
+      }
+    }
+  }
+  function unpick(pos) { if (!shell.running || busy || picked[pos] == null) return; picked = picked.slice(0, pos); render(); }
+  document.getElementById('mix').addEventListener('click', function () { if (!shell.running || busy) return; picked = []; letters = P.shuffle(letters); render(); });
+  document.getElementById('skip').addEventListener('click', function () { if (!shell.running || busy) return; skipped++; hint.textContent = 'Было: ' + word; timer.add(-3); busy = true; setTimeout(function () { if (shell.running) next(); }, 700); });
+  window.addEventListener('keydown', function (e) {
+    if (!shell.running) return;
+    if (e.code === 'Backspace') { if (picked.length) unpick(picked.length - 1); return; }
+    var ch = (e.key || '').toLowerCase().replace('ё', 'е');
+    var k = letters ? letters.findIndex(function (l, i) { return l === ch && picked.indexOf(i) === -1; }) : -1;
+    if (k >= 0) pick(k);
+  });
+  function reset() { solved = 0; skipped = 0; used = {}; shell.setScore('0'); timer.reset(); next(); }
+  function finish() { shell.end({ score: solved, delay: 300, stats: 'пропущено: ' + skipped + (word ? ' · последнее слово: ' + word : ''), phrase: 'В «Анаграммах» у меня ' + solved + ' ' + P.plural(solved, U) + ' за минуту.' }); }
+  word = 'пауза'; letters = ['у', 'а', 'п', 'з', 'а']; picked = []; render(); timer.show();
+})();
+</script>
+</body>
+</html>

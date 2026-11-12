@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Четыре в ряд</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:14px}
+.turn{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac);min-height:1.4em}
+.board{--size:340px;display:grid;grid-template-columns:repeat(7,1fr);width:var(--size);height:calc(var(--size) * 6 / 7);background:#3B1E8C;border-radius:16px;padding:6px;gap:5px;flex:none;cursor:pointer;touch-action:manipulation}
+.h{border-radius:50%;background:#140734;transition:background-color .15s}
+.h.x{background:var(--mint)}.h.o{background:var(--coral)}
+.h.win{box-shadow:0 0 0 3px var(--sun)}
+.h.drop{animation:drop .25s ease-in}
+@keyframes drop{from{transform:translateY(-140%)}}
+@media (prefers-reduced-motion:reduce){.h.drop{animation:none}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="turn" id="turn">Твой ход</p>
+    <div class="board" id="board" role="grid" aria-label="Поле 7 на 6, нажми на столбец"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var C = 7, R = 6, U = ['победа', 'победы', 'побед'];
+  var stage = document.getElementById('stage'), boardEl = document.getElementById('board'), turnEl = document.getElementById('turn');
+  var g, els = [], busy, moves, lastDrop = -1;
+
+  var shell = P.shell({
+    id: 'connect4', title: 'Четыре в ряд', tagline: 'Брось фишки так, чтобы собрать четыре подряд.',
+    rulesHtml: '<p>Нажми на столбец, и фишка упадёт вниз. Собери четыре свои зелёные фишки подряд по горизонтали, вертикали или диагонали раньше компьютера. Рекорд — серия побед подряд.</p>',
+    countdown: false,
+    unit: function (n) { return P.plural(n, U) + ' подряд'; },
+    onReset: reset
+  });
+  for (var i = 0; i < C * R; i++) { var h = document.createElement('i'); h.className = 'h'; boardEl.appendChild(h); els.push(h); }
+  boardEl.addEventListener('click', function (e) { var r = boardEl.getBoundingClientRect(); play(P.clamp(Math.floor((e.clientX - r.left) / r.width * C), 0, C - 1)); });
+  function render(win) { g.forEach(function (v, i) { els[i].className = 'h' + (v === 1 ? ' x' : v === 2 ? ' o' : '') + (win && win.indexOf(i) !== -1 ? ' win' : '') + (i === lastDrop ? ' drop' : ''); }); }
+  function free(b, c) { for (var r = R - 1; r >= 0; r--) if (!b[r * C + c]) return r; return -1; }
+  function winner(b) {
+    var D = [[0, 1], [1, 0], [1, 1], [1, -1]];
+    for (var r = 0; r < R; r++) for (var c = 0; c < C; c++) {
+      var p = b[r * C + c]; if (!p) continue;
+      for (var k = 0; k < 4; k++) {
+        var cells = [r * C + c], ok = true;
+        for (var s = 1; s < 4; s++) { var rr = r + D[k][0] * s, cc = c + D[k][1] * s; if (rr < 0 || rr >= R || cc < 0 || cc >= C || b[rr * C + cc] !== p) { ok = false; break; } cells.push(rr * C + cc); }
+        if (ok) return { p: p, cells: cells };
+      }
+    }
+    return null;
+  }
+  function scoreWindow(w, p) {
+    var mine = 0, theirs = 0, empty = 0;
+    w.forEach(function (v) { if (v === p) mine++; else if (v === 0) empty++; else theirs++; });
+    if (mine === 4) return 1000; if (mine === 3 && empty === 1) return 6; if (mine === 2 && empty === 2) return 2;
+    if (theirs === 3 && empty === 1) return -8; return 0;
+  }
+  function evalBoard(b) {
+    var s = 0;
+    for (var r = 0; r < R; r++) if (b[r * C + 3] === 2) s += 3; else if (b[r * C + 3] === 1) s -= 3;
+    var D = [[0, 1], [1, 0], [1, 1], [1, -1]];
+    for (r = 0; r < R; r++) for (var c = 0; c < C; c++) for (var k = 0; k < 4; k++) {
+      var er = r + D[k][0] * 3, ec = c + D[k][1] * 3;
+      if (er < 0 || er >= R || ec < 0 || ec >= C) continue;
+      var w = []; for (var t = 0; t < 4; t++) w.push(b[(r + D[k][0] * t) * C + c + D[k][1] * t]);
+      s += scoreWindow(w, 2) - scoreWindow(w, 1);
+    }
+    return s;
+  }
+  var ORDER = [3, 2, 4, 1, 5, 0, 6];
+  function search(b, depth, alpha, beta, ai) {
+    var w = winner(b);
+    if (w) return w.p === 2 ? 100000 + depth : -100000 - depth;
+    if (depth === 0 || b.every(Boolean)) return evalBoard(b);
+    var best = ai ? -Infinity : Infinity;
+    for (var i = 0; i < C; i++) {
+      var c = ORDER[i], r = free(b, c); if (r < 0) continue;
+      b[r * C + c] = ai ? 2 : 1;
+      var v = search(b, depth - 1, alpha, beta, !ai);
+      b[r * C + c] = 0;
+      if (ai) { if (v > best) best = v; alpha = Math.max(alpha, v); } else { if (v < best) best = v; beta = Math.min(beta, v); }
+      if (alpha >= beta) break;
+    }
+    return best;
+  }
+  function aiMove() {
+    var b = g.slice(), best = -Infinity, choice = 3, depth = 5;
+    ORDER.forEach(function (c) {
+      var r = free(b, c); if (r < 0) return;
+      b[r * C + c] = 2;
+      var v = search(b, depth, -Infinity, Infinity, false) + Math.random() * 1.5;
+      b[r * C + c] = 0;
+      if (v > best) { best = v; choice = c; }
+    });
+    return choice;
+  }
+  function finish(result, cells) {
+    busy = true; render(cells);
+    var k = 'pz_streak_connect4', s = result === 'win' ? P.store.get(k, 0) + 1 : 0; P.store.set(k, s);
+    var eyebrow = result === 'win' ? 'Победа' : result === 'lose' ? 'Компьютер победил' : 'Ничья';
+    turnEl.textContent = eyebrow;
+    shell.end({ score: s, delay: 900, eyebrow: eyebrow, tone: result === 'win' ? 'good' : null, record: result === 'win', haptic: result === 'win' ? 'win' : 'crash',
+      stats: 'ходов: ' + moves + (result === 'win' ? '' : ' · серия обнулилась'),
+      phrase: result === 'win' ? 'В «Четыре в ряд» у меня ' + s + ' ' + P.plural(s, U) + ' подряд над компьютером.' : 'Сыграем в «Четыре в ряд»? Компьютер не так прост.' });
+  }
+  function drop(c, p) { var r = free(g, c); if (r < 0) return false; g[r * C + c] = p; lastDrop = r * C + c; return true; }
+  function play(c) {
+    if (!shell.running || busy) return;
+    if (!drop(c, 1)) return;
+    moves++; P.haptic('tap'); render();
+    var w = winner(g); if (w) return finish('win', w.cells);
+    if (g.every(Boolean)) return finish('draw');
+    busy = true; turnEl.textContent = 'Компьютер думает…';
+    setTimeout(function () {
+      if (!shell.running) return;
+      drop(aiMove(), 2); render();
+      var w2 = winner(g); if (w2) return finish('lose', w2.cells);
+      if (g.every(Boolean)) return finish('draw');
+      busy = false; turnEl.textContent = 'Твой ход';
+    }, 300);
+  }
+  function reset() { g = new Array(C * R).fill(0); busy = false; moves = 0; lastDrop = -1; turnEl.textContent = 'Начинаешь ты'; render(); shell.setScore(String(P.store.get('pz_streak_connect4', 0))); shell.setSide('серия'); }
+  P.arrows(function () {});
+  window.addEventListener('keydown', function (e) { var m = /^Digit([1-7])$/.exec(e.code); if (m) play(Number(m[1]) - 1); });
+  function layout() { var r = stage.getBoundingClientRect(); boardEl.style.setProperty('--size', Math.floor(Math.min(r.width - 24, (r.height - 170) * 7 / 6, 480)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); g = new Array(C * R).fill(0); g[38] = 1; g[39] = 2; g[31] = 1; render();
+})();
+</script>
+</body>
+</html>

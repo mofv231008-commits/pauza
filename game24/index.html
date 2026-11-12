@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · 24</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:18px}
+.goal{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac);text-align:center;min-height:1.4em}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;width:min(100%,320px)}
+.card{min-height:110px;border:0;border-radius:20px;background:var(--paper);color:var(--ink);font-family:var(--font-display);font-weight:800;font-size:40px;cursor:pointer;touch-action:manipulation;transition:transform .1s,background-color .15s}
+.card.sel{background:var(--sun);transform:translateY(-4px)}
+.card.gone{visibility:hidden}
+.card.small{font-size:28px}
+.ops{display:flex;gap:10px}
+.ops button{width:60px;height:56px;border:0;border-radius:16px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:800;font-size:26px;cursor:pointer;touch-action:manipulation}
+.ops button.sel{background:var(--mint);color:var(--ink)}
+.tools{display:flex;gap:10px}
+.tools button{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer}
+.stage[data-state="paused"] .cards,.stage[data-state="countdown"] .cards{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="goal" id="goal">Получи 24 из четырёх чисел</p>
+    <div class="cards" id="cards"></div>
+    <div class="ops" id="ops"></div>
+    <div class="tools"><button type="button" id="undo">Назад</button><button type="button" id="skip">Другие числа (−5 с)</button></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['пример', 'примера', 'примеров'], OPS = ['+', '−', '×', '÷'];
+  var cardsEl = document.getElementById('cards'), opsEl = document.getElementById('ops'), goal = document.getElementById('goal');
+  var vals, history, selA = -1, op = null, solved, busy, cardBtns = [], opBtns = [];
+
+  var shell = P.shell({
+    id: 'game24', title: '24', tagline: 'Сложи, вычти, умножь и раздели, чтобы вышло 24.',
+    rulesHtml: '<p>Используй все четыре числа по одному разу и действия + − × ÷, чтобы получить 24. Нажми число, действие и второе число — на месте второго появится результат. За 90 секунд реши как можно больше.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 90, finish, document.getElementById('timebar'));
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = a % b; a = b; b = t; } return a || 1; }
+  function frac(n, d) { if (d < 0) { n = -n; d = -d; } var g = gcd(n, d); return { n: n / g, d: d / g }; }
+  function calc(a, b, o) {
+    if (o === 0) return frac(a.n * b.d + b.n * a.d, a.d * b.d);
+    if (o === 1) return frac(a.n * b.d - b.n * a.d, a.d * b.d);
+    if (o === 2) return frac(a.n * b.n, a.d * b.d);
+    return b.n === 0 ? null : frac(a.n * b.d, a.d * b.n);
+  }
+  function solvable(list) {
+    if (list.length === 1) return list[0].n === 24 && list[0].d === 1;
+    for (var i = 0; i < list.length; i++) for (var j = 0; j < list.length; j++) {
+      if (i === j) continue;
+      var rest = list.filter(function (_, k) { return k !== i && k !== j; });
+      for (var o = 0; o < 4; o++) { var r = calc(list[i], list[j], o); if (r && solvable(rest.concat([r]))) return true; }
+    }
+    return false;
+  }
+  function show(v) { return v.d === 1 ? String(v.n) : v.n + '/' + v.d; }
+  for (var i = 0; i < 4; i++) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'card';
+    (function (k) { b.addEventListener('click', function () { tapCard(k); }); })(i);
+    cardsEl.appendChild(b); cardBtns.push(b);
+  }
+  OPS.forEach(function (s, k) {
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = s; b.setAttribute('aria-label', ['плюс', 'минус', 'умножить', 'разделить'][k]);
+    b.addEventListener('click', function () { if (!shell.running || busy || selA < 0) return; op = op === k ? null : k; render(); });
+    opsEl.appendChild(b); opBtns.push(b);
+  });
+  function render() {
+    vals.forEach(function (v, k) { var e = cardBtns[k]; if (!v) { e.className = 'card gone'; e.textContent = ''; return; } e.textContent = show(v); e.className = 'card' + (k === selA ? ' sel' : '') + (show(v).length > 3 ? ' small' : ''); });
+    opBtns.forEach(function (b, k) { b.classList.toggle('sel', k === op); });
+  }
+  function fresh() {
+    var nums;
+    do { nums = [0, 0, 0, 0].map(function () { return frac(1 + P.rand(9), 1); }); } while (!solvable(nums));
+    vals = nums; history = []; selA = -1; op = null; busy = false;
+    goal.textContent = 'Получи 24 из четырёх чисел';
+    render();
+  }
+  function tapCard(k) {
+    if (!shell.running || busy || !vals[k]) return;
+    if (selA < 0 || op === null) { selA = selA === k ? -1 : k; op = null; P.haptic('tap'); render(); return; }
+    if (k === selA) { selA = -1; op = null; render(); return; }
+    var r = calc(vals[selA], vals[k], op);
+    if (!r) { goal.textContent = 'На ноль делить нельзя'; P.haptic('crash'); return; }
+    history.push(vals.slice());
+    vals[k] = r; vals[selA] = null; selA = -1; op = null; P.haptic('tap');
+    var left = vals.filter(Boolean);
+    render();
+    if (left.length === 1) {
+      if (left[0].n === 24 && left[0].d === 1) {
+        solved++; shell.setScore(String(solved)); busy = true; P.haptic('win'); goal.textContent = 'Есть 24!';
+        setTimeout(function () { if (shell.running) fresh(); }, 650);
+      } else {
+        busy = true; P.haptic('crash'); goal.textContent = 'Вышло ' + show(left[0]) + ', а не 24. Ещё раз';
+        setTimeout(function () { if (!shell.running) return; vals = history[0]; history = []; busy = false; render(); }, 900);
+      }
+    }
+  }
+  document.getElementById('undo').addEventListener('click', function () { if (shell.running && !busy && history.length) { vals = history.pop(); selA = -1; op = null; render(); } });
+  document.getElementById('skip').addEventListener('click', function () { if (shell.running && !busy) { timer.add(-5); if (shell.running) fresh(); } });
+  function reset() { solved = 0; shell.setScore('0'); timer.reset(); fresh(); }
+  function finish() { shell.end({ score: solved, delay: 300, stats: 'решено примеров: ' + solved, phrase: 'В игре «24» у меня ' + solved + ' ' + P.plural(solved, U) + ' за полторы минуты.' }); }
+  vals = [frac(3, 1), frac(8, 1), frac(1, 1), frac(1, 1)]; history = []; render(); timer.show();
+})();
+</script>
+</body>
+</html>

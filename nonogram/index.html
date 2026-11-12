@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Японский рисунок</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:12px}
+.lvl{margin:0;font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--lilac)}
+.wrap{--cell:40px;--n:5;--clue:64px;display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto}
+.colclues{display:grid;grid-template-columns:repeat(var(--n),var(--cell));gap:2px;align-items:end;height:var(--clue);padding-bottom:4px}
+.colclues div,.rowclues div{font-family:var(--font-display);font-weight:600;font-size:calc(var(--cell) * .3);color:var(--lilac);line-height:1.15;text-align:center}
+.rowclues{display:grid;grid-template-rows:repeat(var(--n),var(--cell));gap:2px;width:var(--clue)}
+.rowclues div{display:flex;align-items:center;justify-content:flex-end;gap:5px;padding-right:6px}
+.ok{color:var(--mint) !important}
+.grid{display:grid;grid-template-columns:repeat(var(--n),var(--cell));grid-auto-rows:var(--cell);gap:2px;touch-action:none}
+.grid i{display:block;border-radius:5px;background:var(--road);position:relative}
+.grid i.f{background:var(--mint)}
+.grid i.x::after{content:"×";position:absolute;inset:0;display:grid;place-items:center;color:rgba(185,168,240,.6);font-size:calc(var(--cell) * .55);font-style:normal}
+.mode{display:flex;gap:8px}
+.mode button{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer}
+.mode button.on{background:var(--mint);color:var(--ink);border-color:var(--mint)}
+.stage[data-state="paused"] .wrap,.stage[data-state="countdown"] .wrap{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="lvl" id="lvl">Рисунок 1</p>
+    <div class="wrap" id="wrap">
+      <span></span><div class="colclues" id="cc"></div>
+      <div class="rowclues" id="rc"></div><div class="grid" id="grid"></div>
+    </div>
+    <div class="mode"><button type="button" id="mFill" class="on">Закрашивать</button><button type="button" id="mX">Ставить ×</button></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['рисунок', 'рисунка', 'рисунков'];
+  var stage = document.getElementById('stage'), wrap = document.getElementById('wrap'), gridEl = document.getElementById('grid'), cc = document.getElementById('cc'), rc = document.getElementById('rc'), lvl = document.getElementById('lvl');
+  var mFill = document.getElementById('mFill'), mX = document.getElementById('mX');
+  var n, pic, marks, els, rowClues, colClues, level, solved, mode = 'f', paintVal = null, busy;
+
+  var shell = P.shell({
+    id: 'nonogram', title: 'Японский рисунок', tagline: 'Восстанови картинку по числам.',
+    rulesHtml: '<p>Числа слева и сверху — длины закрашенных отрезков в строке и столбце, по порядку. Между отрезками есть хотя бы одна пустая клетка. Закрашивай клетки, крестиками отмечай точно пустые. Можно вести пальцем. За 2 минуты разгадай как можно больше рисунков.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 120, finish, document.getElementById('timebar'));
+  function clues(arr) { var out = [], run = 0; arr.forEach(function (v) { if (v) run++; else if (run) { out.push(run); run = 0; } }); if (run) out.push(run); return out.length ? out : [0]; }
+  function row(src, r) { return src.slice(r * n, r * n + n); }
+  function col(src, c) { var a = []; for (var r = 0; r < n; r++) a.push(src[r * n + c]); return a; }
+  function same(a, b) { return a.length === b.length && a.every(function (v, i) { return v === b[i]; }); }
+  function setLevel(l) {
+    level = l; n = l < 2 ? 5 : l < 4 ? 6 : 7;
+    do { pic = []; for (var i = 0; i < n * n; i++) pic.push(Math.random() < 0.58 ? 1 : 0); }
+    while (pic.filter(Boolean).length < n * n * 0.45);
+    marks = new Array(n * n).fill(0); busy = false;
+    rowClues = []; colClues = [];
+    for (var r = 0; r < n; r++) rowClues.push(clues(row(pic, r)));
+    for (var c = 0; c < n; c++) colClues.push(clues(col(pic, c)));
+    wrap.style.setProperty('--n', n);
+    rc.innerHTML = rowClues.map(function (cl) { return '<div>' + cl.map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div>'; }).join('');
+    cc.innerHTML = colClues.map(function (cl) { return '<div>' + cl.join('<br>') + '</div>'; }).join('');
+    gridEl.innerHTML = ''; els = [];
+    for (i = 0; i < n * n; i++) { var e = document.createElement('i'); gridEl.appendChild(e); els.push(e); }
+    lvl.textContent = 'Рисунок ' + (l + 1) + ' · ' + n + '×' + n;
+    layout(); render();
+  }
+  function render() {
+    marks.forEach(function (m, i) { els[i].className = m === 1 ? 'f' : m === 2 ? 'x' : ''; });
+    var filled = marks.map(function (m) { return m === 1 ? 1 : 0; });
+    rc.children.length && rowClues.forEach(function (cl, r) { rc.children[r].classList.toggle('ok', same(clues(row(filled, r)), cl)); });
+    colClues.forEach(function (cl, c) { cc.children[c].classList.toggle('ok', same(clues(col(filled, c)), cl)); });
+  }
+  function solvedNow() {
+    var f = marks.map(function (m) { return m === 1 ? 1 : 0; });
+    for (var r = 0; r < n; r++) if (!same(clues(row(f, r)), rowClues[r])) return false;
+    for (var c = 0; c < n; c++) if (!same(clues(col(f, c)), colClues[c])) return false;
+    return true;
+  }
+  function cellAt(e) { var r = gridEl.getBoundingClientRect(), s = (r.width + 2) / n; var c = Math.floor((e.clientX - r.left) / s), rr = Math.floor((e.clientY - r.top) / s); return c >= 0 && rr >= 0 && c < n && rr < n ? rr * n + c : -1; }
+  function paint(k) {
+    if (k < 0 || busy) return;
+    var want = mode === 'f' ? 1 : 2;
+    if (paintVal === null) paintVal = marks[k] === want ? 0 : want;
+    if (marks[k] === paintVal) return;
+    marks[k] = paintVal; render(); P.haptic('tap');
+    if (solvedNow()) {
+      busy = true; solved++; shell.setScore(String(solved)); timer.add(10); P.haptic('win');
+      lvl.textContent = 'Готово! +10 секунд';
+      marks = marks.map(function (m) { return m === 1 ? 1 : 0; }); render();
+      setTimeout(function () { if (shell.running) setLevel(level + 1); }, 900);
+    }
+  }
+  gridEl.addEventListener('pointerdown', function (e) { if (!shell.running) return; e.preventDefault(); gridEl.setPointerCapture(e.pointerId); paintVal = null; paint(cellAt(e)); });
+  gridEl.addEventListener('pointermove', function (e) { if (paintVal !== null && shell.running) paint(cellAt(e)); });
+  ['pointerup', 'pointercancel'].forEach(function (t) { gridEl.addEventListener(t, function () { paintVal = null; }); });
+  function setMode(m) { mode = m; mFill.classList.toggle('on', m === 'f'); mX.classList.toggle('on', m === 'x'); }
+  mFill.addEventListener('click', function () { setMode('f'); }); mX.addEventListener('click', function () { setMode('x'); });
+  window.addEventListener('keydown', function (e) { if (e.code === 'KeyX') setMode(mode === 'f' ? 'x' : 'f'); });
+  function reset() { solved = 0; shell.setScore('0'); timer.reset(); setMode('f'); setLevel(0); }
+  function finish() { shell.end({ score: solved, delay: 300, stats: 'последний размер: ' + n + '×' + n, phrase: 'В «Японском рисунке» у меня ' + solved + ' ' + P.plural(solved, U) + ' за 2 минуты.' }); }
+  function layout() {
+    if (!n) return;
+    var r = stage.getBoundingClientRect(), clue = Math.ceil(n / 2) * 0.55 + 0.6;
+    var cell = Math.floor(Math.min((r.width - 32) / (n + clue), (r.height - 280) / (n + clue), 56));
+    wrap.style.setProperty('--cell', cell + 'px'); wrap.style.setProperty('--clue', Math.round(cell * clue) + 'px');
+  }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  setLevel(0); timer.show();
+})();
+</script>
+</body>
+</html>

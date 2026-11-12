@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Реверси</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:14px}
+.turn{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac);min-height:1.4em;text-align:center}
+.turn b{color:var(--mint)}.turn em{font-style:normal;color:var(--coral)}
+.board{--size:340px;display:grid;grid-template-columns:repeat(8,1fr);width:var(--size);height:var(--size);background:#1FB97F;border-radius:14px;padding:4px;gap:2px;flex:none}
+.c{border:0;padding:0;background:#18A06D;border-radius:4px;position:relative;cursor:pointer;touch-action:manipulation}
+.c::after{content:"";position:absolute;inset:12%;border-radius:50%;transition:background-color .2s}
+.c.x::after{background:var(--ink)}
+.c.o::after{background:var(--paper)}
+.c.can::after{inset:38%;background:rgba(18,6,48,.35)}
+.c.last{box-shadow:inset 0 0 0 2px var(--sun)}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="turn" id="turn"></p>
+    <div class="board" id="board"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 8, U = ['победа', 'победы', 'побед'];
+  var W8 = [100, -20, 10, 5, 5, 10, -20, 100, -20, -50, -2, -2, -2, -2, -50, -20, 10, -2, 1, 1, 1, 1, -2, 10, 5, -2, 1, 0, 0, 1, -2, 5, 5, -2, 1, 0, 0, 1, -2, 5, 10, -2, 1, 1, 1, 1, -2, 10, -20, -50, -2, -2, -2, -2, -50, -20, 100, -20, 10, 5, 5, 10, -20, 100];
+  var stage = document.getElementById('stage'), boardEl = document.getElementById('board'), turnEl = document.getElementById('turn');
+  var g, els = [], busy, last = -1;
+
+  var shell = P.shell({
+    id: 'reversi', title: 'Реверси', tagline: 'Окружай фишки соперника и перекрашивай их.',
+    rulesHtml: '<p>Ты играешь тёмными. Ставь фишку так, чтобы между ней и другой твоей фишкой оказались фишки компьютера — они перевернутся. Точки подсказывают возможные ходы. Нет хода — пропуск. В конце побеждает тот, у кого больше фишек.</p>',
+    countdown: false,
+    unit: function (n) { return P.plural(n, U) + ' подряд'; },
+    onReset: reset,
+    onRun: function () { render(); }
+  });
+  for (var i = 0; i < N * N; i++) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'c';
+    (function (k) { b.addEventListener('click', function () { play(k); }); })(i);
+    boardEl.appendChild(b); els.push(b);
+  }
+  var D = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+  function flips(b, k, p) {
+    if (b[k]) return [];
+    var r = Math.floor(k / N), c = k % N, out = [];
+    D.forEach(function (d) {
+      var rr = r + d[0], cc = c + d[1], run = [];
+      while (rr >= 0 && cc >= 0 && rr < N && cc < N && b[rr * N + cc] === 3 - p) { run.push(rr * N + cc); rr += d[0]; cc += d[1]; }
+      if (run.length && rr >= 0 && cc >= 0 && rr < N && cc < N && b[rr * N + cc] === p) out = out.concat(run);
+    });
+    return out;
+  }
+  function movesFor(b, p) { var m = []; for (var k = 0; k < N * N; k++) if (!b[k] && flips(b, k, p).length) m.push(k); return m; }
+  function apply(b, k, p) { var f = flips(b, k, p); b[k] = p; f.forEach(function (j) { b[j] = p; }); return f.length; }
+  function count(b, p) { return b.filter(function (v) { return v === p; }).length; }
+  function evalB(b) {
+    var s = 0; for (var k = 0; k < N * N; k++) if (b[k] === 2) s += W8[k]; else if (b[k] === 1) s -= W8[k];
+    return s + (movesFor(b, 2).length - movesFor(b, 1).length) * 4;
+  }
+  function search(b, depth, alpha, beta, p) {
+    var ms = movesFor(b, p);
+    if (depth === 0) return evalB(b);
+    if (!ms.length) {
+      if (!movesFor(b, 3 - p).length) { var d = count(b, 2) - count(b, 1); return d > 0 ? 10000 + d : d < 0 ? -10000 + d : 0; }
+      return search(b, depth - 1, alpha, beta, 3 - p);
+    }
+    var best = p === 2 ? -Infinity : Infinity;
+    for (var i = 0; i < ms.length; i++) {
+      var c = b.slice(); apply(c, ms[i], p);
+      var v = search(c, depth - 1, alpha, beta, 3 - p);
+      if (p === 2) { best = Math.max(best, v); alpha = Math.max(alpha, v); } else { best = Math.min(best, v); beta = Math.min(beta, v); }
+      if (alpha >= beta) break;
+    }
+    return best;
+  }
+  function aiMove() {
+    var ms = movesFor(g, 2), best = -Infinity, choice = ms[0];
+    ms.forEach(function (k) { var c = g.slice(); apply(c, k, 2); var v = search(c, 3, -Infinity, Infinity, 1) + Math.random() * 2; if (v > best) { best = v; choice = k; } });
+    return choice;
+  }
+  function render() {
+    var can = !busy && shell.running ? movesFor(g, 1) : [];
+    g.forEach(function (v, i) { els[i].className = 'c' + (v === 1 ? ' x' : v === 2 ? ' o' : '') + (i === last ? ' last' : '') + (!v && can.indexOf(i) !== -1 ? ' can' : ''); });
+    turnEl.innerHTML = 'Ты <b>' + count(g, 1) + '</b> : <em>' + count(g, 2) + '</em> компьютер';
+  }
+  function finish() {
+    busy = true; render();
+    var a = count(g, 1), o = count(g, 2), result = a > o ? 'win' : a < o ? 'lose' : 'draw';
+    var k = 'pz_streak_reversi', s = result === 'win' ? P.store.get(k, 0) + 1 : 0; P.store.set(k, s);
+    var eyebrow = result === 'win' ? 'Победа' : result === 'lose' ? 'Компьютер победил' : 'Ничья';
+    shell.end({ score: s, delay: 900, eyebrow: eyebrow, tone: result === 'win' ? 'good' : null, record: result === 'win', haptic: result === 'win' ? 'win' : 'crash',
+      stats: 'счёт ' + a + ' : ' + o + (result === 'win' ? '' : ' · серия обнулилась'),
+      phrase: result === 'win' ? 'В «Реверси» у меня ' + s + ' ' + P.plural(s, U) + ' подряд над компьютером.' : 'Сыграем в «Реверси»? Компьютер не так прост.' });
+  }
+  function aiTurn() {
+    if (!shell.running) return;
+    if (!movesFor(g, 2).length) {
+      if (!movesFor(g, 1).length) return finish();
+      busy = false; render(); turnEl.innerHTML += '<br>У компьютера нет хода'; return;
+    }
+    var m = aiMove(); apply(g, m, 2); last = m; P.haptic('tap');
+    if (!movesFor(g, 1).length) {
+      if (!movesFor(g, 2).length) return finish();
+      render(); turnEl.innerHTML += '<br>У тебя нет хода, пропуск'; setTimeout(aiTurn, 900); return;
+    }
+    busy = false; render();
+  }
+  function play(k) {
+    if (!shell.running || busy) return;
+    if (!flips(g, k, 1).length) { P.haptic('crash'); return; }
+    apply(g, k, 1); last = k; P.haptic('coin');
+    busy = true; render();
+    setTimeout(aiTurn, 400);
+  }
+  function reset() { g = new Array(N * N).fill(0); g[27] = 2; g[28] = 1; g[35] = 1; g[36] = 2; busy = false; last = -1; render(); shell.setScore(String(P.store.get('pz_streak_reversi', 0))); shell.setSide('серия'); }
+  function layout() { var r = stage.getBoundingClientRect(); boardEl.style.setProperty('--size', Math.floor(Math.min(r.width - 24, r.height - 180, 480)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); reset();
+})();
+</script>
+</body>
+</html>

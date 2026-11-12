@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Морской бой</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:#140734}
+.play{gap:10px;justify-content:flex-start;padding-top:80px}
+.turn{margin:0;font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--lilac);min-height:1.4em;text-align:center}
+.turn.me{color:var(--mint)}.turn.ai{color:var(--coral)}
+.sea{--size:320px;display:grid;grid-template-columns:repeat(10,1fr);gap:2px;width:var(--size);height:var(--size);flex:none;background:#140734}
+.sea i,.sea button{display:block;border:0;padding:0;border-radius:3px;background:#1F3E9E;position:relative}
+.sea button{cursor:pointer;touch-action:manipulation}
+.sea .ship{background:#B9A8F0}
+.sea .miss::after{content:"";position:absolute;inset:38%;border-radius:50%;background:rgba(244,241,255,.55)}
+.sea .hit{background:var(--coral)}
+.sea .sunk{background:#7A2A1C}
+.sea .hit::after,.sea .sunk::after{content:"";position:absolute;inset:25%;background:linear-gradient(45deg,transparent 42%,#120630 42% 58%,transparent 58%),linear-gradient(-45deg,transparent 42%,#120630 42% 58%,transparent 58%)}
+.mine{--size:150px}
+.lbl{margin:0;font-size:12px;color:var(--lilac);text-transform:uppercase;letter-spacing:.12em}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="lbl">Поле компьютера</p>
+    <div class="sea" id="enemy"></div>
+    <p class="turn" id="turn">Твой выстрел</p>
+    <p class="lbl">Твой флот</p>
+    <div class="sea mine" id="mine"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 10, FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1], U = ['победа', 'победы', 'побед'];
+  var stage = document.getElementById('stage'), enemyEl = document.getElementById('enemy'), mineEl = document.getElementById('mine'), turnEl = document.getElementById('turn');
+  var A, B, ee = [], me = [], busy, myShots, aiTargets;
+
+  var shell = P.shell({
+    id: 'battleship', title: 'Морской бой', tagline: 'Потопи флот компьютера раньше, чем он твой.',
+    rulesHtml: '<p>Стреляй по полю компьютера сверху. Попал — стреляешь ещё раз. Корабли не касаются друг друга, поэтому вокруг потопленного клетки отмечаются сами. Твой флот расставлен внизу. Рекорд — серия побед подряд.</p>',
+    countdown: false,
+    unit: function (n) { return P.plural(n, U) + ' подряд'; },
+    onReset: reset
+  });
+  for (var i = 0; i < N * N; i++) {
+    var b = document.createElement('button'); b.type = 'button';
+    (function (k) { b.addEventListener('click', function () { fire(k); }); })(i);
+    enemyEl.appendChild(b); ee.push(b);
+    var m = document.createElement('i'); mineEl.appendChild(m); me.push(m);
+  }
+  function around(k) { var r = Math.floor(k / N), c = k % N, out = []; for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) { var rr = r + dr, cc = c + dc; if ((dr || dc) && rr >= 0 && cc >= 0 && rr < N && cc < N) out.push(rr * N + cc); } return out; }
+  function placeFleet() {
+    for (var attempt = 0; attempt < 200; attempt++) {
+      var grid = new Array(N * N).fill(-1), ships = [], ok = true;
+      for (var s = 0; s < FLEET.length && ok; s++) {
+        var len = FLEET[s], placed = false;
+        for (var t = 0; t < 300 && !placed; t++) {
+          var horiz = Math.random() < 0.5, r = P.rand(horiz ? N : N - len + 1), c = P.rand(horiz ? N - len + 1 : N), cells = [];
+          for (var k = 0; k < len; k++) cells.push((r + (horiz ? 0 : k)) * N + c + (horiz ? k : 0));
+          if (cells.some(function (x) { return grid[x] !== -1 || around(x).some(function (y) { return grid[y] !== -1; }); })) continue;
+          cells.forEach(function (x) { grid[x] = ships.length; }); ships.push({ cells: cells, hits: 0 }); placed = true;
+        }
+        if (!placed) ok = false;
+      }
+      if (ok) return { grid: grid, ships: ships, shots: new Array(N * N).fill(0) };
+    }
+  }
+  function shoot(side, k) {
+    if (side.shots[k]) return null;
+    var s = side.grid[k];
+    if (s < 0) { side.shots[k] = 1; return 'miss'; }
+    side.shots[k] = 2; side.ships[s].hits++;
+    if (side.ships[s].hits === side.ships[s].cells.length) {
+      side.ships[s].cells.forEach(function (x) { side.shots[x] = 3; around(x).forEach(function (y) { if (!side.shots[y]) side.shots[y] = 1; }); });
+      return side.ships.every(function (sh) { return sh.hits === sh.cells.length; }) ? 'all' : 'sunk';
+    }
+    return 'hit';
+  }
+  function cls(side, k, showShips) {
+    var s = side.shots[k];
+    if (s === 1) return 'miss'; if (s === 2) return 'hit'; if (s === 3) return 'sunk';
+    return showShips && side.grid[k] >= 0 ? 'ship' : '';
+  }
+  function render() {
+    for (var k = 0; k < N * N; k++) {
+      ee[k].className = cls(B, k, false); ee[k].disabled = !!B.shots[k];
+      ee[k].setAttribute('aria-label', 'АБВГДЕЖЗИК'[Math.floor(k / N)] + (k % N + 1));
+      me[k].className = cls(A, k, true);
+    }
+    var left = B.ships.filter(function (s) { return s.hits < s.cells.length; }).length;
+    shell.setSide('осталось ' + left);
+  }
+  function say(t, who) { turnEl.textContent = t; turnEl.className = 'turn' + (who ? ' ' + who : ''); }
+  function finish(won) {
+    busy = true; render();
+    if (!won) for (var k = 0; k < N * N; k++) if (B.grid[k] >= 0 && !B.shots[k]) ee[k].className = 'ship';
+    var key = 'pz_streak_battleship', s = won ? P.store.get(key, 0) + 1 : 0; P.store.set(key, s);
+    shell.end({ score: s, delay: 1000, eyebrow: won ? 'Победа' : 'Флот потоплен', tone: won ? 'good' : null, record: won, haptic: won ? 'win' : 'crash',
+      stats: 'выстрелов: ' + myShots + (won ? '' : ' · серия обнулилась'),
+      phrase: won ? 'В «Морском бое» у меня ' + s + ' ' + P.plural(s, U) + ' подряд над компьютером.' : 'Сыграем в «Морской бой»? Компьютер стреляет метко.' });
+  }
+  function fire(k) {
+    if (!shell.running || busy || B.shots[k]) return;
+    myShots++;
+    var r = shoot(B, k);
+    render();
+    if (r === 'all') return finish(true);
+    if (r === 'hit' || r === 'sunk') { P.haptic(r === 'sunk' ? 'win' : 'coin'); say(r === 'sunk' ? 'Потоплен! Стреляй ещё' : 'Попадание! Стреляй ещё', 'me'); return; }
+    P.haptic('tap'); busy = true; say('Мимо. Стреляет компьютер…', 'ai');
+    setTimeout(aiTurn, 650);
+  }
+  function aiPick() {
+    var hits = []; for (var k = 0; k < N * N; k++) if (A.shots[k] === 2) hits.push(k);
+    var cand = [];
+    if (hits.length) {
+      hits.forEach(function (h) {
+        var r = Math.floor(h / N), c = h % N;
+        var lineH = hits.some(function (x) { return x !== h && Math.floor(x / N) === r && Math.abs(x % N - c) === 1; });
+        var lineV = hits.some(function (x) { return x !== h && x % N === c && Math.abs(Math.floor(x / N) - r) === 1; });
+        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(function (d) {
+          if ((lineH && d[0]) || (lineV && d[1])) return;
+          var rr = r + d[0], cc = c + d[1];
+          if (rr >= 0 && cc >= 0 && rr < N && cc < N && !A.shots[rr * N + cc]) cand.push(rr * N + cc);
+        });
+      });
+    }
+    if (!cand.length) { for (k = 0; k < N * N; k++) if (!A.shots[k] && (Math.floor(k / N) + k % N) % 2 === aiTargets) cand.push(k); }
+    if (!cand.length) { for (k = 0; k < N * N; k++) if (!A.shots[k]) cand.push(k); }
+    return P.pick(cand);
+  }
+  function aiTurn() {
+    if (!shell.running) return;
+    var r = shoot(A, aiPick());
+    render();
+    if (r === 'all') return finish(false);
+    if (r === 'hit' || r === 'sunk') { P.haptic('crash'); say(r === 'sunk' ? 'Компьютер потопил твой корабль…' : 'Компьютер попал и стреляет снова…', 'ai'); setTimeout(aiTurn, 650); return; }
+    busy = false; say('Компьютер промахнулся. Твой выстрел', 'me');
+  }
+  function reset() { A = placeFleet(); B = placeFleet(); busy = false; myShots = 0; aiTargets = P.rand(2); render(); say('Твой выстрел', 'me'); shell.setScore(String(P.store.get('pz_streak_battleship', 0))); }
+  function layout() {
+    var r = stage.getBoundingClientRect(), big = Math.floor(Math.min(r.width - 32, (r.height - 200) * 0.66, 420));
+    enemyEl.style.setProperty('--size', big + 'px'); mineEl.style.setProperty('--size', Math.floor(big * 0.48) + 'px');
+  }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); reset();
+})();
+</script>
+</body>
+</html>

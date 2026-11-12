@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Пять в ряд</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:14px}
+.turn{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac);min-height:1.4em}
+.board{--size:340px;display:grid;grid-template-columns:repeat(11,1fr);width:var(--size);height:var(--size);background:#2E167A;border-radius:12px;padding:4px;gap:2px;flex:none}
+.c{border:0;padding:0;border-radius:6px;background:#3B1E8C;cursor:pointer;touch-action:manipulation;position:relative}
+.c.x::after,.c.o::after{content:"";position:absolute;inset:16%;border-radius:50%}
+.c.x::after{background:var(--mint)}
+.c.o::after{background:var(--coral)}
+.c.last{box-shadow:inset 0 0 0 2px var(--sun)}
+.c.win{background:#5A3FD0}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="turn" id="turn">Твой ход</p>
+    <div class="board" id="board"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 11, U = ['победа', 'победы', 'побед'];
+  var stage = document.getElementById('stage'), boardEl = document.getElementById('board'), turnEl = document.getElementById('turn');
+  var g, els = [], busy, last = -1, moves;
+
+  var shell = P.shell({
+    id: 'gomoku', title: 'Пять в ряд', tagline: 'Крестики-нолики до пяти против компьютера.',
+    rulesHtml: '<p>Ставь свои зелёные фишки по очереди с компьютером. Кто первым соберёт пять подряд по горизонтали, вертикали или диагонали, тот победил. Рекорд — самая длинная серия побед подряд.</p>',
+    startLabel: 'Играть', countdown: false,
+    unit: function (n) { return P.plural(n, U) + ' подряд'; },
+    onReset: reset
+  });
+  for (var i = 0; i < N * N; i++) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'c';
+    (function (k) { b.addEventListener('click', function () { play(k); }); })(i);
+    boardEl.appendChild(b); els.push(b);
+  }
+  function render(win) {
+    g.forEach(function (v, i) {
+      els[i].className = 'c' + (v === 1 ? ' x' : v === 2 ? ' o' : '') + (i === last ? ' last' : '') + (win && win.indexOf(i) !== -1 ? ' win' : '');
+      els[i].setAttribute('aria-label', 'Клетка ' + (Math.floor(i / N) + 1) + '-' + (i % N + 1) + (v === 1 ? ', твоя' : v === 2 ? ', компьютера' : ''));
+    });
+  }
+  var DIRS = [[0, 1], [1, 0], [1, 1], [1, -1]];
+  function line(k, p, d) {
+    var r = Math.floor(k / N), c = k % N, cells = [k], open = 0;
+    for (var s = -1; s <= 1; s += 2) {
+      var rr = r + d[0] * s, cc = c + d[1] * s;
+      while (rr >= 0 && cc >= 0 && rr < N && cc < N && g[rr * N + cc] === p) { cells.push(rr * N + cc); rr += d[0] * s; cc += d[1] * s; }
+      if (rr >= 0 && cc >= 0 && rr < N && cc < N && g[rr * N + cc] === 0) open++;
+    }
+    return { cells: cells, open: open };
+  }
+  function winLine(k, p) { for (var i = 0; i < 4; i++) { var l = line(k, p, DIRS[i]); if (l.cells.length >= 5) return l.cells; } return null; }
+  function value(k, p) {
+    var total = 0;
+    g[k] = p;
+    DIRS.forEach(function (d) {
+      var l = line(k, p, d), n = l.cells.length, o = l.open;
+      if (n >= 5) total += 100000;
+      else if (n === 4) total += o === 2 ? 12000 : o === 1 ? 1500 : 0;
+      else if (n === 3) total += o === 2 ? 1200 : o === 1 ? 150 : 0;
+      else if (n === 2) total += o === 2 ? 120 : o === 1 ? 15 : 0;
+      else total += o;
+    });
+    g[k] = 0;
+    return total;
+  }
+  function near(k) { var r = Math.floor(k / N), c = k % N; for (var dr = -2; dr <= 2; dr++) for (var dc = -2; dc <= 2; dc++) { var rr = r + dr, cc = c + dc; if (rr >= 0 && cc >= 0 && rr < N && cc < N && g[rr * N + cc]) return true; } return false; }
+  function aiMove() {
+    var best = -1, bv = -1;
+    for (var k = 0; k < N * N; k++) {
+      if (g[k] || !near(k)) continue;
+      var v = value(k, 2) * 1.08 + value(k, 1) + Math.random() * 6;
+      if (v > bv) { bv = v; best = k; }
+    }
+    if (best < 0) best = Math.floor(N * N / 2);
+    return best;
+  }
+  function finish(result, win) {
+    busy = true; render(win);
+    var k = 'pz_streak_gomoku', s = result === 'win' ? P.store.get(k, 0) + 1 : 0;
+    P.store.set(k, s);
+    var eyebrow = result === 'win' ? 'Победа' : result === 'lose' ? 'Компьютер победил' : 'Ничья';
+    turnEl.textContent = eyebrow;
+    shell.end({ score: s, delay: 900, eyebrow: eyebrow, tone: result === 'win' ? 'good' : null, record: result === 'win', haptic: result === 'win' ? 'win' : 'crash',
+      stats: 'ходов: ' + moves + (result === 'win' ? '' : ' · серия обнулилась'),
+      phrase: result === 'win' ? 'В «Пять в ряд» у меня ' + s + ' ' + P.plural(s, U) + ' подряд над компьютером.' : 'Сыграем в «Пять в ряд»? Компьютер не так прост.' });
+  }
+  function play(k) {
+    if (!shell.running || busy || g[k]) return;
+    g[k] = 1; last = k; moves++; P.haptic('tap'); render();
+    var w = winLine(k, 1); if (w) return finish('win', w);
+    if (g.every(Boolean)) return finish('draw');
+    busy = true; turnEl.textContent = 'Компьютер думает…';
+    setTimeout(function () {
+      if (!shell.running) return;
+      var m = aiMove(); g[m] = 2; last = m; render();
+      var w2 = winLine(m, 2); if (w2) return finish('lose', w2);
+      if (g.every(Boolean)) return finish('draw');
+      busy = false; turnEl.textContent = 'Твой ход';
+    }, 350);
+  }
+  function reset() { g = new Array(N * N).fill(0); busy = false; last = -1; moves = 0; turnEl.textContent = 'Начинаешь ты'; render(); shell.setScore(String(P.store.get('pz_streak_gomoku', 0))); shell.setSide('серия'); }
+  function layout() { var r = stage.getBoundingClientRect(); boardEl.style.setProperty('--size', Math.floor(Math.min(r.width - 24, r.height - 170, 480)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); g = new Array(N * N).fill(0); g[60] = 1; g[61] = 2; g[49] = 1; render();
+})();
+</script>
+</body>
+</html>

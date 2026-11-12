@@ -649,6 +649,156 @@
    ],
    "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#140734\"/>\n<g fill=\"#22105A\"><rect x=\"34\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"54\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"110\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"34\" y=\"24\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"90\" y=\"24\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"110\" y=\"24\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"54\" y=\"44\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"74\" y=\"44\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"110\" y=\"44\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"34\" y=\"64\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"54\" y=\"64\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"74\" y=\"64\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"90\" y=\"64\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"34\" y=\"84\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"74\" y=\"84\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"110\" y=\"84\" width=\"16\" height=\"16\" rx=\"4\"/></g>\n<g fill=\"#FFD84D\"><rect x=\"74\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"90\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"54\" y=\"24\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"74\" y=\"24\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"34\" y=\"44\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"90\" y=\"44\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"110\" y=\"64\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"54\" y=\"84\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"90\" y=\"84\" width=\"16\" height=\"16\" rx=\"4\"/></g>\n</svg>",
    "new": true
+  },
+  {
+   "id": "gomoku",
+   "title": "Пять в ряд",
+   "into": "«Пять в ряд»",
+   "about": "Собери пять раньше компьютера",
+   "section": "board",
+   "icon": "\\u{274C}",
+   "unit": [
+    "победа",
+    "победы",
+    "побед"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/><rect x=\"38.0\" y=\"8.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"50.5\" y=\"8.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"63.0\" y=\"8.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"75.5\" y=\"8.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"88.0\" y=\"8.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"100.5\" y=\"8.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"113.0\" y=\"8.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"38.0\" y=\"20.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"50.5\" y=\"20.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"63.0\" y=\"20.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"75.5\" y=\"20.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"88.0\" y=\"20.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"100.5\" y=\"20.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"113.0\" y=\"20.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"38.0\" y=\"33.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"50.5\" y=\"33.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"63.0\" y=\"33.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"75.5\" y=\"33.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"88.0\" y=\"33.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"100.5\" y=\"33.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"113.0\" y=\"33.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"38.0\" y=\"45.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"50.5\" y=\"45.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"63.0\" y=\"45.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"75.5\" y=\"45.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"88.0\" y=\"45.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"100.5\" y=\"45.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"113.0\" y=\"45.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"38.0\" y=\"58.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"50.5\" y=\"58.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"63.0\" y=\"58.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"75.5\" y=\"58.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"88.0\" y=\"58.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"100.5\" y=\"58.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"113.0\" y=\"58.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"38.0\" y=\"70.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"50.5\" y=\"70.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"63.0\" y=\"70.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"75.5\" y=\"70.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"88.0\" y=\"70.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"100.5\" y=\"70.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"113.0\" y=\"70.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"38.0\" y=\"83.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"50.5\" y=\"83.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"63.0\" y=\"83.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"75.5\" y=\"83.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"88.0\" y=\"83.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"100.5\" y=\"83.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/><rect x=\"113.0\" y=\"83.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#3B1E8C\"/>\n<g fill=\"#3DF5B0\"><circle cx=\"55.5\" cy=\"25.5\" r=\"4\"/><circle cx=\"68\" cy=\"38\" r=\"4\"/><circle cx=\"80.5\" cy=\"50.5\" r=\"4\"/><circle cx=\"93\" cy=\"63\" r=\"4\"/></g>\n<g fill=\"#FF6B4A\"><circle cx=\"68\" cy=\"25.5\" r=\"4\"/><circle cx=\"80.5\" cy=\"38\" r=\"4\"/><circle cx=\"93\" cy=\"38\" r=\"4\"/><circle cx=\"105.5\" cy=\"75.5\" r=\"4\"/></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "connect4",
+   "title": "Четыре в ряд",
+   "into": "«Четыре в ряд»",
+   "about": "Бросай фишки в столбцы",
+   "section": "board",
+   "icon": "\\u{1F534}",
+   "unit": [
+    "победа",
+    "победы",
+    "побед"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/><rect x=\"34\" y=\"8\" width=\"92\" height=\"84\" rx=\"10\" fill=\"#3B1E8C\"/>\n<g fill=\"#140734\"><circle cx=\"47\" cy=\"22\" r=\"5.5\"/><circle cx=\"60\" cy=\"22\" r=\"5.5\"/><circle cx=\"73\" cy=\"22\" r=\"5.5\"/><circle cx=\"86\" cy=\"22\" r=\"5.5\"/><circle cx=\"99\" cy=\"22\" r=\"5.5\"/><circle cx=\"112\" cy=\"22\" r=\"5.5\"/><circle cx=\"47\" cy=\"36\" r=\"5.5\"/><circle cx=\"60\" cy=\"36\" r=\"5.5\"/><circle cx=\"73\" cy=\"36\" r=\"5.5\"/><circle cx=\"99\" cy=\"36\" r=\"5.5\"/><circle cx=\"112\" cy=\"36\" r=\"5.5\"/><circle cx=\"47\" cy=\"50\" r=\"5.5\"/><circle cx=\"60\" cy=\"50\" r=\"5.5\"/><circle cx=\"112\" cy=\"50\" r=\"5.5\"/><circle cx=\"47\" cy=\"64\" r=\"5.5\"/><circle cx=\"112\" cy=\"64\" r=\"5.5\"/></g>\n<g fill=\"#3DF5B0\"><circle cx=\"86\" cy=\"36\" r=\"5.5\"/><circle cx=\"73\" cy=\"50\" r=\"5.5\"/><circle cx=\"60\" cy=\"64\" r=\"5.5\"/><circle cx=\"47\" cy=\"78\" r=\"5.5\"/><circle cx=\"99\" cy=\"78\" r=\"5.5\"/></g>\n<g fill=\"#FF6B4A\"><circle cx=\"86\" cy=\"50\" r=\"5.5\"/><circle cx=\"99\" cy=\"50\" r=\"5.5\"/><circle cx=\"73\" cy=\"64\" r=\"5.5\"/><circle cx=\"86\" cy=\"64\" r=\"5.5\"/><circle cx=\"99\" cy=\"64\" r=\"5.5\"/><circle cx=\"60\" cy=\"78\" r=\"5.5\"/><circle cx=\"73\" cy=\"78\" r=\"5.5\"/><circle cx=\"86\" cy=\"78\" r=\"5.5\"/><circle cx=\"112\" cy=\"78\" r=\"5.5\"/></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "reversi",
+   "title": "Реверси",
+   "into": "«Реверси»",
+   "about": "Окружай и переворачивай фишки",
+   "section": "board",
+   "icon": "\\u{26AB}",
+   "unit": [
+    "победа",
+    "победы",
+    "побед"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#1FB97F\"/><rect x=\"42.0\" y=\"4.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"57.2\" y=\"4.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"72.4\" y=\"4.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"87.6\" y=\"4.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"102.8\" y=\"4.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"118.0\" y=\"4.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"42.0\" y=\"19.2\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"57.2\" y=\"19.2\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"72.4\" y=\"19.2\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"87.6\" y=\"19.2\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"102.8\" y=\"19.2\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"118.0\" y=\"19.2\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"42.0\" y=\"34.4\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"57.2\" y=\"34.4\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"72.4\" y=\"34.4\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"87.6\" y=\"34.4\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"102.8\" y=\"34.4\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"118.0\" y=\"34.4\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"42.0\" y=\"49.599999999999994\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"57.2\" y=\"49.599999999999994\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"72.4\" y=\"49.599999999999994\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"87.6\" y=\"49.599999999999994\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"102.8\" y=\"49.599999999999994\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"118.0\" y=\"49.599999999999994\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"42.0\" y=\"64.8\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"57.2\" y=\"64.8\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"72.4\" y=\"64.8\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"87.6\" y=\"64.8\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"102.8\" y=\"64.8\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"118.0\" y=\"64.8\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"42.0\" y=\"80.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"57.2\" y=\"80.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"72.4\" y=\"80.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"87.6\" y=\"80.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"102.8\" y=\"80.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/><rect x=\"118.0\" y=\"80.0\" width=\"13\" height=\"13\" rx=\"2\" fill=\"#18A06D\"/>\n<g fill=\"#120630\"><circle cx=\"70.6\" cy=\"40.6\" r=\"5\"/><circle cx=\"85.8\" cy=\"55.8\" r=\"5\"/><circle cx=\"85.8\" cy=\"40.6\" r=\"5\"/><circle cx=\"101\" cy=\"40.6\" r=\"5\"/></g>\n<g fill=\"#F4F1FF\"><circle cx=\"70.6\" cy=\"55.8\" r=\"5\"/><circle cx=\"55.4\" cy=\"55.8\" r=\"5\"/><circle cx=\"70.6\" cy=\"71\" r=\"5\"/></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "battleship",
+   "title": "Морской бой",
+   "into": "«Морской бой»",
+   "about": "Потопи флот компьютера",
+   "section": "board",
+   "icon": "\\u{1F6A2}",
+   "unit": [
+    "победа",
+    "победы",
+    "побед"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#140734\"/><rect x=\"36.0\" y=\"6.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"48.5\" y=\"6.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"61.0\" y=\"6.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"73.5\" y=\"6.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"86.0\" y=\"6.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"98.5\" y=\"6.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"111.0\" y=\"6.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"36.0\" y=\"18.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"48.5\" y=\"18.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"61.0\" y=\"18.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"73.5\" y=\"18.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"86.0\" y=\"18.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"98.5\" y=\"18.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"111.0\" y=\"18.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"36.0\" y=\"31.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"48.5\" y=\"31.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"61.0\" y=\"31.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"73.5\" y=\"31.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"86.0\" y=\"31.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"98.5\" y=\"31.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"111.0\" y=\"31.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"36.0\" y=\"43.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"48.5\" y=\"43.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"61.0\" y=\"43.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"73.5\" y=\"43.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"86.0\" y=\"43.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"98.5\" y=\"43.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"111.0\" y=\"43.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"36.0\" y=\"56.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"48.5\" y=\"56.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"61.0\" y=\"56.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"73.5\" y=\"56.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"86.0\" y=\"56.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"98.5\" y=\"56.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"111.0\" y=\"56.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"36.0\" y=\"68.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"48.5\" y=\"68.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"61.0\" y=\"68.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"73.5\" y=\"68.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"86.0\" y=\"68.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"98.5\" y=\"68.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"111.0\" y=\"68.5\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"36.0\" y=\"81.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"48.5\" y=\"81.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"61.0\" y=\"81.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"73.5\" y=\"81.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"86.0\" y=\"81.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"98.5\" y=\"81.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/><rect x=\"111.0\" y=\"81.0\" width=\"10.5\" height=\"10.5\" rx=\"2\" fill=\"#1F3E9E\"/>\n<g fill=\"#B9A8F0\"><rect x=\"48.5\" y=\"18.5\" width=\"35.5\" height=\"10.5\" rx=\"2\"/><rect x=\"98\" y=\"43.5\" width=\"10.5\" height=\"23\" rx=\"2\"/></g>\n<g fill=\"#FF6B4A\"><rect x=\"61\" y=\"18.5\" width=\"10.5\" height=\"10.5\" rx=\"2\"/><rect x=\"48.5\" y=\"68.5\" width=\"10.5\" height=\"10.5\" rx=\"2\"/></g>\n<g fill=\"#F4F1FF\" opacity=\".6\"><circle cx=\"66\" cy=\"49\" r=\"2\"/><circle cx=\"91\" cy=\"74\" r=\"2\"/><circle cx=\"41\" cy=\"37\" r=\"2\"/></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "bulls",
+   "title": "Быки и коровы",
+   "into": "«Быки и коровы»",
+   "about": "Разгадай четырёхзначный код",
+   "section": "board",
+   "icon": "\\u{1F42E}",
+   "unit": [
+    "попытка",
+    "попытки",
+    "попыток"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<g><rect x=\"22\" y=\"14\" width=\"116\" height=\"20\" rx=\"6\" fill=\"#3B1E8C\"/><rect x=\"22\" y=\"40\" width=\"116\" height=\"20\" rx=\"6\" fill=\"#3B1E8C\"/><rect x=\"22\" y=\"66\" width=\"116\" height=\"20\" rx=\"6\" fill=\"#3B1E8C\"/></g>\n<g font-size=\"12\" fill=\"#F4F1FF\"><text x=\"30\" y=\"28\">1 2 3 4</text><text x=\"30\" y=\"54\">5 2 9 1</text><text x=\"30\" y=\"80\">8 2 1 5</text></g>\n<g font-size=\"10\" fill=\"#3DF5B0\"><text x=\"96\" y=\"28\">1Б</text><text x=\"96\" y=\"54\">1Б</text><text x=\"96\" y=\"80\">3Б</text></g>\n<g font-size=\"10\" fill=\"#FFD84D\"><text x=\"116\" y=\"28\">1К</text><text x=\"116\" y=\"54\">1К</text><text x=\"116\" y=\"80\">1К</text></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "nonogram",
+   "title": "Японский рисунок",
+   "into": "«Японский рисунок»",
+   "about": "Картинка по числам",
+   "section": "puzzle",
+   "icon": "\\u{1F5BC}",
+   "unit": [
+    "рисунок",
+    "рисунка",
+    "рисунков"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<g font-size=\"9\" fill=\"#B9A8F0\" text-anchor=\"middle\"><text x=\"70\" y=\"12\">1</text><text x=\"84\" y=\"12\">3</text><text x=\"98\" y=\"12\">5</text><text x=\"112\" y=\"12\">3</text><text x=\"126\" y=\"12\">1</text><text x=\"52\" y=\"27\">1</text><text x=\"52\" y=\"41\">3</text><text x=\"52\" y=\"55\">5</text><text x=\"52\" y=\"69\">3</text><text x=\"52\" y=\"83\">1</text></g>\n<g fill=\"#3B1E8C\"><rect x=\"63\" y=\"18\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"77\" y=\"18\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"105\" y=\"18\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"119\" y=\"18\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"63\" y=\"32\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"119\" y=\"32\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"63\" y=\"60\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"119\" y=\"60\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"63\" y=\"74\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"77\" y=\"74\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"105\" y=\"74\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"119\" y=\"74\" width=\"13\" height=\"13\" rx=\"2\"/></g>\n<g fill=\"#3DF5B0\"><rect x=\"91\" y=\"18\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"77\" y=\"32\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"91\" y=\"32\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"105\" y=\"32\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"63\" y=\"46\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"77\" y=\"46\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"91\" y=\"46\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"105\" y=\"46\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"119\" y=\"46\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"77\" y=\"60\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"91\" y=\"60\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"105\" y=\"60\" width=\"13\" height=\"13\" rx=\"2\"/><rect x=\"91\" y=\"74\" width=\"13\" height=\"13\" rx=\"2\"/></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "game24",
+   "title": "24",
+   "into": "«24»",
+   "about": "Получи 24 из четырёх чисел",
+   "section": "words",
+   "icon": "\\u{1F522}",
+   "unit": [
+    "пример",
+    "примера",
+    "примеров"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<g fill=\"#F4F1FF\"><rect x=\"30\" y=\"10\" width=\"44\" height=\"34\" rx=\"8\"/><rect x=\"86\" y=\"10\" width=\"44\" height=\"34\" rx=\"8\"/><rect x=\"30\" y=\"52\" width=\"44\" height=\"34\" rx=\"8\"/><rect x=\"86\" y=\"52\" width=\"44\" height=\"34\" rx=\"8\"/></g>\n<rect x=\"86\" y=\"10\" width=\"44\" height=\"34\" rx=\"8\" fill=\"#FFD84D\"/>\n<g font-size=\"20\" text-anchor=\"middle\" fill=\"#120630\"><text x=\"52\" y=\"34\">3</text><text x=\"108\" y=\"34\">8</text><text x=\"52\" y=\"76\">4</text><text x=\"108\" y=\"76\">2</text></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "anagram",
+   "title": "Анаграммы",
+   "into": "«Анаграммы»",
+   "about": "Слово из перемешанных букв",
+   "section": "words",
+   "icon": "\\u{1F500}",
+   "unit": [
+    "слово",
+    "слова",
+    "слов"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<g fill=\"#F4F1FF\"><rect x=\"22\" y=\"56\" width=\"20\" height=\"24\" rx=\"5\"/><rect x=\"46\" y=\"56\" width=\"20\" height=\"24\" rx=\"5\"/><rect x=\"70\" y=\"56\" width=\"20\" height=\"24\" rx=\"5\"/><rect x=\"94\" y=\"56\" width=\"20\" height=\"24\" rx=\"5\"/><rect x=\"118\" y=\"56\" width=\"20\" height=\"24\" rx=\"5\"/></g>\n<g font-size=\"14\" text-anchor=\"middle\" fill=\"#120630\"><text x=\"32\" y=\"73\">Л</text><text x=\"56\" y=\"73\">Т</text><text x=\"80\" y=\"73\">О</text><text x=\"104\" y=\"73\">Ь</text><text x=\"128\" y=\"73\">П</text></g>\n<g fill=\"none\" stroke=\"#3DF5B0\" stroke-width=\"2\"><rect x=\"22\" y=\"18\" width=\"20\" height=\"24\" rx=\"5\"/><rect x=\"46\" y=\"18\" width=\"20\" height=\"24\" rx=\"5\"/><rect x=\"70\" y=\"18\" width=\"20\" height=\"24\" rx=\"5\" stroke-dasharray=\"3 3\" stroke=\"#B9A8F0\"/><rect x=\"94\" y=\"18\" width=\"20\" height=\"24\" rx=\"5\" stroke-dasharray=\"3 3\" stroke=\"#B9A8F0\"/><rect x=\"118\" y=\"18\" width=\"20\" height=\"24\" rx=\"5\" stroke-dasharray=\"3 3\" stroke=\"#B9A8F0\"/></g>\n<g font-size=\"14\" text-anchor=\"middle\" fill=\"#F4F1FF\"><text x=\"32\" y=\"35\">П</text><text x=\"56\" y=\"35\">О</text></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "wordsearch",
+   "title": "Филворд",
+   "into": "«Филворд»",
+   "about": "Найди слова в сетке букв",
+   "section": "words",
+   "icon": "\\u{1F50E}",
+   "unit": [
+    "слово",
+    "слова",
+    "слов"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<rect x=\"34\" y=\"34\" width=\"92\" height=\"16\" rx=\"7\" fill=\"#2FD99B\"/><rect x=\"34\" y=\"6\" width=\"16\" height=\"88\" rx=\"7\" fill=\"#FF8AD8\" opacity=\".85\"/>\n<g font-size=\"12\" text-anchor=\"middle\" fill=\"#F4F1FF\"><text x=\"42\" y=\"18\">Д</text><text x=\"65\" y=\"18\">А</text><text x=\"88\" y=\"18\">Т</text><text x=\"111\" y=\"18\">Ж</text><text x=\"42\" y=\"46\">О</text><text x=\"65\" y=\"46\" fill=\"#120630\">К</text><text x=\"88\" y=\"46\" fill=\"#120630\">О</text><text x=\"111\" y=\"46\" fill=\"#120630\">Т</text><text x=\"42\" y=\"74\">М</text><text x=\"65\" y=\"74\">Р</text><text x=\"88\" y=\"74\">Е</text><text x=\"111\" y=\"74\">У</text><text x=\"42\" y=\"90\">Ь</text><text x=\"65\" y=\"90\">Ш</text><text x=\"88\" y=\"90\">Л</text><text x=\"111\" y=\"90\">И</text></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "capitals",
+   "title": "Столицы",
+   "into": "«Столицы»",
+   "about": "Угадай столицу страны",
+   "section": "words",
+   "icon": "\\u{1F30D}",
+   "unit": [
+    "ответ",
+    "ответа",
+    "ответов"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/><circle cx=\"46\" cy=\"50\" r=\"30\" fill=\"#1F3E9E\"/>\n<path d=\"M30 36 q8 -6 14 0 q4 8 -4 12 q-8 2 -10 -12z M52 54 q10 -4 14 4 q-2 10 -10 10 q-6 -4 -4 -14z\" fill=\"#3DF5B0\"/>\n<g fill=\"#3B1E8C\"><rect x=\"88\" y=\"14\" width=\"56\" height=\"16\" rx=\"6\"/><rect x=\"88\" y=\"34\" width=\"56\" height=\"16\" rx=\"6\"/><rect x=\"88\" y=\"54\" width=\"56\" height=\"16\" rx=\"6\"/><rect x=\"88\" y=\"74\" width=\"56\" height=\"16\" rx=\"6\"/></g>\n<rect x=\"88\" y=\"34\" width=\"56\" height=\"16\" rx=\"6\" fill=\"#3DF5B0\"/><g fill=\"#F4F1FF\" opacity=\".7\"><rect x=\"96\" y=\"20\" width=\"30\" height=\"4\" rx=\"2\"/><rect x=\"96\" y=\"60\" width=\"26\" height=\"4\" rx=\"2\"/><rect x=\"96\" y=\"80\" width=\"34\" height=\"4\" rx=\"2\"/></g><rect x=\"96\" y=\"40\" width=\"34\" height=\"4\" rx=\"2\" fill=\"#120630\"/>\n</svg>",
+   "new": true
   }
  ]
 }

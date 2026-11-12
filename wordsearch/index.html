@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Филворд</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:14px}
+.grid{--size:340px;display:grid;grid-template-columns:repeat(8,1fr);gap:3px;width:var(--size);height:var(--size);touch-action:none;user-select:none;-webkit-user-select:none;flex:none}
+.grid i{display:grid;place-items:center;border-radius:8px;background:var(--road);font-family:var(--font-display);font-weight:600;font-style:normal;font-size:calc(var(--size) / 15);text-transform:uppercase;color:var(--paper)}
+.grid i.sel{background:var(--sun);color:var(--ink)}
+.grid i.f0{background:#2FD99B;color:var(--ink)}.grid i.f1{background:#FF8AD8;color:var(--ink)}.grid i.f2{background:#6FD3FF;color:var(--ink)}.grid i.f3{background:#FF9A6B;color:var(--ink)}.grid i.f4{background:#B9A8F0;color:var(--ink)}
+.list{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 12px;max-width:var(--size,340px);margin:0;padding:0;list-style:none}
+.list li{font-family:var(--font-display);font-weight:600;font-size:14px;text-transform:uppercase;color:var(--paper)}
+.list li.done{color:rgba(185,168,240,.45);text-decoration:line-through}
+.stage[data-state="paused"] .grid,.stage[data-state="countdown"] .grid{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <div class="grid" id="grid"></div>
+    <ul class="list" id="list"></ul>
+  </div>
+</div>
+<script src="../shared/nouns.js"></script>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 8, U = ['слово', 'слова', 'слов'];
+  var FILL = 'оооеееаааииннттссррввллккммддппуяыьгзбчйхжшюцщэф';
+  var DIRS = [[0, 1], [1, 0], [1, 1]];
+  var WORDS = window.PauzaNouns.filter(function (w) { return w.length >= 4 && w.length <= 7; });
+  var stage = document.getElementById('stage'), gridEl = document.getElementById('grid'), listEl = document.getElementById('list');
+  var letters, hidden, found, els = [], drag = null, total, boards;
+
+  var shell = P.shell({
+    id: 'wordsearch', title: 'Филворд', tagline: 'Найди спрятанные слова в сетке букв.',
+    rulesHtml: '<p>В сетке спрятаны слова из списка внизу: слева направо, сверху вниз или по диагонали. Проведи пальцем от первой буквы до последней. Нашёл все — новая сетка и ещё 15 секунд. На всё 90 секунд.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 90, finish, document.getElementById('timebar'));
+  for (var i = 0; i < N * N; i++) { var e = document.createElement('i'); gridEl.appendChild(e); els.push(e); }
+  function build() {
+    for (var attempt = 0; attempt < 50; attempt++) {
+      letters = new Array(N * N).fill(''); hidden = [];
+      var pool = P.shuffle(WORDS.slice()), want = 5;
+      for (var w = 0; w < pool.length && hidden.length < want; w++) {
+        var word = pool[w];
+        if (hidden.some(function (h) { return h.word === word; })) continue;
+        for (var t = 0; t < 60; t++) {
+          var d = P.pick(DIRS), r = P.rand(N - d[0] * (word.length - 1)), c = P.rand(N - d[1] * (word.length - 1)), cells = [], ok = true;
+          for (var k = 0; k < word.length; k++) { var idx = (r + d[0] * k) * N + c + d[1] * k; if (letters[idx] && letters[idx] !== word[k]) { ok = false; break; } cells.push(idx); }
+          if (!ok) continue;
+          cells.forEach(function (idx, k2) { letters[idx] = word[k2]; });
+          hidden.push({ word: word, cells: cells }); break;
+        }
+      }
+      if (hidden.length === want) break;
+    }
+    letters = letters.map(function (ch) { return ch || FILL[P.rand(FILL.length)]; });
+    found = [];
+    render();
+  }
+  function render(sel) {
+    els.forEach(function (e, i) {
+      e.textContent = letters[i];
+      var f = -1; found.forEach(function (fi) { if (hidden[fi].cells.indexOf(i) !== -1) f = fi; });
+      e.className = sel && sel.indexOf(i) !== -1 ? 'sel' : f >= 0 ? 'f' + (f % 5) : '';
+    });
+    listEl.innerHTML = hidden.map(function (h, k) { return '<li class="' + (found.indexOf(k) !== -1 ? 'done' : '') + '">' + h.word + '</li>'; }).join('');
+  }
+  function cellAt(ev) { var r = gridEl.getBoundingClientRect(), s = (r.width + 3) / N; return { r: P.clamp(Math.floor((ev.clientY - r.top) / s), 0, N - 1), c: P.clamp(Math.floor((ev.clientX - r.left) / s), 0, N - 1) }; }
+  function lineCells(a, b) {
+    var dr = b.r - a.r, dc = b.c - a.c, len = Math.max(Math.abs(dr), Math.abs(dc));
+    if (len === 0) return [a.r * N + a.c];
+    if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) {
+      if (Math.abs(dr) > Math.abs(dc)) dc = 0; else dr = 0;
+      len = Math.max(Math.abs(dr), Math.abs(dc));
+    }
+    var sr = Math.sign(dr), sc = Math.sign(dc), out = [];
+    for (var k = 0; k <= len; k++) out.push((a.r + sr * k) * N + a.c + sc * k);
+    return out;
+  }
+  gridEl.addEventListener('pointerdown', function (ev) { if (!shell.running) return; ev.preventDefault(); gridEl.setPointerCapture(ev.pointerId); var c = cellAt(ev); drag = { a: c, cells: lineCells(c, c) }; render(drag.cells); });
+  gridEl.addEventListener('pointermove', function (ev) { if (!drag) return; drag.cells = lineCells(drag.a, cellAt(ev)); render(drag.cells); });
+  gridEl.addEventListener('pointerup', function () {
+    if (!drag) return;
+    var str = drag.cells.map(function (i) { return letters[i]; }).join(''), rev = str.split('').reverse().join('');
+    drag = null;
+    var hit = -1;
+    hidden.forEach(function (h, k) { if (found.indexOf(k) === -1 && (h.word === str || h.word === rev)) hit = k; });
+    if (hit >= 0 && shell.running) {
+      found.push(hit); total++; shell.setScore(String(total)); P.haptic('coin');
+      if (found.length === hidden.length) { boards++; timer.add(15); P.haptic('win'); setTimeout(function () { if (shell.running) build(); }, 600); }
+    }
+    render();
+  });
+  gridEl.addEventListener('pointercancel', function () { drag = null; render(); });
+  function reset() { total = 0; boards = 0; shell.setScore('0'); timer.reset(); build(); }
+  function finish() { drag = null; shell.end({ score: total, delay: 300, stats: 'сеток пройдено: ' + boards, phrase: 'В «Филворде» у меня ' + total + ' ' + P.plural(total, U) + ' за полторы минуты.' }); }
+  function layout() { var r = stage.getBoundingClientRect(); gridEl.style.setProperty('--size', Math.floor(Math.min(r.width - 32, r.height - 240, 460)) + 'px'); listEl.style.setProperty('--size', gridEl.style.getPropertyValue('--size')); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); build(); timer.show();
+})();
+</script>
+</body>
+</html>

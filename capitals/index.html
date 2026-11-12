@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Столицы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:20px}
+.q{margin:0;font-family:var(--font-display);font-weight:800;font-size:clamp(24px,7.5vw,34px);text-align:center;line-height:1.15}
+.sub{margin:0;color:var(--lilac);font-size:15px}
+.opts{display:grid;gap:10px;width:min(100%,360px)}
+.opts button{min-height:56px;border:0;border-radius:16px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:17px;cursor:pointer;touch-action:manipulation}
+.opts button.right{background:var(--mint);color:var(--ink)}
+.opts button.wrong{background:var(--coral);color:var(--ink)}
+.stage[data-state="paused"] .opts,.stage[data-state="countdown"] .opts,.stage[data-state="paused"] .q{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="sub">Столица страны</p>
+    <p class="q" id="q">Франция</p>
+    <div class="opts" id="opts"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['ответ', 'ответа', 'ответов'];
+  /* Страна, столица, регион для правдоподобных вариантов */
+  var DATA = [
+    ['Россия', 'Москва', 's'], ['Украина', 'Киев', 's'], ['Беларусь', 'Минск', 's'], ['Казахстан', 'Астана', 's'], ['Узбекистан', 'Ташкент', 's'],
+    ['Киргизия', 'Бишкек', 's'], ['Таджикистан', 'Душанбе', 's'], ['Туркменистан', 'Ашхабад', 's'], ['Азербайджан', 'Баку', 's'], ['Армения', 'Ереван', 's'],
+    ['Грузия', 'Тбилиси', 's'], ['Молдавия', 'Кишинёв', 's'], ['Латвия', 'Рига', 'e'], ['Литва', 'Вильнюс', 'e'], ['Эстония', 'Таллин', 'e'],
+    ['Финляндия', 'Хельсинки', 'e'], ['Швеция', 'Стокгольм', 'e'], ['Норвегия', 'Осло', 'e'], ['Дания', 'Копенгаген', 'e'], ['Исландия', 'Рейкьявик', 'e'],
+    ['Великобритания', 'Лондон', 'e'], ['Ирландия', 'Дублин', 'e'], ['Франция', 'Париж', 'e'], ['Германия', 'Берлин', 'e'], ['Италия', 'Рим', 'e'],
+    ['Испания', 'Мадрид', 'e'], ['Португалия', 'Лиссабон', 'e'], ['Нидерланды', 'Амстердам', 'e'], ['Бельгия', 'Брюссель', 'e'], ['Швейцария', 'Берн', 'e'],
+    ['Австрия', 'Вена', 'e'], ['Польша', 'Варшава', 'e'], ['Чехия', 'Прага', 'e'], ['Словакия', 'Братислава', 'e'], ['Венгрия', 'Будапешт', 'e'],
+    ['Румыния', 'Бухарест', 'e'], ['Болгария', 'София', 'e'], ['Сербия', 'Белград', 'e'], ['Хорватия', 'Загреб', 'e'], ['Греция', 'Афины', 'e'],
+    ['Турция', 'Анкара', 'a'], ['Китай', 'Пекин', 'a'], ['Япония', 'Токио', 'a'], ['Южная Корея', 'Сеул', 'a'], ['КНДР', 'Пхеньян', 'a'],
+    ['Монголия', 'Улан-Батор', 'a'], ['Индия', 'Нью-Дели', 'a'], ['Пакистан', 'Исламабад', 'a'], ['Афганистан', 'Кабул', 'a'], ['Иран', 'Тегеран', 'a'],
+    ['Ирак', 'Багдад', 'a'], ['Сирия', 'Дамаск', 'a'], ['Саудовская Аравия', 'Эр-Рияд', 'a'], ['ОАЭ', 'Абу-Даби', 'a'], ['Таиланд', 'Бангкок', 'a'],
+    ['Вьетнам', 'Ханой', 'a'], ['Филиппины', 'Манила', 'a'], ['Малайзия', 'Куала-Лумпур', 'a'], ['Австралия', 'Канберра', 'o'], ['Новая Зеландия', 'Веллингтон', 'o'],
+    ['США', 'Вашингтон', 'm'], ['Канада', 'Оттава', 'm'], ['Мексика', 'Мехико', 'm'], ['Куба', 'Гавана', 'm'], ['Бразилия', 'Бразилиа', 'm'],
+    ['Аргентина', 'Буэнос-Айрес', 'm'], ['Чили', 'Сантьяго', 'm'], ['Перу', 'Лима', 'm'], ['Колумбия', 'Богота', 'm'], ['Венесуэла', 'Каракас', 'm'],
+    ['Марокко', 'Рабат', 'f'], ['Нигерия', 'Абуджа', 'f'], ['Кения', 'Найроби', 'f'], ['Эфиопия', 'Аддис-Абеба', 'f'], ['Гана', 'Аккра', 'f'], ['Сенегал', 'Дакар', 'f']
+  ];
+  var qEl = document.getElementById('q'), optsEl = document.getElementById('opts');
+  var cur, score, wrong, busy, order, pos;
+
+  var shell = P.shell({
+    id: 'capitals', title: 'Столицы', tagline: 'Угадай столицу страны за секунды.',
+    rulesHtml: '<p>Выбери столицу страны из четырёх вариантов. Верный ответ — +1, ошибка отнимает 3 секунды. На всё 60 секунд.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1–4',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  function ask() {
+    if (pos >= order.length) { order = P.shuffle(order); pos = 0; }
+    cur = DATA[order[pos++]];
+    var same = DATA.filter(function (d) { return d !== cur && d[2] === cur[2]; }), others = DATA.filter(function (d) { return d !== cur && d[2] !== cur[2]; });
+    var wrongs = P.shuffle(same).slice(0, 3);
+    while (wrongs.length < 3) wrongs.push(P.pick(others.filter(function (d) { return wrongs.indexOf(d) === -1; })));
+    var opts = P.shuffle([cur].concat(wrongs));
+    qEl.textContent = cur[0];
+    optsEl.textContent = '';
+    opts.forEach(function (d, k) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = d[1];
+      b.addEventListener('click', function () { answer(b, d); });
+      optsEl.appendChild(b);
+    });
+    busy = false;
+  }
+  function answer(btn, d) {
+    if (!shell.running || busy) return;
+    busy = true;
+    if (d === cur) { score++; shell.setScore(String(score)); btn.className = 'right'; P.haptic('coin'); setTimeout(function () { if (shell.running) ask(); }, 350); }
+    else {
+      wrong++; btn.className = 'wrong'; P.haptic('crash');
+      Array.prototype.forEach.call(optsEl.children, function (b) { if (b.textContent === cur[1]) b.className = 'right'; });
+      timer.add(-3);
+      setTimeout(function () { if (shell.running) ask(); }, 900);
+    }
+  }
+  function reset() { score = 0; wrong = 0; order = P.shuffle(DATA.map(function (_, i) { return i; })); pos = 0; shell.setScore('0'); timer.reset(); ask(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong, phrase: 'В «Столицах» у меня ' + score + ' ' + P.plural(score, U) + ' за минуту.' }); }
+  window.addEventListener('keydown', function (e) { var m = /^Digit([1-4])$/.exec(e.code); if (m && optsEl.children[m[1] - 1]) optsEl.children[m[1] - 1].click(); });
+  order = DATA.map(function (_, i) { return i; }); pos = 22; ask(); timer.show();
+})();
+</script>
+</body>
+</html>
