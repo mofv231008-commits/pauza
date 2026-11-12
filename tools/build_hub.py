@@ -285,3 +285,15 @@ page = (TEMPLATE
         .replace('%%STAR%%', STAR))
 (ROOT / 'index.html').write_text(page, encoding='utf-8')
 print('hub:', len(games), 'игр,', len(page), 'байт')
+
+# Список игр для бота: бот берёт его с сайта (games.json), так что новые игры появляются в боте без правки кода.
+import re
+def emoji(s):
+    return re.sub(r'\\u\{([0-9A-Fa-f]+)\}', lambda m: chr(int(m.group(1), 16)), s)
+ordered = []
+for s in data['sections']:
+    ordered += [g for g in games if g['section'] == s['id']]
+bot_list = [[g['id'], emoji(g['icon']), g['title'], g['into'].strip('«»'), g['about']] for g in ordered]
+assert len(bot_list) == len(games)
+(ROOT / 'games.json').write_text(json.dumps(bot_list, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+print('games.json:', len(bot_list))
