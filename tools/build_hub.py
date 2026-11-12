@@ -81,7 +81,7 @@ TEMPLATE = r'''<!doctype html>
 <meta name="theme-color" content="#140734">
 <meta name="color-scheme" content="dark">
 <title>Пауза</title>
-<script src="shared/pauza.js?v=5"></script>
+<script src="shared/pauza.js?v=6"></script>
 <script>
 /* Ссылка вида t.me/Pauzagame_bot/play?startapp=race сразу открывает нужную игру */
 (function () {
@@ -93,7 +93,7 @@ TEMPLATE = r'''<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="shared/pauza.css?v=5">
+<link rel="stylesheet" href="shared/pauza.css?v=6">
 <style>
 /* Экран выбора: шапка, затем разделы. В каждом разделе карточки листаются вбок. */
 body.hub{overflow-y:auto;overflow-x:hidden;height:auto;min-height:100%}

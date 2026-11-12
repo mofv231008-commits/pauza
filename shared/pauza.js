@@ -52,6 +52,16 @@
     postEvent('web_app_set_header_color', { color: NIGHT });
     postEvent('web_app_set_background_color', { color: NIGHT });
     postEvent('web_app_set_bottom_bar_color', { color: NIGHT });
+    /* Крестик Telegram сначала спрашивает «Закрыть?», а не выкидывает сразу */
+    postEvent('web_app_setup_closing_behavior', { need_confirmation: true });
+    if (!backHandler) postEvent('web_app_setup_back_button', { is_visible: false });
+  }
+
+  /* Кнопка «Назад» в шапке Telegram вместо крестика. back(fn) — показать, back(null) — спрятать */
+  var backHandler = null;
+  function back(fn) {
+    backHandler = fn || null;
+    postEvent('web_app_setup_back_button', { is_visible: !!backHandler });
   }
 
   /* Какую игру просили открыть по ссылке t.me/…/play?startapp=race */
@@ -139,6 +149,7 @@
   function receiveEvent(type, data) {
     (listeners[type] || []).slice().forEach(function (fn) { safe(function () { fn(data || {}); }); });
   }
+  on('back_button_pressed', function () { if (backHandler) backHandler(); });
   window.Telegram = window.Telegram || {};
   if (!window.Telegram.WebView) window.Telegram.WebView = { receiveEvent: receiveEvent };
   if (!window.TelegramGameProxy) window.TelegramGameProxy = { receiveEvent: receiveEvent };
@@ -589,6 +600,11 @@
     });
 
     init();
+    /* «Назад» в шапке: во время игры ставит на паузу, иначе возвращает к списку игр */
+    back(function () {
+      if (state === 'running' || state === 'countdown') pause();
+      else location.href = home;
+    });
     sync();
     showBest();
 
@@ -617,6 +633,7 @@
     on: on,
     off: off,
     postEvent: postEvent,
+    back: back,
     cloud: cloud,
     products: PRODUCTS,
     perks: perks,
