@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Кот на клавиатуре</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:#17093F}
+.play{gap:14px;justify-content:flex-end;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+.to{align-self:stretch;margin:0 4px;font-size:13px;color:var(--lilac)}
+.mail{align-self:stretch;min-height:96px;padding:14px 16px;border-radius:18px;background:var(--paper);color:var(--ink);font-size:17px;line-height:1.4;word-break:break-word}
+.mail .typo{color:#E0402A;background:rgba(255,107,74,.18);border-radius:3px}
+.mail .caret{display:inline-block;width:2px;height:1.1em;background:var(--ink);vertical-align:-3px;animation:caret 1s steps(1) infinite}
+@keyframes caret{50%{opacity:0}}
+.say{margin:0;min-height:1.4em;font-size:14px;color:var(--sun);text-align:center}
+.kb{position:relative;align-self:stretch;display:grid;grid-template-rows:repeat(4,1fr);gap:6px;height:min(46vh,300px);padding:10px;border-radius:18px;background:#22105A}
+.kb .row{display:flex;gap:4px}
+.kb .k{flex:1;border-radius:7px;background:#3B1E8C;display:grid;place-items:center;font-size:13px;color:rgba(244,241,255,.7);text-transform:uppercase}
+.kb .k.hit{background:var(--mint);color:var(--ink)}
+.paw{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border:0;padding:0;background:none;cursor:pointer;touch-action:manipulation;animation:in .25s ease-out;z-index:2}
+.paw svg{display:block;width:100%;height:100%}
+.paw.press svg{transform:scale(.88)}
+.paw.out{animation:out .25s ease-in forwards}
+@keyframes in{from{transform:translateY(60px) scale(.6);opacity:0}}
+@keyframes out{to{transform:translateY(-40px) scale(.6);opacity:0}}
+.meow{position:absolute;font-family:var(--font-display);font-weight:800;font-size:15px;color:var(--sun);pointer-events:none;animation:up .7s ease-out forwards;z-index:3}
+@keyframes up{to{transform:translateY(-36px);opacity:0}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="to">Кому: <b>начальник</b> · Тема: срочно</p>
+    <div class="mail" id="mail"></div>
+    <p class="say" id="say"></p>
+    <div class="kb" id="kb"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['письмо', 'письма', 'писем'], MAXTYPOS = 3;
+  var LINES = ['Добрый день! Отчёт будет готов к пятнице.', 'Спасибо, всё получено, посмотрю сегодня.', 'Предлагаю созвониться завтра в десять.', 'Задача закрыта, ссылку прикрепляю.', 'Извините за задержку, уже исправляю.', 'Да, конечно, всё сделаю до обеда.', 'Коллеги, напоминаю про встречу в три.', 'Документы отправлены, проверьте, пожалуйста.'];
+  var JUNK = ['ффффф', 'ыыыыы', 'мммммм', 'ъъъъ', 'ррррр', 'жжжжж', 'ячсмииии', '444444', 'ццццц'];
+  var ROWS = ['йцукенгшщзх', 'фывапролджэ', 'ячсмитьбю', ' '];
+  var PAW = '<svg viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="32" cy="40" rx="17" ry="14" fill="#FF9A6B"/><ellipse cx="32" cy="42" rx="9" ry="7" fill="#FF8AD8"/><circle cx="16" cy="24" r="6.5" fill="#FF9A6B"/><circle cx="26" cy="16" r="6.5" fill="#FF9A6B"/><circle cx="38" cy="16" r="6.5" fill="#FF9A6B"/><circle cx="48" cy="24" r="6.5" fill="#FF9A6B"/><circle cx="16" cy="25" r="3.2" fill="#FF8AD8"/><circle cx="26" cy="17" r="3.2" fill="#FF8AD8"/><circle cx="38" cy="17" r="3.2" fill="#FF8AD8"/><circle cx="48" cy="25" r="3.2" fill="#FF8AD8"/></svg>';
+  var mail = document.getElementById('mail'), kb = document.getElementById('kb'), say = document.getElementById('say');
+  var line, pos, typos, out, sent, ruined, paws, typeT, spawnT, keys = [], t, totalShoo;
+
+  var shell = P.shell({
+    id: 'cat', title: 'Кот на клавиатуре', tagline: 'Допиши письмо начальнику, пока кот не помог.',
+    rulesHtml: '<p>Письмо печатается само. Кот то и дело ставит лапу на клавиатуру — жми на лапу, чтобы её убрать. Не успеешь — в письме появится «ыыыыы». Три кошачьи вставки в одном письме — письмо испорчено. Три испорченных письма — конец. Отправь как можно больше чистых писем.</p>',
+    startLabel: 'Печатать', countdown: true, overEyebrow: 'Кот победил',
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  ROWS.forEach(function (r) {
+    var row = document.createElement('div'); row.className = 'row';
+    (r === ' ' ? ['пробел'] : r.split('')).forEach(function (ch) { var k = document.createElement('div'); k.className = 'k'; k.textContent = ch; row.appendChild(k); keys.push({ el: k, ch: ch === 'пробел' ? ' ' : ch }); });
+    kb.appendChild(row);
+  });
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function render() { mail.innerHTML = out.map(function (p) { return p.typo ? '<span class="typo">' + esc(p.s) + '</span>' : esc(p.s); }).join('') + '<span class="caret"></span>'; }
+  function newLine() { line = P.pick(LINES); pos = 0; typos = 0; out = []; typeT = 0; render(); }
+  function flash(ch) { var k = keys.find(function (x) { return x.ch === ch.toLowerCase(); }); if (!k) return; k.el.classList.add('hit'); setTimeout(function () { k.el.classList.remove('hit'); }, 90); }
+  function spawnPaw() {
+    var r = kb.getBoundingClientRect(), b = document.createElement('button');
+    b.type = 'button'; b.className = 'paw'; b.innerHTML = PAW; b.setAttribute('aria-label', 'Лапа кота');
+    var x = 40 + Math.random() * (r.width - 80), y = 40 + Math.random() * (r.height - 80);
+    b.style.left = x + 'px'; b.style.top = y + 'px';
+    var paw = { el: b, life: Math.max(0.7, 1.4 - t * 0.012), x: x, y: y };
+    b.addEventListener('pointerdown', function (e) { e.preventDefault(); shoo(paw); });
+    kb.appendChild(b); paws.push(paw);
+  }
+  function shoo(paw) {
+    if (!shell.running || paw.gone) return;
+    paw.gone = true; totalShoo++; paw.el.classList.add('out'); P.haptic('tap');
+    var m = document.createElement('div'); m.className = 'meow'; m.textContent = P.pick(['мяу?', 'мрр', 'ну и ладно', 'фыр']); m.style.left = (paw.x - 20) + 'px'; m.style.top = (paw.y - 40) + 'px';
+    kb.appendChild(m); setTimeout(function () { m.remove(); paw.el.remove(); }, 700);
+  }
+  function pawPress(paw) {
+    paw.gone = true; paw.el.classList.add('press');
+    out.push({ s: P.pick(JUNK), typo: true }); typos++; render(); P.haptic('crash');
+    say.textContent = P.pick(['Кот дописал за тебя', 'Кот тоже хочет высказаться', 'Мурчащая правка', 'Кот поставил подпись']);
+    setTimeout(function () { paw.el.classList.add('out'); setTimeout(function () { paw.el.remove(); }, 260); }, 250);
+    if (typos >= MAXTYPOS) {
+      ruined++; side(); say.textContent = 'Письмо ушло с котом. Начальник в недоумении';
+      if (ruined >= 3) { shell.end({ score: sent, delay: 800, stats: 'отогнано лап: ' + totalShoo, phrase: 'В «Коте на клавиатуре» у меня ' + sent + ' ' + P.plural(sent, U) + ' начальнику без единого «ыыыыы».' }); return; }
+      clearPaws(); newLine();
+    }
+  }
+  function clearPaws() { paws.forEach(function (p) { if (!p.gone) { p.gone = true; p.el.remove(); } }); paws = []; }
+  function side() { var s = ''; for (var i = 0; i < 3; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (i < 3 - ruined ? '#3DF5B0' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function reset() { sent = 0; ruined = 0; t = 0; totalShoo = 0; paws && clearPaws(); paws = []; spawnT = 1; shell.setScore('0'); side(); say.textContent = ''; newLine(); }
+  P.loop(function (dt) {
+    if (!shell.running) return;
+    t += dt;
+    typeT += dt;
+    var speed = 0.075;
+    while (typeT >= speed && pos < line.length) {
+      typeT -= speed;
+      var ch = line[pos++];
+      var last = out[out.length - 1];
+      if (last && !last.typo) last.s += ch; else out.push({ s: ch, typo: false });
+      flash(ch);
+    }
+    render();
+    if (pos >= line.length && typeT > 0.5) {
+      sent++; shell.setScore(String(sent)); P.haptic('win');
+      say.textContent = typos ? 'Отправлено. Начальник сделал вид, что не заметил' : 'Отправлено чисто!';
+      clearPaws(); newLine();
+    }
+    spawnT -= dt;
+    if (spawnT <= 0) { spawnPaw(); spawnT = Math.max(0.35, 1.3 - t * 0.02) * (0.6 + Math.random() * 0.8); }
+    paws.forEach(function (p) { if (p.gone) return; p.life -= dt; if (p.life <= 0) pawPress(p); });
+    paws = paws.filter(function (p) { return !p.gone || p.el.isConnected; });
+  });
+  paws = []; out = [{ s: 'Добрый день! Отчёт будет', typo: false }, { s: 'ыыыыы', typo: true }]; render();
+})();
+</script>
+</body>
+</html>

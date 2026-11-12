@@ -10,7 +10,7 @@
 <script>
 /* Ссылка вида t.me/Pauzagame_bot/play?startapp=race сразу открывает нужную игру */
 (function () {
-  var known = ["space", "race", "flight", "snake", "bounce", "tower", "reaction", "2048", "match3", "fifteen", "mines", "pairs", "simon", "shade", "arrows", "word", "math", "tetris", "runner", "jumper", "moles", "tiles", "knives", "stick", "schulte", "sudoku", "hangman", "slice", "hoops", "pong", "hockey", "balloons", "catch", "aim", "colors", "sort", "lines", "frog", "ski", "fall", "zigzag", "maze", "golf", "bubbles", "ten", "flood", "lights", "gomoku", "connect4", "reversi", "battleship", "bulls", "nonogram", "game24", "anagram", "wordsearch", "capitals", "stress", "diff", "digits", "missing", "stroop", "dots", "pattern", "shells", "tug", "duel"];
+  var known = ["space", "race", "flight", "snake", "bounce", "tower", "reaction", "2048", "match3", "fifteen", "mines", "pairs", "simon", "shade", "arrows", "word", "math", "tetris", "runner", "jumper", "moles", "tiles", "knives", "stick", "schulte", "sudoku", "hangman", "slice", "hoops", "pong", "hockey", "balloons", "catch", "aim", "colors", "sort", "lines", "frog", "ski", "fall", "zigzag", "maze", "golf", "bubbles", "ten", "flood", "lights", "gomoku", "connect4", "reversi", "battleship", "bulls", "nonogram", "game24", "anagram", "wordsearch", "capitals", "stress", "diff", "digits", "missing", "stroop", "dots", "pattern", "shells", "tug", "duel", "typing", "voices", "cat", "wrongchat", "grandma"];
   var wanted = window.Pauza.startParam();
   if (wanted && known.indexOf(wanted) !== -1) location.replace(wanted + '/' + location.hash);
 })();
@@ -98,7 +98,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
     <div class="mark" aria-hidden="true"><i></i><i></i></div>
     <div>
       <h1>Пауза <span class="badge" id="badge" title="Спасибо за поддержку" hidden><svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></span></h1>
-      <p class="tag">67 игр на минуту, пока ждёшь ответа.</p>
+      <p class="tag">72 игр на минуту, пока ждёшь ответа.</p>
     </div>
   </header>
   <div class="hub-actions">
@@ -109,6 +109,49 @@ body.gold .hub-head .mark i{background:var(--sun)}
   <section class="group" aria-labelledby="g-new">
     <div class="group-head"><h2 class="group-title" id="g-new">Новые игры</h2><span class="group-count">10</span></div>
     <ul class="cards">
+      <li><a class="card" href="typing/" data-id="typing">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#17093F"/><rect x="14" y="12" width="70" height="22" rx="11" fill="#2E177A"/><rect x="72" y="40" width="74" height="22" rx="11" fill="#3DF5B0"/>
+          <rect x="14" y="68" width="52" height="24" rx="12" fill="#2E177A"/><g fill="#B9A8F0"><circle cx="29" cy="80" r="4"/><circle cx="40" cy="80" r="4" opacity=".6"/><circle cx="51" cy="80" r="4" opacity=".35"/></g>
+          <g font-size="10" fill="#F4F1FF"><text x="24" y="27">ок</text></g><text x="82" y="55" font-size="10" fill="#120630">Ну что там?</text>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Печатает…</span><span class="card-desc">Ответь сразу, но не раньше</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="cat/" data-id="cat">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#17093F"/><rect x="14" y="10" width="132" height="26" rx="8" fill="#F4F1FF"/><text x="22" y="27" font-size="10" fill="#120630">Добрый день! <tspan fill="#E0402A">ыыыыы</tspan></text>
+          <rect x="14" y="44" width="132" height="50" rx="10" fill="#22105A"/><g fill="#3B1E8C"><rect x="20" y="50" width="14" height="12" rx="3"/><rect x="37" y="50" width="14" height="12" rx="3"/><rect x="54" y="50" width="14" height="12" rx="3"/><rect x="71" y="50" width="14" height="12" rx="3"/><rect x="88" y="50" width="14" height="12" rx="3"/><rect x="105" y="50" width="14" height="12" rx="3"/><rect x="122" y="50" width="18" height="12" rx="3"/><rect x="20" y="66" width="120" height="10" rx="3"/><rect x="40" y="80" width="80" height="9" rx="3"/></g>
+          <g transform="translate(78 54)"><ellipse cx="16" cy="22" rx="12" ry="10" fill="#FF9A6B"/><ellipse cx="16" cy="24" rx="6" ry="5" fill="#FF8AD8"/><circle cx="5" cy="10" r="4.5" fill="#FF9A6B"/><circle cx="12" cy="5" r="4.5" fill="#FF9A6B"/><circle cx="21" cy="5" r="4.5" fill="#FF9A6B"/><circle cx="28" cy="10" r="4.5" fill="#FF9A6B"/></g>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Кот на клавиатуре</span><span class="card-desc">Допиши письмо, пока кот не помог</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="grandma/" data-id="grandma">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#2A1036"/><circle cx="46" cy="44" r="22" fill="#FFD0C4"/><path d="M24 40 C24 18 68 18 68 40 C64 30 28 30 24 40Z" fill="#E9E4FF"/><circle cx="46" cy="16" r="8" fill="#E9E4FF"/>
+          <circle cx="38" cy="44" r="5" fill="none" stroke="#3B1E8C" stroke-width="2"/><circle cx="54" cy="44" r="5" fill="none" stroke="#3B1E8C" stroke-width="2"/><path d="M40 54 Q46 59 52 54" stroke="#C0392B" stroke-width="2" fill="none"/>
+          <path d="M20 48 Q14 74 30 92 L62 92 Q78 74 72 48 Q66 64 46 66 Q26 64 20 48Z" fill="#FF6B4A"/>
+          <ellipse cx="116" cy="72" rx="36" ry="11" fill="#F4F1FF"/><ellipse cx="102" cy="62" rx="14" ry="8" fill="#FF9A6B"/><ellipse cx="128" cy="63" rx="14" ry="8" fill="#F2884F"/><ellipse cx="115" cy="55" rx="14" ry="8" fill="#FF9A6B"/>
+          <rect x="88" y="12" width="56" height="7" rx="3.5" fill="#F4F1FF" opacity=".15"/><rect x="88" y="12" width="46" height="7" rx="3.5" fill="#FFD84D"/><rect x="88" y="24" width="56" height="7" rx="3.5" fill="#F4F1FF" opacity=".15"/><rect x="88" y="24" width="24" height="7" rx="3.5" fill="#FF8AD8"/>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Бабушка кормит</span><span class="card-desc">Не обидеть бабушку и не лопнуть</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="wrongchat/" data-id="wrongchat">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#17093F"/><rect x="18" y="10" width="124" height="60" rx="14" fill="#22105A"/><circle cx="36" cy="26" r="9" fill="#FF9A6B"/><rect x="50" y="20" width="44" height="6" rx="3" fill="#F4F1FF"/><rect x="50" y="29" width="26" height="4" rx="2" fill="#B9A8F0"/>
+          <rect x="58" y="42" width="74" height="20" rx="10" fill="#3DF5B0"/><text x="64" y="56" font-size="9" fill="#120630">го катку вечером?</text>
+          <rect x="18" y="76" width="58" height="18" rx="9" fill="#FF6B4A"/><rect x="84" y="76" width="58" height="18" rx="9" fill="#3DF5B0"/>
+          <g font-size="9" text-anchor="middle" fill="#120630" font-weight="700"><text x="47" y="88">Удалить</text><text x="113" y="88">Отправить</text></g>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Не тот чат</span><span class="card-desc">Отправь или удали, пока не поздно</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="voices/" data-id="voices">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#17093F"/><rect x="14" y="26" width="132" height="48" rx="16" fill="#2E177A"/><circle cx="38" cy="50" r="13" fill="#3DF5B0"/><path d="M34 43 l11 7 -11 7z" fill="#120630"/>
+          <g fill="#B9A8F0"><rect x="58" y="44" width="3" height="12" rx="1.5"/><rect x="64" y="38" width="3" height="24" rx="1.5"/><rect x="70" y="42" width="3" height="16" rx="1.5"/><rect x="76" y="35" width="3" height="30" rx="1.5"/><rect x="82" y="44" width="3" height="12" rx="1.5"/><rect x="88" y="40" width="3" height="20" rx="1.5"/><rect x="94" y="46" width="3" height="8" rx="1.5"/></g>
+          <text x="128" y="56" font-size="15" font-weight="800" text-anchor="middle" fill="#FF6B4A">12:47</text>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Голосовые</span><span class="card-desc">Короткие слушай, длинные мимо</span><span class="card-best" hidden></span></span>
+      </a></li>
       <li><a class="card" href="tetris/" data-id="tetris">
         <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
           <rect width="160" height="100" fill="#140734"/><rect x="40" y="6" width="80" height="94" fill="#22105A"/>
@@ -139,30 +182,6 @@ body.gold .hub-head .mark i{background:var(--sun)}
           </svg></span>
         <span class="card-body"><span class="card-title">Пузыри</span><span class="card-desc">Стреляй и собирай по три</span><span class="card-best" hidden></span></span>
       </a></li>
-      <li><a class="card" href="frog/" data-id="frog">
-        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-          <rect width="160" height="100" fill="#2E177A"/><rect y="12" width="160" height="34" fill="#140734"/><rect y="28" width="160" height="2" fill="#F4F1FF" opacity=".25"/><rect y="62" width="160" height="22" fill="#1F3E9E"/>
-          <rect x="18" y="16" width="30" height="11" rx="4" fill="#FF6B4A"/><rect x="96" y="32" width="44" height="11" rx="4" fill="#FFD84D"/><rect x="40" y="66" width="56" height="13" rx="6" fill="#FF9A6B"/>
-          <rect x="72" y="86" width="14" height="13" rx="5" fill="#3DF5B0"/><circle cx="75" cy="88" r="2.5" fill="#F4F1FF"/><circle cx="83" cy="88" r="2.5" fill="#F4F1FF"/>
-          </svg></span>
-        <span class="card-body"><span class="card-title">Переход</span><span class="card-desc">Через дороги и реки</span><span class="card-best" hidden></span></span>
-      </a></li>
-      <li><a class="card" href="knives/" data-id="knives">
-        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-          <rect width="160" height="100" fill="#140734"/>
-          <g transform="translate(80 38)"><path d="M-3 22 L3 22 L2 40 L-2 40 Z" fill="#F4F1FF" transform="rotate(30)"/><path d="M-3 22 L3 22 L2 40 L-2 40 Z" fill="#F4F1FF" transform="rotate(150)"/><path d="M-3 22 L3 22 L2 40 L-2 40 Z" fill="#F4F1FF" transform="rotate(-100)"/><circle r="24" fill="#FF9A6B"/><circle r="16" fill="none" stroke="#120630" stroke-opacity=".25" stroke-width="2"/><circle r="4" fill="#FF6B4A"/><circle cx="18" cy="-19" r="4" fill="#3DF5B0"/></g>
-          <path d="M80 74 L83 78 L82 90 L78 90 L77 78 Z" fill="#F4F1FF"/><rect x="77.5" y="90" width="5" height="10" rx="2" fill="#FF6B4A"/>
-          </svg></span>
-        <span class="card-body"><span class="card-title">Ножи</span><span class="card-desc">Втыкай ножи в бревно</span><span class="card-best" hidden></span></span>
-      </a></li>
-      <li><a class="card" href="sort/" data-id="sort">
-        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-          <rect width="160" height="100" fill="#22105A"/>
-          <g stroke="#F4F1FF" stroke-opacity=".6" stroke-width="2" fill="none"><path d="M30 14 V78 a9 9 0 0 0 18 0 V14"/><path d="M62 14 V78 a9 9 0 0 0 18 0 V14"/><path d="M94 14 V78 a9 9 0 0 0 18 0 V14"/><path d="M126 14 V78 a9 9 0 0 0 18 0 V14"/></g>
-          <g><rect x="32" y="66" width="14" height="19" rx="6" fill="#FF6B4A"/><rect x="32" y="50" width="14" height="14" fill="#3DF5B0"/><rect x="32" y="34" width="14" height="14" fill="#FF6B4A"/><rect x="64" y="66" width="14" height="19" rx="6" fill="#3DF5B0"/><rect x="64" y="50" width="14" height="14" fill="#FFD84D"/><rect x="96" y="66" width="14" height="19" rx="6" fill="#FFD84D"/><rect x="96" y="50" width="14" height="14" fill="#FF6B4A"/><rect x="96" y="34" width="14" height="14" fill="#3DF5B0"/><rect x="96" y="18" width="14" height="14" fill="#FFD84D"/></g>
-          </svg></span>
-        <span class="card-body"><span class="card-title">Колбы</span><span class="card-desc">Разлей цвета по колбам</span><span class="card-best" hidden></span></span>
-      </a></li>
       <li><a class="card" href="battleship/" data-id="battleship">
         <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
           <rect width="160" height="100" fill="#140734"/><rect x="36.0" y="6.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="48.5" y="6.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="61.0" y="6.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="73.5" y="6.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="86.0" y="6.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="98.5" y="6.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="111.0" y="6.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="36.0" y="18.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="48.5" y="18.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="61.0" y="18.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="73.5" y="18.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="86.0" y="18.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="98.5" y="18.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="111.0" y="18.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="36.0" y="31.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="48.5" y="31.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="61.0" y="31.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="73.5" y="31.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="86.0" y="31.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="98.5" y="31.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="111.0" y="31.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="36.0" y="43.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="48.5" y="43.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="61.0" y="43.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="73.5" y="43.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="86.0" y="43.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="98.5" y="43.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="111.0" y="43.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="36.0" y="56.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="48.5" y="56.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="61.0" y="56.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="73.5" y="56.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="86.0" y="56.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="98.5" y="56.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="111.0" y="56.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="36.0" y="68.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="48.5" y="68.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="61.0" y="68.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="73.5" y="68.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="86.0" y="68.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="98.5" y="68.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="111.0" y="68.5" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="36.0" y="81.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="48.5" y="81.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="61.0" y="81.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="73.5" y="81.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="86.0" y="81.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="98.5" y="81.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/><rect x="111.0" y="81.0" width="10.5" height="10.5" rx="2" fill="#1F3E9E"/>
@@ -172,24 +191,6 @@ body.gold .hub-head .mark i{background:var(--sun)}
           </svg></span>
         <span class="card-body"><span class="card-title">Морской бой</span><span class="card-desc">Потопи флот компьютера</span><span class="card-best" hidden></span></span>
       </a></li>
-      <li><a class="card" href="hoops/" data-id="hoops">
-        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-          <rect width="160" height="100" fill="#22105A"/><rect y="62" width="160" height="38" fill="#2A1470"/>
-          <rect x="56" y="8" width="48" height="30" rx="4" fill="#F4F1FF"/><rect x="70" y="18" width="20" height="14" fill="none" stroke="#FF6B4A" stroke-width="2"/>
-          <path d="M66 40 L72 56 M74 40 L76 56 M86 40 L84 56 M94 40 L88 56" stroke="#F4F1FF" stroke-width="1.5"/><rect x="64" y="38" width="32" height="4" rx="2" fill="#FF6B4A"/>
-          <circle cx="112" cy="70" r="12" fill="#FF9A6B"/><path d="M100 70 H124 M112 58 V82" stroke="#120630" stroke-opacity=".5" stroke-width="1.5"/>
-          </svg></span>
-        <span class="card-body"><span class="card-title">Броски</span><span class="card-desc">Забрасывай мяч в кольцо</span><span class="card-best" hidden></span></span>
-      </a></li>
-      <li><a class="card" href="stick/" data-id="stick">
-        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-          <rect width="160" height="100" fill="#3B1E8C"/>
-          <rect x="10" y="64" width="34" height="36" fill="#140734"/><rect x="104" y="64" width="22" height="36" fill="#140734"/><rect x="112" y="64" width="6" height="2" fill="#FF6B4A"/>
-          <rect x="44" y="62" width="58" height="3" fill="#FFD84D"/>
-          <rect x="32" y="48" width="9" height="14" rx="3" fill="#3DF5B0"/><rect x="32" y="51" width="9" height="2" fill="#120630"/>
-          </svg></span>
-        <span class="card-body"><span class="card-title">Мостик</span><span class="card-desc">Построй мост точной длины</span><span class="card-best" hidden></span></span>
-      </a></li>
       <li><a class="card" href="tug/" data-id="tug">
         <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
           <rect width="160" height="50" fill="#3A1236"/><rect y="50" width="160" height="50" fill="#0F3A36"/>
@@ -198,6 +199,55 @@ body.gold .hub-head .mark i{background:var(--sun)}
           <g fill="none" stroke-width="2"><circle cx="34" cy="26" r="10" stroke="#FF6B4A"/><circle cx="126" cy="78" r="10" stroke="#3DF5B0"/><circle cx="126" cy="78" r="17" stroke="#3DF5B0" opacity=".4"/></g>
           </svg></span>
         <span class="card-body"><span class="card-title">Перетягивание</span><span class="card-desc">Канат на двоих: кто быстрее жмёт</span><span class="card-best" hidden></span></span>
+      </a></li>
+    </ul>
+  </section>
+
+  <section class="group" aria-labelledby="g-meme">
+    <div class="group-head"><h2 class="group-title" id="g-meme">Мемы</h2><span class="group-count">5</span></div>
+    <ul class="cards">
+      <li><a class="card" href="typing/" data-id="typing">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#17093F"/><rect x="14" y="12" width="70" height="22" rx="11" fill="#2E177A"/><rect x="72" y="40" width="74" height="22" rx="11" fill="#3DF5B0"/>
+          <rect x="14" y="68" width="52" height="24" rx="12" fill="#2E177A"/><g fill="#B9A8F0"><circle cx="29" cy="80" r="4"/><circle cx="40" cy="80" r="4" opacity=".6"/><circle cx="51" cy="80" r="4" opacity=".35"/></g>
+          <g font-size="10" fill="#F4F1FF"><text x="24" y="27">ок</text></g><text x="82" y="55" font-size="10" fill="#120630">Ну что там?</text>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Печатает…</span><span class="card-desc">Ответь сразу, но не раньше</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="voices/" data-id="voices">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#17093F"/><rect x="14" y="26" width="132" height="48" rx="16" fill="#2E177A"/><circle cx="38" cy="50" r="13" fill="#3DF5B0"/><path d="M34 43 l11 7 -11 7z" fill="#120630"/>
+          <g fill="#B9A8F0"><rect x="58" y="44" width="3" height="12" rx="1.5"/><rect x="64" y="38" width="3" height="24" rx="1.5"/><rect x="70" y="42" width="3" height="16" rx="1.5"/><rect x="76" y="35" width="3" height="30" rx="1.5"/><rect x="82" y="44" width="3" height="12" rx="1.5"/><rect x="88" y="40" width="3" height="20" rx="1.5"/><rect x="94" y="46" width="3" height="8" rx="1.5"/></g>
+          <text x="128" y="56" font-size="15" font-weight="800" text-anchor="middle" fill="#FF6B4A">12:47</text>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Голосовые</span><span class="card-desc">Короткие слушай, длинные мимо</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="cat/" data-id="cat">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#17093F"/><rect x="14" y="10" width="132" height="26" rx="8" fill="#F4F1FF"/><text x="22" y="27" font-size="10" fill="#120630">Добрый день! <tspan fill="#E0402A">ыыыыы</tspan></text>
+          <rect x="14" y="44" width="132" height="50" rx="10" fill="#22105A"/><g fill="#3B1E8C"><rect x="20" y="50" width="14" height="12" rx="3"/><rect x="37" y="50" width="14" height="12" rx="3"/><rect x="54" y="50" width="14" height="12" rx="3"/><rect x="71" y="50" width="14" height="12" rx="3"/><rect x="88" y="50" width="14" height="12" rx="3"/><rect x="105" y="50" width="14" height="12" rx="3"/><rect x="122" y="50" width="18" height="12" rx="3"/><rect x="20" y="66" width="120" height="10" rx="3"/><rect x="40" y="80" width="80" height="9" rx="3"/></g>
+          <g transform="translate(78 54)"><ellipse cx="16" cy="22" rx="12" ry="10" fill="#FF9A6B"/><ellipse cx="16" cy="24" rx="6" ry="5" fill="#FF8AD8"/><circle cx="5" cy="10" r="4.5" fill="#FF9A6B"/><circle cx="12" cy="5" r="4.5" fill="#FF9A6B"/><circle cx="21" cy="5" r="4.5" fill="#FF9A6B"/><circle cx="28" cy="10" r="4.5" fill="#FF9A6B"/></g>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Кот на клавиатуре</span><span class="card-desc">Допиши письмо, пока кот не помог</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="wrongchat/" data-id="wrongchat">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#17093F"/><rect x="18" y="10" width="124" height="60" rx="14" fill="#22105A"/><circle cx="36" cy="26" r="9" fill="#FF9A6B"/><rect x="50" y="20" width="44" height="6" rx="3" fill="#F4F1FF"/><rect x="50" y="29" width="26" height="4" rx="2" fill="#B9A8F0"/>
+          <rect x="58" y="42" width="74" height="20" rx="10" fill="#3DF5B0"/><text x="64" y="56" font-size="9" fill="#120630">го катку вечером?</text>
+          <rect x="18" y="76" width="58" height="18" rx="9" fill="#FF6B4A"/><rect x="84" y="76" width="58" height="18" rx="9" fill="#3DF5B0"/>
+          <g font-size="9" text-anchor="middle" fill="#120630" font-weight="700"><text x="47" y="88">Удалить</text><text x="113" y="88">Отправить</text></g>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Не тот чат</span><span class="card-desc">Отправь или удали, пока не поздно</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="grandma/" data-id="grandma">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#2A1036"/><circle cx="46" cy="44" r="22" fill="#FFD0C4"/><path d="M24 40 C24 18 68 18 68 40 C64 30 28 30 24 40Z" fill="#E9E4FF"/><circle cx="46" cy="16" r="8" fill="#E9E4FF"/>
+          <circle cx="38" cy="44" r="5" fill="none" stroke="#3B1E8C" stroke-width="2"/><circle cx="54" cy="44" r="5" fill="none" stroke="#3B1E8C" stroke-width="2"/><path d="M40 54 Q46 59 52 54" stroke="#C0392B" stroke-width="2" fill="none"/>
+          <path d="M20 48 Q14 74 30 92 L62 92 Q78 74 72 48 Q66 64 46 66 Q26 64 20 48Z" fill="#FF6B4A"/>
+          <ellipse cx="116" cy="72" rx="36" ry="11" fill="#F4F1FF"/><ellipse cx="102" cy="62" rx="14" ry="8" fill="#FF9A6B"/><ellipse cx="128" cy="63" rx="14" ry="8" fill="#F2884F"/><ellipse cx="115" cy="55" rx="14" ry="8" fill="#FF9A6B"/>
+          <rect x="88" y="12" width="56" height="7" rx="3.5" fill="#F4F1FF" opacity=".15"/><rect x="88" y="12" width="46" height="7" rx="3.5" fill="#FFD84D"/><rect x="88" y="24" width="56" height="7" rx="3.5" fill="#F4F1FF" opacity=".15"/><rect x="88" y="24" width="24" height="7" rx="3.5" fill="#FF8AD8"/>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Бабушка кормит</span><span class="card-desc">Не обидеть бабушку и не лопнуть</span><span class="card-best" hidden></span></span>
       </a></li>
     </ul>
   </section>
@@ -861,9 +911,9 @@ body.gold .hub-head .mark i{background:var(--sun)}
 (function () {
   'use strict';
   var P = window.Pauza;
-  var GAMES = ["space", "race", "flight", "snake", "bounce", "tower", "reaction", "2048", "match3", "fifteen", "mines", "pairs", "simon", "shade", "arrows", "word", "math", "tetris", "runner", "jumper", "moles", "tiles", "knives", "stick", "schulte", "sudoku", "hangman", "slice", "hoops", "pong", "hockey", "balloons", "catch", "aim", "colors", "sort", "lines", "frog", "ski", "fall", "zigzag", "maze", "golf", "bubbles", "ten", "flood", "lights", "gomoku", "connect4", "reversi", "battleship", "bulls", "nonogram", "game24", "anagram", "wordsearch", "capitals", "stress", "diff", "digits", "missing", "stroop", "dots", "pattern", "shells", "tug", "duel"];
+  var GAMES = ["space", "race", "flight", "snake", "bounce", "tower", "reaction", "2048", "match3", "fifteen", "mines", "pairs", "simon", "shade", "arrows", "word", "math", "tetris", "runner", "jumper", "moles", "tiles", "knives", "stick", "schulte", "sudoku", "hangman", "slice", "hoops", "pong", "hockey", "balloons", "catch", "aim", "colors", "sort", "lines", "frog", "ski", "fall", "zigzag", "maze", "golf", "bubbles", "ten", "flood", "lights", "gomoku", "connect4", "reversi", "battleship", "bulls", "nonogram", "game24", "anagram", "wordsearch", "capitals", "stress", "diff", "digits", "missing", "stroop", "dots", "pattern", "shells", "tug", "duel", "typing", "voices", "cat", "wrongchat", "grandma"];
   /* Как подписать рекорд на карточке: слова после числа, 'points', 'ms' или 'clock' */
-  var units = {"space": "points", "race": "points", "flight": ["арка", "арки", "арок"], "snake": ["яблоко", "яблока", "яблок"], "bounce": ["кирпич", "кирпича", "кирпичей"], "tower": ["этаж", "этажа", "этажей"], "reaction": "ms", "2048": "points", "match3": "points", "fifteen": ["ход", "хода", "ходов"], "mines": "clock", "pairs": ["ход", "хода", "ходов"], "simon": ["шаг", "шага", "шагов"], "shade": ["квадрат", "квадрата", "квадратов"], "arrows": ["стрелка", "стрелки", "стрелок"], "word": ["попытка", "попытки", "попыток"], "math": ["пример", "примера", "примеров"], "tetris": "points", "runner": ["метр", "метра", "метров"], "jumper": ["метр", "метра", "метров"], "moles": ["крот", "крота", "кротов"], "tiles": ["плитка", "плитки", "плиток"], "knives": "points", "stick": "points", "schulte": "tenths", "sudoku": "clock", "hangman": ["слово", "слова", "слов"], "slice": ["фрукт", "фрукта", "фруктов"], "hoops": "points", "pong": ["гол", "гола", "голов"], "hockey": ["гол", "гола", "голов"], "balloons": ["шарик", "шарика", "шариков"], "catch": "points", "aim": "points", "colors": ["звезда", "звезды", "звёзд"], "sort": ["уровень", "уровня", "уровней"], "lines": "points", "frog": ["ряд", "ряда", "рядов"], "ski": "points", "fall": ["этаж", "этажа", "этажей"], "zigzag": ["поворот", "поворота", "поворотов"], "maze": ["лабиринт", "лабиринта", "лабиринтов"], "golf": ["удар", "удара", "ударов"], "bubbles": "points", "ten": ["цифра", "цифры", "цифр"], "flood": ["поле", "поля", "полей"], "lights": ["уровень", "уровня", "уровней"], "gomoku": ["победа", "победы", "побед"], "connect4": ["победа", "победы", "побед"], "reversi": ["победа", "победы", "побед"], "battleship": ["победа", "победы", "побед"], "bulls": ["попытка", "попытки", "попыток"], "nonogram": ["рисунок", "рисунка", "рисунков"], "game24": ["пример", "примера", "примеров"], "anagram": ["слово", "слова", "слов"], "wordsearch": ["слово", "слова", "слов"], "capitals": ["ответ", "ответа", "ответов"], "stress": ["слово", "слова", "слов"], "diff": ["отличие", "отличия", "отличий"], "digits": ["цифра", "цифры", "цифр"], "missing": ["раунд", "раунда", "раундов"], "stroop": ["ответ", "ответа", "ответов"], "dots": ["ответ", "ответа", "ответов"], "pattern": ["клетка", "клетки", "клеток"], "shells": ["раунд", "раунда", "раундов"]};
+  var units = {"space": "points", "race": "points", "flight": ["арка", "арки", "арок"], "snake": ["яблоко", "яблока", "яблок"], "bounce": ["кирпич", "кирпича", "кирпичей"], "tower": ["этаж", "этажа", "этажей"], "reaction": "ms", "2048": "points", "match3": "points", "fifteen": ["ход", "хода", "ходов"], "mines": "clock", "pairs": ["ход", "хода", "ходов"], "simon": ["шаг", "шага", "шагов"], "shade": ["квадрат", "квадрата", "квадратов"], "arrows": ["стрелка", "стрелки", "стрелок"], "word": ["попытка", "попытки", "попыток"], "math": ["пример", "примера", "примеров"], "tetris": "points", "runner": ["метр", "метра", "метров"], "jumper": ["метр", "метра", "метров"], "moles": ["крот", "крота", "кротов"], "tiles": ["плитка", "плитки", "плиток"], "knives": "points", "stick": "points", "schulte": "tenths", "sudoku": "clock", "hangman": ["слово", "слова", "слов"], "slice": ["фрукт", "фрукта", "фруктов"], "hoops": "points", "pong": ["гол", "гола", "голов"], "hockey": ["гол", "гола", "голов"], "balloons": ["шарик", "шарика", "шариков"], "catch": "points", "aim": "points", "colors": ["звезда", "звезды", "звёзд"], "sort": ["уровень", "уровня", "уровней"], "lines": "points", "frog": ["ряд", "ряда", "рядов"], "ski": "points", "fall": ["этаж", "этажа", "этажей"], "zigzag": ["поворот", "поворота", "поворотов"], "maze": ["лабиринт", "лабиринта", "лабиринтов"], "golf": ["удар", "удара", "ударов"], "bubbles": "points", "ten": ["цифра", "цифры", "цифр"], "flood": ["поле", "поля", "полей"], "lights": ["уровень", "уровня", "уровней"], "gomoku": ["победа", "победы", "побед"], "connect4": ["победа", "победы", "побед"], "reversi": ["победа", "победы", "побед"], "battleship": ["победа", "победы", "побед"], "bulls": ["попытка", "попытки", "попыток"], "nonogram": ["рисунок", "рисунка", "рисунков"], "game24": ["пример", "примера", "примеров"], "anagram": ["слово", "слова", "слов"], "wordsearch": ["слово", "слова", "слов"], "capitals": ["ответ", "ответа", "ответов"], "stress": ["слово", "слова", "слов"], "diff": ["отличие", "отличия", "отличий"], "digits": ["цифра", "цифры", "цифр"], "missing": ["раунд", "раунда", "раундов"], "stroop": ["ответ", "ответа", "ответов"], "dots": ["ответ", "ответа", "ответов"], "pattern": ["клетка", "клетки", "клеток"], "shells": ["раунд", "раунда", "раундов"], "typing": ["ответ", "ответа", "ответов"], "voices": ["голосовое", "голосовых", "голосовых"], "cat": ["письмо", "письма", "писем"], "wrongchat": ["сообщение", "сообщения", "сообщений"], "grandma": ["тарелка", "тарелки", "тарелок"]};
   var POINTS = ['очко', 'очка', 'очков'];
   function label(u, v) {
     if (u === 'ms') return v + ' мс';

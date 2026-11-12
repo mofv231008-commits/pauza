@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Не тот чат</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:#17093F}
+.play{gap:16px}
+.card{width:min(100%,340px);border-radius:22px;background:#22105A;overflow:hidden;transition:transform .2s,opacity .2s}
+.card.sent{transform:translateY(-60px) scale(.9);opacity:0}
+.card.del{transform:scale(.6) rotate(-6deg);opacity:0}
+.chat{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(244,241,255,.06)}
+.ava{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-weight:800;color:var(--ink);flex:none}
+.chat b{font-size:16px}
+.chat span{display:block;font-size:12px;color:var(--lilac)}
+.body{padding:18px 14px 20px;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.bubble{max-width:90%;padding:12px 16px;border-radius:18px 18px 6px 18px;background:var(--mint);color:var(--ink);font-size:17px;line-height:1.35}
+.status{font-size:12px;color:var(--lilac)}
+.say{margin:0;min-height:2.6em;max-width:340px;color:var(--sun);font-size:14px;text-align:center;line-height:1.35}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(100%,340px)}
+.btns button{min-height:58px;border:0;border-radius:18px;font-family:var(--font-display);font-weight:600;font-size:15px;cursor:pointer;touch-action:manipulation}
+.b-del{background:var(--coral);color:var(--ink)}
+.b-send{background:var(--mint);color:var(--ink)}
+.stage[data-state="paused"] .card,.stage[data-state="countdown"] .card{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <div class="card" id="card"></div>
+    <p class="say" id="say">Подходит ли сообщение этому чату?</p>
+    <div class="btns"><button class="b-del" type="button" id="del">Удалить</button><button class="b-send" type="button" id="send">Отправить</button></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['сообщение', 'сообщения', 'сообщений'];
+  var CHATS = { 'Начальник': '#FF9A6B', 'Мама': '#FFD84D', 'Чат группы': '#6FD3FF', 'Преподаватель': '#B9A8F0', 'Бабушка': '#FF8AD8', 'Курьер': '#3DF5B0', 'Чат дома': '#FFD84D', 'Лучший друг': '#6FD3FF', 'Староста': '#3DF5B0' };
+  /* чат, сообщение, можно ли отправлять */
+  var DATA = [
+    ['Начальник', 'Отчёт будет к пятнице', 1], ['Начальник', 'Задержусь на 10 минут, пробки', 1], ['Начальник', 'Можно перенести созвон на завтра?', 1],
+    ['Начальник', 'го катку вечером? 🎮', 0], ['Начальник', 'Скинь мем, где кот орёт', 0], ['Начальник', 'Я на больничном 😉', 0], ['Начальник', 'Целую, спокойной ночи', 0],
+    ['Мама', 'Я уже дома, не волнуйся', 1], ['Мама', 'Приеду в субботу к обеду', 1], ['Мама', 'Спасибо за котлеты!', 1],
+    ['Мама', 'Короче, вчера было жёстко…', 0], ['Мама', 'Жду отчёт до пятницы', 0], ['Мама', 'Отметь меня на паре, я сплю', 0],
+    ['Чат группы', 'Кто сделал домашку, скиньте 🙏', 1], ['Чат группы', 'Пару перенесли на 14:00?', 1],
+    ['Чат группы', 'Мам, я на паре, потом перезвоню', 0], ['Чат группы', 'Люблю тебя, зайка', 0], ['Чат группы', 'Отчёт будет к пятнице, Иван Петрович', 0],
+    ['Преподаватель', 'Можно сдать работу завтра?', 1], ['Преподаватель', 'Спасибо за лекцию!', 1],
+    ['Преподаватель', 'ахаха он опять в той рубашке', 0], ['Преподаватель', 'Кто идёт за шавой после пары?', 0], ['Преподаватель', 'Списывайте, тут все ответы', 0],
+    ['Бабушка', 'Спасибо за пирожки! Очень вкусно', 1], ['Бабушка', 'Позвоню вечером', 1], ['Бабушка', 'С днём рождения! Люблю!', 1],
+    ['Бабушка', 'Дедлайн горит, всем срочно в созвон', 0], ['Бабушка', 'Кто оставил коляску у лифта?', 0],
+    ['Курьер', 'Оставьте у двери, пожалуйста', 1], ['Курьер', 'Домофон не работает, позвоните', 1],
+    ['Курьер', 'Скучаю 😘', 0], ['Курьер', 'Ну что, отчёт готов?', 0],
+    ['Чат дома', 'Кто оставил коляску у лифта?', 1], ['Чат дома', 'Завтра отключат горячую воду', 1],
+    ['Чат дома', 'Целую, спокойной ночи', 0], ['Чат дома', 'Сегодня работаю без штанов', 0],
+    ['Лучший друг', 'Го гулять вечером?', 1], ['Лучший друг', 'Смотри, какой мем 😂', 1],
+    ['Лучший друг', 'Уважаемый, прошу согласовать бюджет', 0],
+    ['Староста', 'Скинь расписание на неделю', 1], ['Староста', 'Отметь меня, я сплю', 0], ['Староста', 'Спасибо за пирожки!', 0]
+  ];
+  var FAIL_SEND = ['Отправлено. Две синие галочки. Поздно', 'Сообщение прочитано. Удалить можно, но память не сотрёшь', 'Скриншот уже ходит по чатам', 'Тебя добавили в чат «Обсуждаем это»'];
+  var FAIL_DEL = ['Удалено, а оно было нормальное', 'Тебя теперь ждут с ответом', 'Перестраховка — тоже ошибка'];
+  var card = document.getElementById('card'), say = document.getElementById('say');
+  var cur, score, wrong, busy, order, pos;
+
+  var shell = P.shell({
+    id: 'wrongchat', title: 'Не тот чат', tagline: 'Отправить или удалить, пока не прочитали.',
+    rulesHtml: '<p>Ты вот-вот отправишь сообщение. Посмотри, кому: если текст подходит этому чату — отправляй, если нет — удаляй, пока не поздно. Ошибка отнимает 4 секунды. На всё 45 секунд.</p>',
+    startLabel: 'Открыть чаты', countdown: true, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: стрелка влево — удалить, вправо — отправить',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 45, finish, document.getElementById('timebar'));
+  function show() {
+    if (pos >= order.length) { order = P.shuffle(order); pos = 0; }
+    cur = DATA[order[pos++]];
+    card.className = 'card';
+    card.innerHTML = '<div class="chat"><div class="ava" style="background:' + CHATS[cur[0]] + '">' + cur[0][0] + '</div><div><b>' + cur[0] + '</b><span>' + (cur[0].indexOf('Чат') === 0 ? 'группа' : 'в сети') + '</span></div></div><div class="body"><div class="bubble">' + cur[1] + '</div><div class="status">не отправлено</div></div>';
+    busy = false;
+  }
+  function act(send) {
+    if (!shell.running || busy) return;
+    busy = true;
+    card.classList.add(send ? 'sent' : 'del');
+    if (send === !!cur[2]) { score++; shell.setScore(String(score)); P.haptic('coin'); say.textContent = send ? 'Ушло куда надо' : 'Фух, удалено вовремя'; }
+    else { wrong++; timer.add(-4); P.haptic('crash'); say.textContent = send ? P.pick(FAIL_SEND) : P.pick(FAIL_DEL); }
+    setTimeout(function () { if (shell.running) show(); }, 260);
+  }
+  function reset() { score = 0; wrong = 0; order = P.shuffle(DATA.map(function (_, i) { return i; })); pos = 0; shell.setScore('0'); timer.reset(); say.textContent = 'Подходит ли сообщение этому чату?'; show(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong, phrase: 'В «Не тот чат» я спасаю ' + score + ' ' + P.plural(score, U) + ' от позора за 45 секунд.' }); }
+  document.getElementById('del').addEventListener('click', function () { act(false); });
+  document.getElementById('send').addEventListener('click', function () { act(true); });
+  P.arrows(function (d) { if (d === 'left') act(false); if (d === 'right') act(true); });
+  order = [0]; pos = 0; show(); timer.show();
+})();
+</script>
+</body>
+</html>

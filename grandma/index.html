@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Бабушка кормит</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:#2A1036}
+.play{gap:14px}
+.meters{display:grid;gap:10px;width:min(100%,340px)}
+.meter b{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--lilac);margin-bottom:4px}
+.meter .track{height:12px;border-radius:6px;background:rgba(244,241,255,.1);overflow:hidden}
+.meter .track i{display:block;height:100%;border-radius:6px;transition:width .15s}
+.full i{background:linear-gradient(90deg,#3DF5B0,#FFD84D 70%,#FF6B4A)}
+.happy i{background:#FF8AD8}
+.speech{position:relative;max-width:320px;padding:12px 16px;border-radius:18px;background:var(--paper);color:var(--ink);font-size:16px;font-weight:600;text-align:center;min-height:1.4em}
+.speech::after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-8px;border:8px solid transparent;border-bottom:0;border-top-color:var(--paper)}
+.granny{width:min(150px,22vh);height:min(150px,22vh)}
+.plate{width:min(230px,32vh);height:min(150px,20vh);display:grid;place-items:center;transition:transform .2s,opacity .2s}
+.plate.eat{transform:scale(.4) translateY(-80px);opacity:0}
+.plate.no{transform:translateX(120%) rotate(15deg);opacity:0}
+.plate svg{width:100%;height:100%}
+.dish{margin:-6px 0 0;font-family:var(--font-display);font-weight:600;font-size:16px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(100%,340px)}
+.btns button{min-height:56px;border:0;border-radius:18px;font-family:var(--font-display);font-weight:600;font-size:15px;cursor:pointer;touch-action:manipulation}
+.no-b{background:var(--road);color:var(--paper)}
+.yes-b{background:var(--mint);color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="meters">
+      <div class="meter full"><b><span>Сытость</span><span id="fullTxt">30%</span></b><div class="track"><i id="full"></i></div></div>
+      <div class="meter happy"><b><span>Бабушка довольна</span><span id="happyTxt">70%</span></b><div class="track"><i id="happy"></i></div></div>
+    </div>
+    <div class="speech" id="speech">Кожа да кости! Садись за стол!</div>
+    <svg class="granny" viewBox="0 0 120 120" aria-hidden="true">
+      <circle cx="60" cy="62" r="34" fill="#FFD0C4"/>
+      <path d="M26 56 C26 26 94 26 94 56 C90 40 30 40 26 56Z" fill="#E9E4FF"/>
+      <circle cx="60" cy="24" r="12" fill="#E9E4FF"/>
+      <path d="M22 60 Q14 92 34 110 L86 110 Q106 92 98 60 Q92 80 60 84 Q28 80 22 60Z" fill="#FF6B4A"/>
+      <circle cx="47" cy="60" r="8" fill="none" stroke="#3B1E8C" stroke-width="3"/><circle cx="73" cy="60" r="8" fill="none" stroke="#3B1E8C" stroke-width="3"/><path d="M55 60 H65" stroke="#3B1E8C" stroke-width="3"/>
+      <circle cx="47" cy="60" r="2.5" fill="#120630"/><circle cx="73" cy="60" r="2.5" fill="#120630"/>
+      <path d="M50 76 Q60 84 70 76" stroke="#C0392B" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="40" cy="72" r="5" fill="#FF8AD8" opacity=".6"/><circle cx="80" cy="72" r="5" fill="#FF8AD8" opacity=".6"/>
+    </svg>
+    <div class="plate" id="plate"></div>
+    <p class="dish" id="dish"></p>
+    <div class="btns"><button class="no-b" type="button" id="no">Не, спасибо</button><button class="yes-b" type="button" id="yes">Съесть</button></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['тарелка', 'тарелки', 'тарелок'];
+  var PLATE = '<ellipse cx="80" cy="74" rx="74" ry="22" fill="#F4F1FF"/><ellipse cx="80" cy="70" rx="58" ry="15" fill="#E9E4FF"/>';
+  var FOOD = [
+    { n: 'Пирожки', f: 14, svg: '<ellipse cx="58" cy="58" rx="26" ry="14" fill="#FF9A6B"/><ellipse cx="98" cy="60" rx="26" ry="14" fill="#F2884F"/><ellipse cx="78" cy="48" rx="26" ry="14" fill="#FF9A6B"/>' },
+    { n: 'Борщ', f: 18, svg: '<ellipse cx="80" cy="56" rx="50" ry="18" fill="#C0392B"/><ellipse cx="80" cy="56" rx="40" ry="12" fill="#E0402A"/><ellipse cx="88" cy="52" rx="10" ry="5" fill="#F4F1FF"/>' },
+    { n: 'Блины', f: 16, svg: '<ellipse cx="80" cy="62" rx="48" ry="12" fill="#FFD84D"/><ellipse cx="80" cy="54" rx="48" ry="12" fill="#FFC93A"/><ellipse cx="80" cy="46" rx="48" ry="12" fill="#FFD84D"/><ellipse cx="80" cy="42" rx="12" ry="4" fill="#FF6B4A"/>' },
+    { n: 'Котлеты с пюре', f: 22, svg: '<ellipse cx="62" cy="58" rx="28" ry="14" fill="#FFF3C4"/><ellipse cx="100" cy="56" rx="20" ry="12" fill="#8B4A2B"/><ellipse cx="100" cy="52" rx="16" ry="7" fill="#A0582F"/>' },
+    { n: 'Оливье', f: 20, svg: '<ellipse cx="80" cy="52" rx="44" ry="22" fill="#FFF3C4"/><g fill="#3DF5B0"><circle cx="64" cy="46" r="4"/><circle cx="92" cy="50" r="4"/><circle cx="78" cy="58" r="4"/></g><g fill="#FF9A6B"><rect x="70" y="40" width="7" height="7"/><rect x="96" y="40" width="7" height="7"/></g>' },
+    { n: 'Компотик', f: 6, svg: '<rect x="62" y="16" width="36" height="56" rx="6" fill="#FF8AD8" opacity=".85"/><rect x="62" y="16" width="36" height="10" fill="#F4F1FF" opacity=".5"/><circle cx="74" cy="52" r="5" fill="#C0392B"/><circle cx="86" cy="42" r="5" fill="#C0392B"/>' },
+    { n: 'Ещё ложечку', f: 8, svg: '<ellipse cx="80" cy="56" rx="22" ry="10" fill="#B9A8F0"/><rect x="100" y="52" width="40" height="6" rx="3" fill="#B9A8F0"/><ellipse cx="80" cy="54" rx="16" ry="6" fill="#FFF3C4"/>' }
+  ];
+  var ASK = ['Кожа да кости! Садись за стол!', 'Ещё ложечку!', 'Я же старалась!', 'Кушай, кушай, растущий организм!', 'А с собой завернуть?', 'Это же домашнее!', 'Зря я, что ли, с утра у плиты?', 'Ну хоть кусочек!'];
+  var HAPPY = ['Вот умница!', 'Кушай на здоровье!', 'Вот это аппетит!', 'Сразу видно — нравится!'];
+  var SAD = ['Невкусно, да?..', 'Ну как хочешь…', 'Я ведь старалась…', 'Совсем не ешь ничего!'];
+  var full, happy, dish, eaten, busy, t, plateEl = document.getElementById('plate'), dishEl = document.getElementById('dish'), speech = document.getElementById('speech');
+
+  var shell = P.shell({
+    id: 'grandma', title: 'Бабушка кормит', tagline: 'Не обидеть бабушку и не лопнуть.',
+    rulesHtml: '<p>Бабушка несёт тарелку за тарелкой. «Съесть» — сытость растёт, бабушка радуется. «Не, спасибо» — бабушка грустит. Со временем еда переваривается, а бабушка снова считает, что ты голодаешь. Сытость 100% — лопнешь. Бабушка расстроится до нуля — обидится навсегда. Продержись подольше.</p>',
+    startLabel: 'К бабушке', countdown: true, overEyebrow: 'Обед окончен',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: стрелки влево и вправо',
+    onReset: reset
+  });
+  function render() {
+    document.getElementById('full').style.width = full + '%'; document.getElementById('fullTxt').textContent = Math.round(full) + '%';
+    document.getElementById('happy').style.width = happy + '%'; document.getElementById('happyTxt').textContent = Math.round(happy) + '%';
+  }
+  function serve() {
+    dish = P.pick(FOOD);
+    plateEl.className = 'plate';
+    plateEl.innerHTML = '<svg viewBox="0 0 160 100" aria-hidden="true">' + PLATE + dish.svg + '</svg>';
+    dishEl.textContent = dish.n;
+    speech.textContent = P.pick(ASK);
+    busy = false;
+  }
+  function act(eat) {
+    if (!shell.running || busy) return;
+    busy = true;
+    if (eat) { full += dish.f; happy = Math.min(100, happy + 14); eaten++; shell.setScore(String(eaten)); speech.textContent = P.pick(HAPPY); P.haptic('coin'); plateEl.className = 'plate eat'; }
+    else { happy -= 18; speech.textContent = P.pick(SAD); P.haptic('tap'); plateEl.className = 'plate no'; }
+    render(); check();
+    setTimeout(function () { if (shell.running) serve(); }, 380);
+  }
+  function check() {
+    if (full >= 100) end('Лопнуть от пирожков — тоже судьба', 'Сытость 100%');
+    else if (happy <= 0) end('Бабушка обиделась и убрала варенье', 'Бабушка расстроилась');
+  }
+  function end(eyebrow, why) {
+    full = Math.min(100, full); happy = Math.max(0, happy); render();
+    shell.end({ score: eaten, delay: 700, eyebrow: eyebrow, stats: why + ' · за столом ' + Math.round(t) + ' с', phrase: 'Выдерживаю у бабушки ' + eaten + ' ' + P.plural(eaten, U) + ' подряд. Кто больше?' });
+  }
+  function reset() { full = 30; happy = 70; eaten = 0; t = 0; shell.setScore('0'); render(); serve(); }
+  P.loop(function (dt) {
+    if (!shell.running) return;
+    t += dt;
+    full = Math.max(0, full - dt * (4 + Math.min(4, t * 0.05)));
+    happy = happy - dt * (3 + Math.min(5, t * 0.06));
+    render(); check();
+  });
+  document.getElementById('no').addEventListener('click', function () { act(false); });
+  document.getElementById('yes').addEventListener('click', function () { act(true); });
+  P.arrows(function (d) { if (d === 'left') act(false); if (d === 'right') act(true); });
+  full = 30; happy = 70; render(); serve();
+})();
+</script>
+</body>
+</html>

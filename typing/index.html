@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Печатает…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:#17093F}
+.chat{position:absolute;inset:70px 0 0;display:flex;flex-direction:column;padding:12px 14px 0}
+.head{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;background:rgba(244,241,255,.06)}
+.ava{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-weight:800;color:var(--ink);flex:none}
+.who b{display:block;font-size:15px}
+.who span{font-size:13px;color:var(--lilac)}
+.who span.typing{color:var(--mint)}
+.feed{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;padding:12px 0}
+.msg{max-width:78%;padding:10px 14px;border-radius:18px;font-size:16px;line-height:1.35;animation:pop .18s ease-out}
+.msg.in{align-self:flex-start;background:#2E177A;border-bottom-left-radius:6px}
+.msg.out{align-self:flex-end;background:var(--mint);color:var(--ink);border-bottom-right-radius:6px}
+.msg.sys{align-self:center;background:none;color:var(--lilac);font-size:13px;padding:2px}
+@keyframes pop{from{transform:translateY(8px);opacity:0}}
+.dots{align-self:flex-start;display:flex;gap:5px;padding:14px 16px;border-radius:18px;background:#2E177A;border-bottom-left-radius:6px}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--lilac);animation:blink 1s infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+.bar{display:flex;gap:10px;padding:10px 0 calc(14px + env(safe-area-inset-bottom,0px))}
+.bar .field{flex:1;min-height:52px;border-radius:26px;background:rgba(244,241,255,.08);display:flex;align-items:center;padding:0 18px;color:var(--lilac);font-size:15px}
+.send{min-width:120px;min-height:52px;border:0;border-radius:26px;background:var(--mint);color:var(--ink);font-family:var(--font-display);font-weight:600;font-size:15px;cursor:pointer;touch-action:manipulation}
+.stage[data-state="start"] .chat{filter:blur(2px)}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="chat">
+    <div class="head"><div class="ava" id="ava">А</div><div class="who"><b id="name">Аня</b><span id="status">в сети</span></div></div>
+    <div class="feed" id="feed"></div>
+    <div class="bar"><div class="field" id="field">Ждём ответа…</div><button class="send" type="button" id="send">Ответить</button></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['ответ', 'ответа', 'ответов'], LIVES = 3;
+  var PEOPLE = [['Аня', '#FF8AD8'], ['Димон', '#6FD3FF'], ['Мама', '#FFD84D'], ['Староста', '#3DF5B0'], ['Начальник', '#FF9A6B'], ['Лёха', '#B9A8F0'], ['Тётя Люба', '#FF6B4A']];
+  var TEXTS = ['ок', 'Ага', 'хорошо', 'щас', 'ну такое', 'я подумаю', 'ахахахах', 'кто это?', 'да', 'норм', 'ок.', 'Ты где?', 'Позвони, как сможешь', 'видел?', 'ладно', 'понял принял', 'ну ты даёшь', 'ок 👍', 'спасибо', 'ммм', 'потом расскажу', 'ничего', 'Это голосовым, долго писать'];
+  var MINE = ['Наконец-то!', 'Ура, ответ!', 'Ок!', 'Принято', 'Отлично', 'Жду дальше'];
+  var feed = document.getElementById('feed'), statusEl = document.getElementById('status'), nameEl = document.getElementById('name'), ava = document.getElementById('ava'), field = document.getElementById('field');
+  var plan, step, phase, t, arrivedAt, lives, score, times, dots;
+
+  var shell = P.shell({
+    id: 'typing', title: 'Печатает…', tagline: 'Главная игра любой переписки: дождаться ответа.',
+    rulesHtml: '<p>Собеседник «печатает…», замолкает, снова печатает. Не пиши первым! Нажми «Ответить» сразу после того, как придёт сообщение, — у тебя меньше секунды. Поспешишь — напишешь первым. Опоздаешь — оставишь сообщение на прочитанном. Три промаха — конец.</p>',
+    startLabel: 'Ждать', countdown: false, overEyebrow: 'Переписка не задалась',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: пробел — ответить',
+    onReset: reset
+  });
+  function add(cls, text) {
+    var m = document.createElement('div'); m.className = 'msg ' + cls; m.textContent = text;
+    feed.appendChild(m);
+    while (feed.children.length > 9) feed.removeChild(feed.firstChild);
+    return m;
+  }
+  function showDots(on) {
+    if (on && !dots) { dots = document.createElement('div'); dots.className = 'dots'; dots.innerHTML = '<i></i><i></i><i></i>'; feed.appendChild(dots); }
+    if (!on && dots) { dots.remove(); dots = null; }
+    statusEl.textContent = on ? 'печатает…' : 'в сети'; statusEl.className = on ? 'typing' : '';
+  }
+  function newRound() {
+    var who = PEOPLE[score % PEOPLE.length];
+    if (score % 3 === 0) { nameEl.textContent = who[0]; ava.textContent = who[0][0]; ava.style.background = who[1]; }
+    plan = []; var fakes = Math.min(4, 1 + Math.floor(score / 2) + P.rand(2));
+    for (var i = 0; i < fakes; i++) { plan.push(['type', 0.6 + Math.random() * 1.6]); plan.push(['pause', 0.4 + Math.random() * 1.4]); }
+    plan.push(['type', 0.5 + Math.random() * 1.5]);
+    step = -1; phase = 'wait'; t = 0; next();
+    field.textContent = 'Ждём ответа…';
+  }
+  function next() {
+    step++;
+    if (step >= plan.length) { showDots(false); add('in', P.pick(TEXTS)); phase = 'arrived'; arrivedAt = performance.now(); t = 0; return; }
+    t = plan[step][1]; showDots(plan[step][0] === 'type');
+  }
+  function window_() { return Math.max(0.55, 1.1 - score * 0.04); }
+  function miss(why) {
+    lives--; side(); P.haptic('crash'); add('sys', why); phase = 'pause'; t = 1.1;
+    showDots(false);
+    if (lives <= 0) {
+      phase = 'over';
+      var avg = times.length ? Math.round(times.reduce(function (a, b) { return a + b; }, 0) / times.length) : 0;
+      shell.end({ score: score, delay: 900, stats: avg ? 'средняя скорость ответа: ' + avg + ' мс' : 'ни одного вовремя', phrase: 'В «Печатает…» у меня ' + score + ' ' + P.plural(score, U) + ' вовремя и ни одного «ты где?».' });
+    }
+  }
+  function reply() {
+    if (!shell.running) return;
+    if (phase === 'wait') { add('out', P.pick(['Ну что там?', 'Алло?', '??', 'Ты где']) ); miss('Первое сообщение — твоё. Позор'); return; }
+    if (phase === 'arrived') {
+      var ms = Math.round(performance.now() - arrivedAt); times.push(ms);
+      add('out', P.pick(MINE)); score++; shell.setScore(String(score)); P.haptic('coin');
+      add('sys', 'Ответ за ' + ms + ' мс');
+      phase = 'pause'; t = 0.7;
+    }
+  }
+  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (i < lives ? '#3DF5B0' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function reset() { feed.textContent = ''; dots = null; lives = LIVES; score = 0; times = []; shell.setScore('0'); side(); add('sys', 'Сегодня'); add('out', 'Привет! Есть минутка?'); newRound(); }
+  P.loop(function (dt) {
+    if (!shell.running) return;
+    if (phase === 'wait') { t -= dt; if (t <= 0) next(); }
+    else if (phase === 'arrived') { t += dt; if (t > window_()) miss('Сообщение осталось на прочитанном. Неловко'); }
+    else if (phase === 'pause') { t -= dt; if (t <= 0) newRound(); }
+  });
+  document.getElementById('send').addEventListener('pointerdown', function (e) { e.preventDefault(); reply(); });
+  window.addEventListener('keydown', function (e) { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); reply(); } });
+  add('in', 'Привет!'); add('out', 'Как дела?'); showDots(true);
+})();
+</script>
+</body>
+</html>
