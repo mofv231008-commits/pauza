@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Элементы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:18px}
+.sub{margin:0;color:var(--lilac);font-size:15px;text-align:center;max-width:340px}
+.q{margin:0;font-family:var(--font-display);font-weight:800;font-size:clamp(24px,7.5vw,34px);text-align:center;line-height:1.2;max-width:360px}
+.opts{display:grid;gap:10px;width:min(100%,360px)}
+.opts.two{grid-template-columns:1fr 1fr}
+.opts button{min-height:56px;border:0;border-radius:16px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:17px;cursor:pointer;touch-action:manipulation;padding:8px 12px;line-height:1.25}
+.opts button.right{background:var(--mint);color:var(--ink)}
+.opts button.wrong{background:var(--coral);color:var(--ink)}
+.note{margin:0;min-height:1.3em;color:var(--sun);font-size:14px;text-align:center;max-width:340px}
+.stage[data-state="paused"] .opts,.stage[data-state="countdown"] .opts,.stage[data-state="paused"] .q,.stage[data-state="countdown"] .q{visibility:hidden}
+.q .sym{display:inline-grid;place-items:center;width:110px;height:110px;border-radius:20px;background:var(--paper);color:var(--ink);font-size:48px}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="sub" id="sub">Какой это элемент?</p>
+    <div class="q" id="q"></div>
+    <div class="opts" id="opts"></div>
+    <p class="note" id="note"></p>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ["ответ", "ответа", "ответов"];
+  var qEl = document.getElementById('q'), opts = document.getElementById('opts'), note = document.getElementById('note'), sub = document.getElementById('sub');
+  var cur, score, wrong, busy, btns = [], recent = [];
+  var EL = [["H", "Водород"], ["He", "Гелий"], ["Li", "Литий"], ["Be", "Бериллий"], ["B", "Бор"], ["C", "Углерод"], ["N", "Азот"], ["O", "Кислород"], ["F", "Фтор"], ["Ne", "Неон"], ["Na", "Натрий"], ["Mg", "Магний"], ["Al", "Алюминий"], ["Si", "Кремний"], ["P", "Фосфор"], ["S", "Сера"], ["Cl", "Хлор"], ["Ar", "Аргон"], ["K", "Калий"], ["Ca", "Кальций"], ["Ti", "Титан"], ["Cr", "Хром"], ["Mn", "Марганец"], ["Fe", "Железо"], ["Co", "Кобальт"], ["Ni", "Никель"], ["Cu", "Медь"], ["Zn", "Цинк"], ["As", "Мышьяк"], ["Se", "Селен"], ["Br", "Бром"], ["Kr", "Криптон"], ["Sr", "Стронций"], ["Ag", "Серебро"], ["Sn", "Олово"], ["I", "Йод"], ["Xe", "Ксенон"], ["Ba", "Барий"], ["W", "Вольфрам"], ["Pt", "Платина"], ["Au", "Золото"], ["Hg", "Ртуть"], ["Pb", "Свинец"], ["Ra", "Радий"], ["U", "Уран"]];
+  function make() {
+    var e = fresh(EL, function (x) { return x[0]; }), rev = score >= 5 && Math.random() < 0.45, others = P.shuffle(EL.filter(function (x) { return x !== e; })).slice(0, 3);
+    return rev ? { q: e[1], sub: 'Какой у него символ?', opts: [e[0]].concat(others.map(function (x) { return x[0]; })), info: e[0] + ' — ' + e[1].toLowerCase() }
+               : { q: '<span class="sym">' + e[0] + '</span>', sub: 'Какой это элемент?', opts: [e[1]].concat(others.map(function (x) { return x[1]; })), info: e[0] + ' — ' + e[1].toLowerCase() };
+  }
+  var shell = P.shell({
+    id: 'elements', title: 'Элементы', tagline: 'Таблица Менделеева: символ и название.',
+    rulesHtml: '<p>Покажут химический символ — выбери название элемента. Потом будет наоборот: название дано, найди символ. Ошибка отнимает 3 секунды. Минута.</p>',
+    startLabel: 'К таблице', countdown: true, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1–4',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  for (var i = 0; i < 4; i++) { var b = document.createElement('button'); b.type = 'button'; b.dataset.i = i; opts.appendChild(b); btns.push(b); }
+  opts.addEventListener('click', function (e) { var t = e.target.closest('button'); if (t) pick(Number(t.dataset.i)); });
+  function fresh(list, key) { var pool = list.filter(function (x) { return recent.indexOf(key(x)) === -1; }); var x = P.pick(pool.length ? pool : list); recent.push(key(x)); if (recent.length > Math.min(30, list.length - 4)) recent.shift(); return x; }
+  function next() {
+    cur = make();
+    qEl.innerHTML = cur.q; if (cur.sub) sub.textContent = cur.sub; note.textContent = '';
+    var set = P.shuffle(cur.opts.slice()); cur.ans = set.indexOf(cur.opts[0]);
+    btns.forEach(function (bt, i) { bt.textContent = set[i]; bt.className = ''; });
+    busy = false;
+  }
+  function pick(i) {
+    if (!shell.running || busy) return;
+    busy = true;
+    if (i === cur.ans) { score++; shell.setScore(String(score)); P.haptic('coin'); btns[i].className = 'right'; }
+    else { wrong++; timer.add(-3); P.haptic('crash'); btns[i].className = 'wrong'; btns[cur.ans].className = 'right'; note.textContent = cur.info || ''; }
+    setTimeout(function () { if (shell.running) next(); }, i === cur.ans ? 250 : 900);
+  }
+  function reset() { score = 0; wrong = 0; recent = []; note.textContent = ''; shell.setScore('0'); timer.reset(); next(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong, phrase: 'В «Элементах» я узнаю ' + score + ' ' + P.plural(score, ['элемент', 'элемента', 'элементов']) + ' таблицы Менделеева за минуту.' }); }
+  window.addEventListener('keydown', function (e) { var m = /^(?:Digit|Numpad)([1-4])$/.exec(e.code); if (m) pick(Number(m[1]) - 1); });
+  score = 0; next(); timer.show();
+})();
+</script>
+</body>
+</html>

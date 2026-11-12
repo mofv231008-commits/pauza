@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Хоккей вдвоём</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Хоккей вдвоём. Каждый водит битой по своей половине"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['гол', 'гола', 'голов'], WIN = 5;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var F, A = null, B = null, puck, sa = 0, sb = 0, aim = { a: null, b: null }, ptrs = {}, pauseT = 0, flashSide = 0, flashT = 0, over = false;
+
+  var shell = P.shell({
+    id: 'hockey2', title: 'Хоккей вдвоём', tagline: 'Аэрохоккей на одном телефоне, до пяти голов.',
+    rulesHtml: '<p>Положите телефон между собой. Зелёный водит битой по нижней половине, красный — по верхней. Пальцами можно играть одновременно. Забей шайбу в ворота соперника. Кто первым забьёт пять, тот и победил.</p>',
+    startLabel: 'На лёд', overEyebrow: 'Матч окончен', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { layout(); if (!A) reset(); });
+  function layout() { var W = view.W, H = view.H; F = { x: 12, y: 74, w: W - 24, h: H - 74 - 16 }; F.goal = F.w * 0.38; F.mr = Math.max(20, F.w * 0.075); F.pr = F.mr * 0.72; }
+  function reset() {
+    if (!F) layout();
+    A = { x: F.x + F.w / 2, y: F.y + F.h * 0.84, vx: 0, vy: 0 };
+    B = { x: F.x + F.w / 2, y: F.y + F.h * 0.16, vx: 0, vy: 0 };
+    aim = { a: { x: A.x, y: A.y }, b: { x: B.x, y: B.y } }; ptrs = {}; sa = 0; sb = 0; over = false;
+    face(P.pick([-1, 1]));
+    shell.setScore('0 : 0');
+  }
+  function face(toward) { puck = { x: F.x + F.w / 2, y: F.y + F.h / 2 + toward * F.h * 0.1, vx: 0, vy: 0 }; pauseT = 0.7; }
+  function finish() {
+    over = true;
+    var green = sa > sb;
+    shell.end({ score: Math.max(sa, sb), record: false, delay: 700, haptic: 'win', eyebrow: green ? 'Победили зелёные' : 'Победили красные', tone: 'good',
+      stats: 'зелёные ' + sa + ' : ' + sb + ' красные', phrase: 'Сыграем в «Хоккей вдвоём»? Последний матч закончился ' + Math.max(sa, sb) + ' : ' + Math.min(sa, sb) + '.' });
+  }
+  function collide(m) {
+    var dx = puck.x - m.x, dy = puck.y - m.y, d = Math.hypot(dx, dy), min = F.mr + F.pr;
+    if (d >= min || d === 0) return false;
+    var nx = dx / d, ny = dy / d;
+    puck.x = m.x + nx * min; puck.y = m.y + ny * min;
+    var rvx = puck.vx - m.vx, rvy = puck.vy - m.vy, dot = rvx * nx + rvy * ny;
+    if (dot < 0) { puck.vx -= 2 * dot * nx; puck.vy -= 2 * dot * ny; }
+    var sp = Math.hypot(puck.vx, puck.vy), max = view.H * 2.4;
+    if (sp > max) { puck.vx *= max / sp; puck.vy *= max / sp; }
+    if (sp < view.H * 0.35) { puck.vx += nx * view.H * 0.35; puck.vy += ny * view.H * 0.35; }
+    return true;
+  }
+  function moveMallet(m, t, dt, top) {
+    var minY = top ? F.y + F.mr : F.y + F.h / 2 + F.mr, maxY = top ? F.y + F.h / 2 - F.mr : F.y + F.h - F.mr;
+    var tx = P.clamp(t.x, F.x + F.mr, F.x + F.w - F.mr), ty = P.clamp(t.y, minY, maxY);
+    var dx = tx - m.x, dy = ty - m.y, d = Math.hypot(dx, dy), step = Math.min(d, view.H * 3.4 * dt);
+    var nx = d ? m.x + dx / d * step : m.x, ny = d ? m.y + dy / d * step : m.y;
+    m.vx = (nx - m.x) / Math.max(dt, 0.001); m.vy = (ny - m.y) / Math.max(dt, 0.001); m.x = nx; m.y = ny;
+  }
+  P.loop(function (dt) {
+    if (flashT > 0) flashT -= dt;
+    if (!F || !puck) { draw(); return; }
+    if (shell.running && !over) {
+      moveMallet(A, aim.a, dt, false); moveMallet(B, aim.b, dt, true);
+      if (pauseT > 0) pauseT -= dt;
+      else {
+        var steps = 3;
+        for (var s = 0; s < steps; s++) {
+          puck.x += puck.vx * dt / steps; puck.y += puck.vy * dt / steps;
+          var r = F.pr, gl = F.x + F.w / 2 - F.goal / 2, gr = F.x + F.w / 2 + F.goal / 2;
+          if (puck.x < F.x + r) { puck.x = F.x + r; puck.vx = Math.abs(puck.vx) * 0.9; }
+          if (puck.x > F.x + F.w - r) { puck.x = F.x + F.w - r; puck.vx = -Math.abs(puck.vx) * 0.9; }
+          var inGoal = puck.x > gl + r * 0.3 && puck.x < gr - r * 0.3;
+          if (puck.y < F.y + r && !inGoal) { puck.y = F.y + r; puck.vy = Math.abs(puck.vy) * 0.9; }
+          if (puck.y > F.y + F.h - r && !inGoal) { puck.y = F.y + F.h - r; puck.vy = -Math.abs(puck.vy) * 0.9; }
+          if (collide(A) || collide(B)) P.haptic('tap');
+          if (puck.y < F.y - r) { sa++; flashSide = -1; flashT = 0.6; P.haptic('win'); face(-1); break; }
+          if (puck.y > F.y + F.h + r) { sb++; flashSide = 1; flashT = 0.6; P.haptic('win'); face(1); break; }
+        }
+        var fr = Math.pow(0.6, dt); puck.vx *= fr; puck.vy *= fr;
+        shell.setScore(sa + ' : ' + sb);
+        if (sa >= WIN || sb >= WIN) finish();
+      }
+    }
+    draw();
+  });
+  function mallet(ctx, m, color) {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(m.x, m.y, F.mr, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(18,6,48,0.3)'; ctx.beginPath(); ctx.arc(m.x, m.y, F.mr * 0.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(m.x, m.y, F.mr * 0.4, 0, Math.PI * 2); ctx.fill();
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!F) return;
+    ctx.fillStyle = '#22105A'; ctx.beginPath(); ctx.roundRect(F.x, F.y, F.w, F.h, 24); ctx.fill();
+    ctx.fillStyle = 'rgba(255,107,74,.06)'; ctx.fillRect(F.x, F.y + 12, F.w, F.h / 2 - 12);
+    ctx.fillStyle = 'rgba(61,245,176,.06)'; ctx.fillRect(F.x, F.y + F.h / 2, F.w, F.h / 2 - 12);
+    ctx.strokeStyle = 'rgba(111,211,255,0.35)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(F.x, F.y + F.h / 2); ctx.lineTo(F.x + F.w, F.y + F.h / 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(F.x + F.w / 2, F.y + F.h / 2, F.w * 0.16, 0, Math.PI * 2); ctx.stroke();
+    var gx = F.x + F.w / 2 - F.goal / 2;
+    ctx.fillStyle = flashT > 0 && flashSide < 0 ? '#3DF5B0' : '#FF6B4A'; ctx.fillRect(gx, F.y - 4, F.goal, 6);
+    ctx.fillStyle = flashT > 0 && flashSide > 0 ? '#FF6B4A' : '#3DF5B0'; ctx.fillRect(gx, F.y + F.h - 2, F.goal, 6);
+    ctx.font = '800 40px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(61,245,176,.18)'; ctx.fillText(String(sa), F.x + F.w / 2, F.y + F.h * 0.62);
+    ctx.save(); ctx.translate(F.x + F.w / 2, F.y + F.h * 0.38); ctx.rotate(Math.PI); ctx.fillStyle = 'rgba(255,107,74,.18)'; ctx.fillText(String(sb), 0, 0); ctx.restore();
+    ctx.textBaseline = 'alphabetic';
+    if (!A) return;
+    mallet(ctx, B, '#FF6B4A');
+    mallet(ctx, A, P.gold() ? '#FFD84D' : '#3DF5B0');
+    ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(puck.x, puck.y, F.pr, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(18,6,48,0.2)'; ctx.beginPath(); ctx.arc(puck.x, puck.y, F.pr * 0.6, 0, Math.PI * 2); ctx.fill();
+  }
+  function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  canvas.addEventListener('pointerdown', function (e) {
+    e.preventDefault(); var p = pos(e), side = p.y > F.y + F.h / 2 ? 'a' : 'b';
+    ptrs[e.pointerId] = side; aim[side] = { x: p.x, y: p.y + (side === 'a' ? -30 : 30) };
+  });
+  canvas.addEventListener('pointermove', function (e) { var side = ptrs[e.pointerId]; if (!side) return; var p = pos(e); aim[side] = { x: p.x, y: p.y + (side === 'a' ? -30 : 30) }; });
+  ['pointerup', 'pointercancel'].forEach(function (ev) { canvas.addEventListener(ev, function (e) { delete ptrs[e.pointerId]; }); });
+})();
+</script>
+</body>
+</html>

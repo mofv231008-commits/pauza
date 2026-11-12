@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Орфография</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:18px}
+.sub{margin:0;color:var(--lilac);font-size:15px;text-align:center;max-width:340px}
+.q{margin:0;font-family:var(--font-display);font-weight:800;font-size:clamp(24px,7.5vw,34px);text-align:center;line-height:1.2;max-width:360px}
+.opts{display:grid;gap:10px;width:min(100%,360px)}
+.opts.two{grid-template-columns:1fr 1fr}
+.opts button{min-height:56px;border:0;border-radius:16px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:17px;cursor:pointer;touch-action:manipulation;padding:8px 12px;line-height:1.25}
+.opts button.right{background:var(--mint);color:var(--ink)}
+.opts button.wrong{background:var(--coral);color:var(--ink)}
+.note{margin:0;min-height:1.3em;color:var(--sun);font-size:14px;text-align:center;max-width:340px}
+.stage[data-state="paused"] .opts,.stage[data-state="countdown"] .opts,.stage[data-state="paused"] .q,.stage[data-state="countdown"] .q{visibility:hidden}
+.q{display:none}.opts button{min-height:84px;font-size:clamp(16px,5vw,21px);text-transform:none}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="sub" id="sub">Как пишется правильно?</p>
+    <div class="q" id="q"></div>
+    <div class="opts two" id="opts"></div>
+    <p class="note" id="note"></p>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ["слово", "слова", "слов"];
+  var qEl = document.getElementById('q'), opts = document.getElementById('opts'), note = document.getElementById('note'), sub = document.getElementById('sub');
+  var cur, score, wrong, busy, btns = [], recent = [];
+  var SP = [["корова", "карова"], ["молоко", "малако"], ["собака", "сабака"], ["ворона", "варона"], ["берёза", "бирёза"], ["карандаш", "корандаш"], ["огурец", "агурец"], ["помидор", "памидор"], ["тетрадь", "тетрать"], ["пенал", "пинал"], ["пальто", "польто"], ["магазин", "магозин"], ["хорошо", "харашо"], ["вокзал", "вакзал"], ["аптека", "аптэка"], ["ракета", "рокета"], ["пшеница", "пшиница"], ["капуста", "копуста"], ["лопата", "лапата"], ["сапоги", "сапаги"], ["заяц", "заец"], ["медведь", "медветь"], ["мороз", "марос"], ["праздник", "празник"], ["солнце", "сонце"], ["сердце", "серце"], ["чувство", "чуство"], ["лестница", "лесница"], ["честный", "чесный"], ["вкусный", "вкустный"], ["интересный", "интерестный"], ["участвовать", "учавствовать"], ["извините", "извените"], ["пожалуйста", "пожалуста"], ["агентство", "агенство"], ["компьютер", "компютер"], ["инцидент", "инциндент"], ["прецедент", "прецендент"], ["компромисс", "компромис"], ["ровесник", "ровестник"], ["грейпфрут", "грейпфрукт"], ["будущий", "будующий"], ["беспорядок", "безпорядок"], ["расчёска", "расчоска"], ["жёлудь", "жолудь"], ["шоколад", "шиколад"], ["жюри", "жури"], ["брошюра", "брошура"], ["парашют", "парашут"], ["цыплёнок", "циплёнок"], ["цирк", "цырк"], ["огурцы", "огурци"], ["молодец", "малодец"], ["винегрет", "венегрет"], ["дефицит", "дифицит"], ["привилегия", "привелегия"], ["ветеринар", "витеринар"], ["иллюзия", "илюзия"], ["аппетит", "апетит"], ["коллектив", "колектив"], ["суббота", "субота"], ["класс", "клас"], ["программа", "програма"], ["миллион", "милион"], ["терраса", "тераса"], ["впечатление", "впечетление"], ["в течение дня", "в течении дня"]];
+  function make() { var p = fresh(SP, function (x) { return x[0]; }); return { q: '', opts: [p[0], p[1]], info: 'Правильно: ' + p[0] }; }
+  var shell = P.shell({
+    id: 'spelling', title: 'Орфография', tagline: 'Выбери, как пишется правильно.',
+    rulesHtml: '<p>Два варианта одного слова, верный только один. Нажми на правильное написание. Слова — от школьных «корова» и «берёза» до коварных «прецедент» и «грейпфрут». Ошибка отнимает 3 секунды. Минута.</p>',
+    startLabel: 'Проверить себя', countdown: true, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1–2',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  for (var i = 0; i < 2; i++) { var b = document.createElement('button'); b.type = 'button'; b.dataset.i = i; opts.appendChild(b); btns.push(b); }
+  opts.addEventListener('click', function (e) { var t = e.target.closest('button'); if (t) pick(Number(t.dataset.i)); });
+  function fresh(list, key) { var pool = list.filter(function (x) { return recent.indexOf(key(x)) === -1; }); var x = P.pick(pool.length ? pool : list); recent.push(key(x)); if (recent.length > Math.min(30, list.length - 4)) recent.shift(); return x; }
+  function next() {
+    cur = make();
+    qEl.innerHTML = cur.q; if (cur.sub) sub.textContent = cur.sub; note.textContent = '';
+    var set = P.shuffle(cur.opts.slice()); cur.ans = set.indexOf(cur.opts[0]);
+    btns.forEach(function (bt, i) { bt.textContent = set[i]; bt.className = ''; });
+    busy = false;
+  }
+  function pick(i) {
+    if (!shell.running || busy) return;
+    busy = true;
+    if (i === cur.ans) { score++; shell.setScore(String(score)); P.haptic('coin'); btns[i].className = 'right'; }
+    else { wrong++; timer.add(-3); P.haptic('crash'); btns[i].className = 'wrong'; btns[cur.ans].className = 'right'; note.textContent = cur.info || ''; }
+    setTimeout(function () { if (shell.running) next(); }, i === cur.ans ? 220 : 900);
+  }
+  function reset() { score = 0; wrong = 0; recent = []; note.textContent = ''; shell.setScore('0'); timer.reset(); next(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong, phrase: 'В «Орфографии» я пишу без ошибок ' + score + ' ' + P.plural(score, U) + ' за минуту. Проверишь себя?' }); }
+  window.addEventListener('keydown', function (e) { var m = /^(?:Digit|Numpad)([1-2])$/.exec(e.code); if (m) pick(Number(m[1]) - 1); });
+  score = 0; next(); timer.show();
+})();
+</script>
+</body>
+</html>

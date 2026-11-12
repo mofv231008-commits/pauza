@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Пословицы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:18px}
+.sub{margin:0;color:var(--lilac);font-size:15px;text-align:center;max-width:340px}
+.q{margin:0;font-family:var(--font-display);font-weight:800;font-size:clamp(24px,7.5vw,34px);text-align:center;line-height:1.2;max-width:360px}
+.opts{display:grid;gap:10px;width:min(100%,360px)}
+.opts.two{grid-template-columns:1fr 1fr}
+.opts button{min-height:56px;border:0;border-radius:16px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:17px;cursor:pointer;touch-action:manipulation;padding:8px 12px;line-height:1.25}
+.opts button.right{background:var(--mint);color:var(--ink)}
+.opts button.wrong{background:var(--coral);color:var(--ink)}
+.note{margin:0;min-height:1.3em;color:var(--sun);font-size:14px;text-align:center;max-width:340px}
+.stage[data-state="paused"] .opts,.stage[data-state="countdown"] .opts,.stage[data-state="paused"] .q,.stage[data-state="countdown"] .q{visibility:hidden}
+.q{font-size:clamp(20px,6.4vw,28px)}.opts button{font-family:var(--font-body,Onest),system-ui,sans-serif;font-size:16px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="sub" id="sub">Как заканчивается пословица?</p>
+    <div class="q" id="q"></div>
+    <div class="opts" id="opts"></div>
+    <p class="note" id="note"></p>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ["пословица", "пословицы", "пословиц"];
+  var qEl = document.getElementById('q'), opts = document.getElementById('opts'), note = document.getElementById('note'), sub = document.getElementById('sub');
+  var cur, score, wrong, busy, btns = [], recent = [];
+  var PV = [["Без труда", "не выловишь и рыбку из пруда"], ["Тише едешь —", "дальше будешь"], ["Цыплят", "по осени считают"], ["Не имей сто рублей,", "а имей сто друзей"], ["Семь раз отмерь —", "один раз отрежь"], ["Делу время —", "потехе час"], ["Слово — серебро,", "молчание — золото"], ["Друзья познаются", "в беде"], ["Яблоко от яблони", "недалеко падает"], ["Не всё коту", "масленица"], ["Любишь кататься —", "люби и саночки возить"], ["Повторенье —", "мать ученья"], ["Ученье — свет,", "а неученье — тьма"], ["Под лежачий камень", "вода не течёт"], ["Готовь сани летом,", "а телегу зимой"], ["Старый друг", "лучше новых двух"], ["Глаза боятся,", "а руки делают"], ["Утро вечера", "мудренее"], ["Всяк кулик", "своё болото хвалит"], ["На вкус и цвет", "товарищей нет"], ["Один в поле", "не воин"], ["Лучше синица в руках,", "чем журавль в небе"], ["В гостях хорошо,", "а дома лучше"], ["Москва не сразу", "строилась"], ["Не зная броду,", "не суйся в воду"], ["Обещанного", "три года ждут"], ["Поспешишь —", "людей насмешишь"], ["Рыбак рыбака", "видит издалека"], ["Сделал дело —", "гуляй смело"], ["Чем дальше в лес,", "тем больше дров"], ["Аппетит приходит", "во время еды"], ["Волков бояться —", "в лес не ходить"], ["За двумя зайцами погонишься —", "ни одного не поймаешь"], ["Как аукнется,", "так и откликнется"], ["Не в свои сани", "не садись"], ["После драки", "кулаками не машут"], ["Терпение и труд", "всё перетрут"], ["У страха", "глаза велики"], ["Хорошо смеётся тот,", "кто смеётся последним"], ["Что посеешь,", "то и пожнёшь"], ["Нет худа", "без добра"], ["Мал золотник,", "да дорог"], ["Дарёному коню", "в зубы не смотрят"], ["Не плюй в колодец —", "пригодится воды напиться"], ["Кто рано встаёт,", "тому Бог подаёт"], ["Не откладывай на завтра", "то, что можно сделать сегодня"]];
+  function make() { var p = fresh(PV, function (x) { return x[0]; }), others = P.shuffle(PV.filter(function (x) { return x !== p; })).slice(0, 3); return { q: p[0] + ' …', opts: [p[1]].concat(others.map(function (x) { return x[1]; })), info: p[0] + ' ' + p[1] }; }
+  var shell = P.shell({
+    id: 'proverbs', title: 'Пословицы', tagline: 'Закончи пословицу правильно.',
+    rulesHtml: '<p>Покажут начало пословицы — выбери, чем она заканчивается. Неправильные концовки взяты из других пословиц, так что иногда получается смешно. Ошибка отнимает 3 секунды. Минута.</p>',
+    startLabel: 'Вспомнить', countdown: true, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1–4',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  for (var i = 0; i < 4; i++) { var b = document.createElement('button'); b.type = 'button'; b.dataset.i = i; opts.appendChild(b); btns.push(b); }
+  opts.addEventListener('click', function (e) { var t = e.target.closest('button'); if (t) pick(Number(t.dataset.i)); });
+  function fresh(list, key) { var pool = list.filter(function (x) { return recent.indexOf(key(x)) === -1; }); var x = P.pick(pool.length ? pool : list); recent.push(key(x)); if (recent.length > Math.min(30, list.length - 4)) recent.shift(); return x; }
+  function next() {
+    cur = make();
+    qEl.innerHTML = cur.q; if (cur.sub) sub.textContent = cur.sub; note.textContent = '';
+    var set = P.shuffle(cur.opts.slice()); cur.ans = set.indexOf(cur.opts[0]);
+    btns.forEach(function (bt, i) { bt.textContent = set[i]; bt.className = ''; });
+    busy = false;
+  }
+  function pick(i) {
+    if (!shell.running || busy) return;
+    busy = true;
+    if (i === cur.ans) { score++; shell.setScore(String(score)); P.haptic('coin'); btns[i].className = 'right'; }
+    else { wrong++; timer.add(-3); P.haptic('crash'); btns[i].className = 'wrong'; btns[cur.ans].className = 'right'; note.textContent = cur.info || ''; }
+    setTimeout(function () { if (shell.running) next(); }, i === cur.ans ? 450 : 900);
+  }
+  function reset() { score = 0; wrong = 0; recent = []; note.textContent = ''; shell.setScore('0'); timer.reset(); next(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong, phrase: 'В «Пословицах» я заканчиваю ' + score + ' ' + P.plural(score, U) + ' за минуту. Тише едешь — дальше будешь.' }); }
+  window.addEventListener('keydown', function (e) { var m = /^(?:Digit|Numpad)([1-4])$/.exec(e.code); if (m) pick(Number(m[1]) - 1); });
+  score = 0; next(); timer.show();
+})();
+</script>
+</body>
+</html>

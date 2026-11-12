@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Наперегонки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Наперегонки. Каждый нажимает на свою половину, чтобы прыгнуть"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['метр', 'метра', 'метров'], TOP = 70;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var obs = [], R = [], goal = 0, over = false, t = 0;
+
+  var shell = P.shell({
+    id: 'race2', title: 'Наперегонки', tagline: 'Двое бегут по одинаковым дорожкам. Кто первый?',
+    rulesHtml: '<p>Зелёный бежит внизу, красный — наверху. Дорожки одинаковые, препятствия одни и те же. Нажимай на свою половину экрана, чтобы прыгать. Споткнулся — потерял скорость. Кто первым добежит до финиша, тот и победил.</p>',
+    startLabel: 'На старт', countdown: true, overEyebrow: 'Финиш',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: W — верхний, стрелка вверх — нижний, P — пауза', pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { if (!obs.length) reset(); });
+  function lane(i) { var mid = TOP + (view.H - TOP) / 2; return i === 1 ? { top: TOP + 4, bot: mid - 6 } : { top: mid + 6, bot: view.H - 12 }; }
+  function LH() { return (view.H - TOP) / 2 - 14; }
+  function reset() {
+    var W = view.W; goal = W * 16; obs = []; var x = W * 1.2;
+    while (x < goal - W * 0.5) { var kind = Math.random() < 0.75 ? 'box' : 'pit'; obs.push({ x: x, w: kind === 'box' ? W * (0.05 + Math.random() * 0.06) : W * (0.1 + Math.random() * 0.06), kind: kind }); x += W * (0.55 + Math.random() * 0.6); }
+    R = [0, 1].map(function () { return { d: 0, y: 0, vy: 0, slow: 0, falls: 0, done: false }; });
+    over = false; t = 0; shell.setScore('0 : 0');
+  }
+  function speed(r) { return view.W * (0.62 + Math.min(0.25, r.d / goal * 0.3)) * (r.slow > 0 ? 0.35 : 1); }
+  function jump(i) { var r = R[i]; if (!shell.running || over || !r || r.y < 0) return; r.vy = -Math.sqrt(2 * LH() * 3.2 * LH() * 0.42); P.haptic('tap'); }
+  function finish(win) {
+    over = true; var green = win === 0;
+    shell.end({ score: Math.round(goal / (view.W * 0.04)), record: false, delay: 700, haptic: 'win', eyebrow: green ? 'Победили зелёные' : 'Победили красные', tone: 'good',
+      stats: 'спотыкались: зелёные ' + R[0].falls + ', красные ' + R[1].falls, phrase: 'Сыграем «Наперегонки»? В прошлый раз ' + (green ? 'зелёные' : 'красные') + ' обогнали.' });
+  }
+  P.loop(function (dt) {
+    if (!R.length) return;
+    if (shell.running && !over) {
+      t += dt;
+      var g = LH() * 3.2;
+      R.forEach(function (r, i) {
+        r.d += speed(r) * dt; if (r.slow > 0) r.slow -= dt;
+        r.vy += g * dt; r.y += r.vy * dt; if (r.y > 0) { r.y = 0; r.vy = 0; }
+        var feet = view.W * 0.25, wdt = Math.min(LH() * 0.12, 34);
+        obs.forEach(function (o) {
+          var ox = o.x - r.d + feet;
+          if (ox < feet + wdt * 0.4 && ox + o.w > feet - wdt * 0.4) {
+            var hitBox = o.kind === 'box' && -r.y < LH() * 0.14, inPit = o.kind === 'pit' && r.y === 0 && ox < feet - wdt * 0.2 && ox + o.w > feet + wdt * 0.2;
+            if ((hitBox || inPit) && r.slow <= 0 && !o['hit' + i]) { o['hit' + i] = true; r.slow = 1; r.falls++; P.haptic('crash'); }
+          }
+        });
+        if (!over && r.d >= goal) { r.done = true; finish(i); }
+      });
+      shell.setScore(Math.round(R[0].d / goal * 100) + '% : ' + Math.round(R[1].d / goal * 100) + '%');
+    }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!R.length) return;
+    [0, 1].forEach(function (i) {
+      var L = lane(i), r = R[i], gy = L.bot - 16, col = i === 0 ? (P.gold() ? '#FFD84D' : '#3DF5B0') : '#FF6B4A', lh = LH(), feet = W * 0.25;
+      ctx.fillStyle = i === 0 ? '#1B0D4A' : '#24103F'; ctx.fillRect(0, L.top, W, L.bot - L.top);
+      ctx.fillStyle = '#3B1E8C'; ctx.fillRect(0, gy, W, L.bot - gy);
+      ctx.fillStyle = 'rgba(185,168,240,.25)'; for (var m = -((r.d * 0.5) % 40); m < W; m += 40) ctx.fillRect(m, gy + 6, 20, 2);
+      var fx = goal - r.d + feet; if (fx < W + 20) { for (var k = 0; k < 6; k++) { ctx.fillStyle = k % 2 ? '#120630' : '#F4F1FF'; ctx.fillRect(fx, L.top + k * (gy - L.top) / 6, 10, (gy - L.top) / 6); } }
+      obs.forEach(function (o) {
+        var ox = o.x - r.d + feet; if (ox > W || ox + o.w < 0) return;
+        if (o.kind === 'box') { ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.roundRect(ox, gy - lh * 0.14, o.w, lh * 0.14, 4); ctx.fill(); }
+        else { ctx.fillStyle = '#0B0420'; ctx.fillRect(ox, gy, o.w, L.bot - gy); }
+      });
+      var s = Math.min(lh * 0.12, 34), y = gy + r.y, wob = r.y === 0 ? Math.sin(r.d * 0.06) * 2 : 0;
+      ctx.globalAlpha = r.slow > 0 && Math.floor(r.slow * 10) % 2 ? 0.45 : 1;
+      ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(feet - s * 0.5, y - s * 1.6 + wob, s, s * 1.3, s * 0.3); ctx.fill();
+      ctx.beginPath(); ctx.arc(feet, y - s * 1.9 + wob, s * 0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(feet - s * 0.2, y - s * 0.35); ctx.lineTo(feet - s * 0.35 + wob * 3, y); ctx.moveTo(feet + s * 0.2, y - s * 0.35); ctx.lineTo(feet + s * 0.35 - wob * 3, y); ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(244,241,255,.15)'; ctx.fillRect(12, L.top + 8, W - 24, 5); ctx.fillStyle = col; ctx.fillRect(12, L.top + 8, (W - 24) * Math.min(1, r.d / goal), 5);
+      ctx.fillStyle = 'rgba(244,241,255,.6)'; ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(i === 0 ? 'зелёные — жми сюда' : 'красные — жми сюда', W - 12, L.top + 28);
+    });
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var r = canvas.getBoundingClientRect(); jump(e.clientY - r.top > TOP + (view.H - TOP) / 2 ? 0 : 1); });
+  window.addEventListener('keydown', function (e) { if (e.repeat) return; if (e.code === 'ArrowUp') { e.preventDefault(); jump(0); } if (e.code === 'KeyW') { e.preventDefault(); jump(1); } });
+})();
+</script>
+</body>
+</html>
