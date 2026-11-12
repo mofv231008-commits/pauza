@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Простые числа</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<script src="../shared/quiz.js?v=1"></script>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var n = 0;
+  function factor(x) { for (var d = 2; d * d <= x; d++) if (x % d === 0) return d; return 0; }
+  PauzaQuiz({
+    id: 'primes', title: 'Простые числа', tagline: 'Делится только на себя и на единицу?',
+    rules: '<p>Простое число делится только на 1 и на само себя. Свайпни влево — составное, вправо — простое. Числа растут. Ошибка — минус 3 секунды и разложение на множители.</p>',
+    swipe: true,
+    onReset: function () { n = 0; },
+    next: function () {
+      n++;
+      var max = Math.min(400, 30 + n * 12), x;
+      do { x = 2 + P.rand(max); } while (x % 2 === 0 && x !== 2 && Math.random() < 0.7 || x % 5 === 0 && x !== 5 && Math.random() < 0.6);
+      var f = factor(x), prime = !f;
+      return { q: String(x), opts: ['👈 Составное', 'Простое 👉'], right: prime ? 1 : 0, explain: prime ? x + ' делится только на 1 и на себя' : x + ' = ' + f + ' × ' + (x / f) };
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Снап</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:#22105A}
+.sn{position:absolute;inset:0;display:flex;flex-direction:column}
+.sn-zone{flex:1;border:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:22px;color:var(--paper);cursor:pointer;touch-action:manipulation;position:relative}
+.sn-top{background:rgba(255,107,74,.16);transform:rotate(180deg)}.sn-bot{background:rgba(111,211,255,.16)}
+.sn-zone small{position:absolute;bottom:16px;font-size:13px;color:var(--lilac);font-weight:600}
+.sn-zone.win{background:rgba(61,245,176,.35)}.sn-zone.lose{background:rgba(255,107,74,.45)}
+.sn-mid{height:150px;display:flex;align-items:center;justify-content:center;gap:16px}
+.sn-card{width:86px;height:118px;border-radius:14px;background:#F4F1FF;display:grid;place-items:center;font-size:52px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.sn-card.prev{opacity:.45;transform:scale(.8) rotate(-8deg)}
+.sn-card.flip{animation:fl .2s}
+@keyframes fl{from{transform:rotateY(90deg)}}
+.stage[data-state="paused"] .sn,.stage[data-state="countdown"] .sn-mid{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="sn"><button class="sn-zone sn-top" id="z1" type="button"><span id="s1">0</span><small>жми здесь, когда совпадёт</small></button>
+<div class="sn-mid"><div class="sn-card prev" id="prev"></div><div class="sn-card" id="cur"></div></div>
+<button class="sn-zone sn-bot" id="z0" type="button"><span id="s0">0</span><small>жми здесь, когда совпадёт</small></button></div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var SY = ['🍎', '🍋', '🍇', '🐸', '⭐', '🔥'];
+  var $ = function (id) { return document.getElementById(id); };
+  var prev = null, cur = null, score = [0, 0], t = 0, interval = 1.1, armed = false, WIN = 7, gen = 0;
+  var shell = P.shell({
+    id: 'snap', title: 'Снап', tagline: 'Игра вдвоём на одном телефоне.',
+    rulesHtml: '<p>Сядьте друг напротив друга. Карты открываются по одной. Как только новая карта совпала с предыдущей — хлопай по своей половине! Кто первый — получает очко. Хлопнул зря — минус очко. До семи.</p>',
+    startLabel: 'Раздать', countdown: true, overEyebrow: 'Партия',
+    formatScore: function () { return score[0] + ':' + score[1]; }, onReset: reset, pauseKeys: ['KeyP', 'Escape']
+  });
+  function show() { $('s0').textContent = score[0]; $('s1').textContent = score[1]; shell.setScore(score[0] + ':' + score[1]); }
+  function reset() { gen++; score = [0, 0]; prev = null; cur = null; t = 0; interval = 1.1; armed = false; $('prev').textContent = ''; $('cur').textContent = ''; show(); }
+  function flip() {
+    prev = cur;
+    cur = prev && Math.random() < 0.3 ? prev : SY[P.rand(SY.length)];
+    armed = !!prev && cur === prev;
+    $('prev').textContent = prev || ''; var c = $('cur'); c.textContent = cur; c.classList.remove('flip'); void c.offsetWidth; c.classList.add('flip');
+  }
+  function zone(i, cls) { var z = $('z' + i); z.classList.add(cls); setTimeout(function () { z.classList.remove(cls); }, 300); }
+  function slap(i) {
+    if (!shell.running || !cur) return;
+    if (armed) { armed = false; score[i]++; zone(i, 'win'); P.haptic('coin'); prev = null; $('prev').textContent = ''; t = -0.4; }
+    else { score[i] = Math.max(0, score[i] - 1); zone(i, 'lose'); P.haptic('crash'); }
+    show();
+    if (score[i] >= WIN) { var who = i === 0 ? 'Нижний' : 'Верхний'; shell.end({ score: WIN, record: false, delay: 500, eyebrow: who + ' игрок победил', tone: 'good', stats: 'счёт ' + score[0] + ':' + score[1], phrase: 'Сыграли в «Снап» — ' + score[0] + ':' + score[1] + '. Кто быстрее?' }); }
+  }
+  $('z0').addEventListener('pointerdown', function (e) { e.preventDefault(); slap(0); });
+  $('z1').addEventListener('pointerdown', function (e) { e.preventDefault(); slap(1); });
+  window.addEventListener('keydown', function (e) { if (e.code === 'Space' || e.code === 'ArrowDown') slap(0); if (e.code === 'KeyQ' || e.code === 'KeyW') slap(1); });
+  P.loop(function (dt) {
+    if (!shell.running) return;
+    t += dt;
+    if (t >= interval) { t = 0; if (armed) armed = false; flip(); interval = Math.max(0.6, interval - 0.01); }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Счёт вдвоём</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:#22105A}
+.m2{position:absolute;inset:0;display:flex;flex-direction:column}
+.m2-half{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:14px;position:relative}
+.m2-top{transform:rotate(180deg);background:rgba(255,107,74,.12)}.m2-bot{background:rgba(111,211,255,.12)}
+.m2-q{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,9vw,40px)}
+.m2-sc{position:absolute;left:14px;top:12px;font-family:var(--font-display);font-weight:800;font-size:22px}
+.m2-top .m2-sc{color:#FF6B4A}.m2-bot .m2-sc{color:#6FD3FF}
+.m2-opts{display:flex;gap:10px;width:min(100%,360px)}
+.m2-opts button{flex:1;min-height:62px;border:0;border-radius:16px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:800;font-size:22px;cursor:pointer;touch-action:manipulation}
+.m2-opts button.right{background:var(--mint);color:var(--ink)}.m2-opts button.wrong{background:var(--coral);color:var(--ink)}
+.m2-half.locked .m2-opts{opacity:.35}
+.m2-line{height:4px;background:var(--line)}
+.stage[data-state="paused"] .m2,.stage[data-state="countdown"] .m2-q{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="m2"><div class="m2-half m2-top" id="h1"><div class="m2-sc" id="s1">0</div><div class="m2-q" id="q1"></div><div class="m2-opts" id="o1"></div></div><div class="m2-line"></div>
+<div class="m2-half m2-bot" id="h0"><div class="m2-sc" id="s0">0</div><div class="m2-q" id="q0"></div><div class="m2-opts" id="o0"></div></div></div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var $ = function (id) { return document.getElementById(id); };
+  var score = [0, 0], ans = 0, opts = [], lock = [0, 0], busy = false, WIN = 10, n = 0;
+  var shell = P.shell({
+    id: 'math2', title: 'Счёт вдвоём', tagline: 'Игра вдвоём на одном телефоне.',
+    rulesHtml: '<p>Сядьте друг напротив друга. Пример один на двоих — кто первым нажмёт верный ответ на своей стороне, тот берёт очко. Ошибся — секунду не можешь отвечать. До десяти.</p>',
+    startLabel: 'Начать', countdown: true, overEyebrow: 'Финал',
+    formatScore: function () { return score[0] + ':' + score[1]; }, onReset: reset
+  });
+  function make() {
+    n++;
+    var t = P.rand(4), a, b, q;
+    if (t === 0) { a = 2 + P.rand(n > 6 ? 40 : 20); b = 2 + P.rand(n > 6 ? 40 : 20); q = a + ' + ' + b; ans = a + b; }
+    else if (t === 1) { a = 10 + P.rand(50); b = 2 + P.rand(a - 2); q = a + ' − ' + b; ans = a - b; }
+    else if (t === 2) { a = 2 + P.rand(8); b = 2 + P.rand(8); q = a + ' × ' + b; ans = a * b; }
+    else { b = 2 + P.rand(8); ans = 2 + P.rand(9); a = b * ans; q = a + ' : ' + b; }
+    var set = [ans]; while (set.length < 3) { var v = ans + (P.rand(2) ? 1 : -1) * (1 + P.rand(t >= 2 ? 6 : 10)); if (v >= 0 && set.indexOf(v) < 0) set.push(v); }
+    opts = P.shuffle(set); $('q0').textContent = $('q1').textContent = q + ' = ?';
+    [0, 1].forEach(function (i) {
+      var o = $('o' + i); o.textContent = '';
+      opts.forEach(function (v) { var b2 = document.createElement('button'); b2.type = 'button'; b2.textContent = v; b2.addEventListener('pointerdown', function (e) { e.preventDefault(); pick(i, v, b2); }); o.appendChild(b2); });
+    });
+    busy = false;
+  }
+  function pick(i, v, btn) {
+    if (!shell.running || busy || lock[i] > Date.now()) return;
+    if (v === ans) {
+      busy = true; score[i]++; btn.className = 'right'; P.haptic('coin'); $('s0').textContent = score[0]; $('s1').textContent = score[1]; shell.setScore(score[0] + ':' + score[1]);
+      if (score[i] >= WIN) { shell.end({ score: WIN, record: false, delay: 500, eyebrow: (i ? 'Верхний' : 'Нижний') + ' игрок победил', tone: 'good', stats: 'счёт ' + score[0] + ':' + score[1], phrase: 'Сыграли в «Счёт вдвоём» — ' + score[0] + ':' + score[1] + '. Кто быстрее считает?' }); return; }
+      setTimeout(function () { if (shell.running) make(); }, 500);
+    } else {
+      btn.className = 'wrong'; lock[i] = Date.now() + 1000; P.haptic('crash'); var h = $('h' + i); h.classList.add('locked');
+      setTimeout(function () { h.classList.remove('locked'); }, 1000);
+    }
+  }
+  function reset() { score = [0, 0]; n = 0; lock = [0, 0]; $('s0').textContent = '0'; $('s1').textContent = '0'; shell.setScore('0:0'); make(); }
+  make();
+})();
+</script>
+</body>
+</html>

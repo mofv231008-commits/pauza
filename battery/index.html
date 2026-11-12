@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Заряд 1%</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:#140734}
+.bt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;gap:10px;padding:80px 14px 14px}
+.bt-bat{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:24px}
+.bt-cell{width:110px;height:40px;border-radius:9px;border:3px solid var(--paper);padding:3px;position:relative}
+.bt-cell::after{content:'';position:absolute;right:-9px;top:11px;width:5px;height:12px;border-radius:2px;background:var(--paper)}
+.bt-cell i{display:block;height:100%;border-radius:4px;background:var(--mint);transition:width .2s}
+.bt-cell.low i{background:var(--coral)}
+.bt-hint{font-size:13px;color:var(--lilac);text-align:center;min-height:18px}
+.bt-grid{flex:1;width:min(100%,380px);display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-content:center}
+.bt-app{aspect-ratio:1;border:0;border-radius:22px;background:#22105A;color:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:600;position:relative;cursor:pointer;touch-action:manipulation;transition:transform .1s}
+.bt-app b{font-size:32px;line-height:1;filter:grayscale(1);opacity:.5}
+.bt-app.on{background:#3B1E8C;box-shadow:0 0 0 3px var(--coral)}
+.bt-app.on b{filter:none;opacity:1}
+.bt-app.on::after{content:'×';position:absolute;right:6px;top:2px;font-size:18px;color:var(--coral);font-weight:800}
+.bt-app.on em{position:absolute;left:8px;bottom:6px;font-style:normal;font-size:10px;color:var(--coral)}
+.bt-app.plug{background:var(--sun);color:var(--ink);box-shadow:0 0 0 3px var(--sun)}
+.bt-app.plug b{filter:none;opacity:1}
+.bt-app:active{transform:scale(.94)}
+.stage[data-state="paused"] .bt,.stage[data-state="countdown"] .bt-grid{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="bt"><div class="bt-bat"><div class="bt-cell" id="cell"><i id="lvl"></i></div><span id="pct">20%</span></div><div class="bt-hint" id="hint">Закрывай приложения, ловить зарядку</div><div class="bt-grid" id="grid"></div></div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var APPS = [['📺', 'Видео'], ['🎮', 'Игра'], ['🗺️', 'Карты'], ['📸', 'Камера'], ['🎵', 'Музыка'], ['🔦', 'Фонарик'], ['📡', 'Блютуз'], ['🛰️', 'GPS'], ['💬', 'Чаты']];
+  var DRAIN = { 'Видео': 1.6, 'Игра': 2.0, 'Карты': 1.3, 'Камера': 1.4, 'Музыка': 0.6, 'Фонарик': 0.9, 'Блютуз': 0.5, 'GPS': 1.0, 'Чаты': 0.7 };
+  var $ = function (id) { return document.getElementById(id); };
+  var bat = 20, t = 0, apps = [], openT = 0, plugT = 6, closed = 0, plugs = 0;
+  function fmtT(v) { return (v / 10).toFixed(1).replace('.', ',') + ' с'; }
+  var shell = P.shell({
+    id: 'battery', title: 'Заряд 1%', tagline: 'Телефон садится, а тебе вот-вот ответят.',
+    rulesHtml: '<p>Приложения сами открываются и жрут заряд — нажимай на них, чтобы закрыть. Иногда появляется зарядка ⚡ — хватай, это +4%. Продержи телефон живым как можно дольше.</p>',
+    countdown: true, overEyebrow: 'Телефон сел', formatScore: fmtT, unit: function () { return ''; }, onReset: reset
+  });
+  function build() {
+    var g = $('grid'); g.textContent = ''; apps = [];
+    APPS.forEach(function (a) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'bt-app'; b.innerHTML = '<b>' + a[0] + '</b>' + a[1] + '<em></em>';
+      var o = { el: b, n: a[1], icon: a[0], on: false, plug: false, life: 0 };
+      b.addEventListener('pointerdown', function (e) { e.preventDefault(); tap(o); });
+      g.appendChild(b); apps.push(o);
+    });
+  }
+  function draw(o) {
+    o.el.className = 'bt-app' + (o.plug ? ' plug' : o.on ? ' on' : '');
+    o.el.querySelector('b').textContent = o.plug ? '⚡' : o.icon;
+    o.el.querySelector('em').textContent = o.on ? '−' + DRAIN[o.n].toFixed(1) + '%/с' : '';
+  }
+  function tap(o) {
+    if (!shell.running) return;
+    if (o.plug) { o.plug = false; bat = Math.min(100, bat + 4); plugs++; P.haptic('win'); draw(o); return; }
+    if (o.on) { o.on = false; closed++; P.haptic('tap'); draw(o); }
+  }
+  function reset() { bat = 20; t = 0; openT = 0.8; plugT = 6; closed = 0; plugs = 0; build(); ui(); shell.setScore('0,0'); }
+  function ui() { $('lvl').style.width = Math.max(0, bat) + '%'; $('cell').classList.toggle('low', bat < 8); $('pct').textContent = Math.max(0, Math.ceil(bat)) + '%'; $('pct').style.color = bat < 8 ? '#FF6B4A' : ''; }
+  P.loop(function (dt) {
+    if (!shell.running) return;
+    t += dt; shell.setScore(fmtT(Math.floor(t * 10)).replace(' с', ''));
+    var drain = 0.25; apps.forEach(function (o) { if (o.on) drain += DRAIN[o.n] * (1 + t / 90); });
+    bat -= drain * dt;
+    openT -= dt;
+    if (openT <= 0) { var free = apps.filter(function (o) { return !o.on && !o.plug; }); if (free.length) { var o = P.pick(free); o.on = true; draw(o); } openT = Math.max(0.35, 1.3 - t / 50) * (0.6 + Math.random() * 0.8); }
+    plugT -= dt;
+    if (plugT <= 0) { var fr = apps.filter(function (o) { return !o.on && !o.plug; }); if (fr.length) { var p = P.pick(fr); p.plug = true; p.life = 1.6; draw(p); } plugT = 5 + Math.random() * 4; }
+    apps.forEach(function (o) { if (o.plug) { o.life -= dt; if (o.life <= 0) { o.plug = false; draw(o); } } });
+    $('hint').textContent = bat < 5 ? 'Почти сел! Закрывай всё!' : 'Открыто приложений: ' + apps.filter(function (o) { return o.on; }).length;
+    ui();
+    if (bat <= 0) { var sc = Math.floor(t * 10); P.haptic('crash'); shell.end({ score: sc, delay: 400, stats: 'закрыто приложений: ' + closed + ' · зарядок: ' + plugs, phrase: 'В «Заряд 1%» мой телефон продержался ' + fmtT(sc) + '. А твой?' }); }
+  });
+  build(); ui();
+})();
+</script>
+</body>
+</html>

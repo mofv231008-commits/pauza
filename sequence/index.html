@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Продолжи ряд</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<script src="../shared/quiz.js?v=1"></script>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['ряд', 'ряда', 'рядов'], n = 0;
+  function gen() {
+    var kinds = n < 4 ? ['ar', 'ar', 'geo'] : ['ar', 'geo', 'sq', 'fib', 'alt', 'inc', 'ar2'], k = P.pick(kinds), s = [], a, d;
+    if (k === 'ar') { a = P.rand(20); d = 2 + P.rand(9) * (Math.random() < 0.25 ? -1 : 1); for (var i = 0; i < 6; i++) s.push(a + d * i); }
+    else if (k === 'geo') { a = 1 + P.rand(4); d = 2 + P.rand(2); for (i = 0; i < 6; i++) s.push(a * Math.pow(d, i)); }
+    else if (k === 'sq') { a = 1 + P.rand(5); for (i = 0; i < 6; i++) s.push((a + i) * (a + i)); }
+    else if (k === 'fib') { var x = 1 + P.rand(3), y = x + P.rand(3); s = [x, y]; while (s.length < 6) s.push(s[s.length - 1] + s[s.length - 2]); }
+    else if (k === 'alt') { a = 10 + P.rand(20); var u = 3 + P.rand(6), v = 1 + P.rand(u - 1); s = [a]; for (i = 1; i < 6; i++) s.push(s[i - 1] + (i % 2 ? u : -v)); }
+    else if (k === 'inc') { a = P.rand(10); s = [a]; for (i = 1; i < 6; i++) s.push(s[i - 1] + i); }
+    else { a = P.rand(10); d = 1 + P.rand(3); s = [a]; for (i = 1; i < 6; i++) s.push(s[i - 1] + d * i * 2); }
+    return s;
+  }
+  PauzaQuiz({
+    id: 'sequence', title: 'Продолжи ряд', tagline: 'Арифметика, степени, Фибоначчи и хитрые ряды.',
+    rules: '<p>Найди, по какому правилу растёт ряд, и выбери следующее число. Ошибка отнимает 3 секунды. На всё 60 секунд.</p>',
+    unit: U, cols: 2,
+    onReset: function () { n = 0; },
+    next: function () {
+      n++;
+      var s = gen(), ans = s[5], set = [ans];
+      while (set.length < 4) { var off = (1 + P.rand(Math.max(3, Math.round(Math.abs(ans) * 0.15)))) * (P.rand(2) ? 1 : -1), v = ans + off; if (set.indexOf(v) < 0) set.push(v); }
+      var opts = P.shuffle(set).map(String);
+      return { q: s.slice(0, 5).join(',  ') + ',  ?', opts: opts, right: opts.indexOf(String(ans)), sub: 'Что дальше?' };
+    },
+    phrase: function (s) { return 'В «Продолжи ряд» я разгадал ' + s + ' ' + P.plural(s, U) + ' за минуту. Сможешь больше?'; }
+  });
+})();
+</script>
+</body>
+</html>

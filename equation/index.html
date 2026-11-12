@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Найди икс</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<script src="../shared/quiz.js?v=1"></script>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['уравнение', 'уравнения', 'уравнений'], n = 0;
+  function make() {
+    var hard = Math.min(3, Math.floor(n / 5)), x = 1 + P.rand(hard >= 2 ? 19 : 12), a = 2 + P.rand(hard >= 1 ? 8 : 5), b = 1 + P.rand(hard >= 2 ? 40 : 20), t = P.rand(hard >= 1 ? 4 : 2), q;
+    if (t === 0) q = a + 'x + ' + b + ' = ' + (a * x + b);
+    else if (t === 1) q = a + 'x − ' + b + ' = ' + (a * x - b);
+    else if (t === 2) q = 'x : ' + a + ' + ' + b + ' = ' + (x + b), x = x * a;
+    else q = b + ' − x = ' + (b - x);
+    return { q: q, x: x };
+  }
+  PauzaQuiz({
+    id: 'equation', title: 'Найди икс', tagline: 'Уравнения в одно действие и в два.',
+    rules: '<p>Реши уравнение и выбери, чему равен икс. Сначала простые, потом сложнее. Ошибка отнимает 3 секунды. На всё 60 секунд.</p>',
+    unit: U, cols: 2,
+    onReset: function () { n = 0; },
+    next: function () {
+      n++;
+      var e = make(), set = [e.x];
+      while (set.length < 4) { var d = e.x + (P.rand(2) ? 1 : -1) * (1 + P.rand(e.x > 20 ? 8 : 4)); if (set.indexOf(d) < 0) set.push(d); }
+      var opts = P.shuffle(set).map(function (v) { return 'x = ' + v; });
+      return { q: e.q, opts: opts, right: opts.indexOf('x = ' + e.x), sub: 'Найди x' };
+    },
+    phrase: function (s) { return 'В «Найди икс» я решил ' + s + ' ' + P.plural(s, U) + ' за минуту. Решишь больше?'; }
+  });
+})();
+</script>
+</body>
+</html>

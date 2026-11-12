@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Сдача</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<script src="../shared/quiz.js?v=1"></script>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['покупатель', 'покупателя', 'покупателей'], n = 0;
+  var ITEMS = ['Хлеб и молоко', 'Шоколадка', 'Кофе с собой', 'Пицца', 'Билет в кино', 'Тетради', 'Футболка', 'Наушники', 'Продукты на неделю', 'Букет', 'Книга', 'Зарядка для телефона', 'Шаурма', 'Мороженое', 'Батарейки'];
+  var BILLS = [100, 200, 500, 1000, 2000, 5000];
+  PauzaQuiz({
+    id: 'change', title: 'Сдача', tagline: 'Ты на кассе, очередь торопит.',
+    rules: '<p>Покупатель заплатил — выбери правильную сдачу. Суммы растут с каждым покупателем. Ошибка отнимает 3 секунды. На всё 60 секунд.</p>',
+    unit: U, cols: 2,
+    onReset: function () { n = 0; },
+    next: function () {
+      n++;
+      var maxP = n < 4 ? 190 : n < 10 ? 950 : 4900, price = 10 + P.rand(maxP);
+      if (n < 6) price = Math.round(price / 5) * 5 || 15;
+      var bill = BILLS.filter(function (b) { return b > price; })[0] || 5000;
+      if (Math.random() < 0.3) { var bigger = BILLS.filter(function (b) { return b > bill; }); if (bigger.length) bill = bigger[0]; }
+      var ans = bill - price, set = [ans], tricks = [10, 100, 1, 50, 90, 110, 9, 11];
+      while (set.length < 4) { var v = ans + P.pick(tricks) * (P.rand(2) ? 1 : -1); if (v > 0 && set.indexOf(v) < 0) set.push(v); }
+      var opts = P.shuffle(set).map(function (v) { return v + ' ₽'; });
+      return { q: price + ' ₽', sub: P.pick(ITEMS) + ' · заплатили ' + bill + ' ₽', opts: opts, right: opts.indexOf(ans + ' ₽') };
+    },
+    phrase: function (s) { return 'В «Сдаче» я обслужил ' + s + ' ' + P.plural(s, U) + ' без очереди. Посчитаешь быстрее?'; }
+  });
+})();
+</script>
+</body>
+</html>

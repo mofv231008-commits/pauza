@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Дроби</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 14px;font-family:var(--font-display);font-weight:800}
+.fr b{display:block;padding:0 6px}.fr b:first-child{border-bottom:4px solid currentColor}
+.qm{display:inline-block;vertical-align:middle;color:var(--sun);font-size:.8em}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<script src="../shared/quiz.js?v=1"></script>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+  function frac() { var d = 2 + P.rand(11), n = 1 + P.rand(d - 1); return [n, d]; }
+  var level = 0;
+  PauzaQuiz({
+    id: 'fractions', title: 'Дроби', tagline: 'Больше, меньше или равно — решай быстро.',
+    rules: '<p>Сравни две дроби: больше, меньше или они равны. Подсказка: приведи к общему знаменателю в уме или прикинь на глаз. Ошибка отнимает 3 секунды. На всё 60 секунд.</p>',
+    cols: 2,
+    onReset: function () { level = 0; },
+    next: function () {
+      level++;
+      var a = frac(), b;
+      if (Math.random() < 0.22) { var k = 2 + P.rand(3); b = [a[0] * k, a[1] * k]; if (Math.random() < 0.5) { var t = a; a = b; b = t; } }
+      else { do { b = frac(); } while (a[0] * b[1] === b[0] * a[1]); }
+      var l = a[0] * b[1], r = b[0] * a[1], right = l > r ? 0 : l < r ? 1 : 2;
+      var html = '<span class="fr"><b>' + a[0] + '</b><b>' + a[1] + '</b></span><span class="qm">?</span><span class="fr"><b>' + b[0] + '</b><b>' + b[1] + '</b></span>';
+      return { q: html, html: true, opts: ['>  больше', '<  меньше', '=  равны'], right: right, sub: 'Левая дробь…' };
+    }
+  });
+})();
+</script>
+</body>
+</html>
