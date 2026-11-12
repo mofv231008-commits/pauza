@@ -113,3 +113,8 @@ h2{font-size:32px}
   .mark i:last-child{animation:none}
   *{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
+
+/* Рекламная строка на экране итога */
+.ad-line{display:flex;flex-direction:column;gap:3px;width:100%;margin:2px 0 0;padding:10px 12px;border:1px solid rgba(185,168,240,.2);border-radius:14px;background:rgba(244,241,255,.05);color:var(--paper);font:inherit;font-size:13px;line-height:1.35;text-align:left;cursor:pointer}
+.ad-line .ad-label{font-size:11px;letter-spacing:.04em;color:var(--lilac)}
+.ad-line[hidden]{display:none}

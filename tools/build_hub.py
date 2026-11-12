@@ -55,7 +55,7 @@ for g in games:
 support_html = '''  <section class="group support" id="support" aria-labelledby="g-support">
     <div class="group-head"><h2 class="group-title" id="g-support">Поддержать «Паузу»</h2></div>
     <div class="support-box">
-      <p class="support-lead">Игры бесплатные и без рекламы. Если нравится, можно поддержать звёздами Telegram. Покупки только для красоты: на очки и рекорды они не влияют.</p>
+      <p class="support-lead">Игры бесплатные. Если нравится, можно поддержать звёздами Telegram. Покупки только для красоты: на очки и рекорды они не влияют.</p>
       <ul class="offers">
         <li class="offer" data-product="thanks">
           <span class="offer-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><rect width="40" height="40" rx="12" fill="#3B1E8C"/><path d="M20 8.5l3.4 7.2 7.8.9-5.8 5.4 1.6 7.7L20 25.8l-7 3.9 1.6-7.7-5.8-5.4 7.8-.9z" fill="#FFD84D"/></svg></span>
@@ -69,7 +69,7 @@ support_html = '''  <section class="group support" id="support" aria-labelledby=
         </li>
       </ul>
       <p class="buy-msg" id="buy-msg" role="status" hidden></p>
-      <p class="support-terms">Нажимая на цену, ты соглашаешься с <a href="terms/">условиями покупок</a>. Помощь с оплатой: команда /paysupport в боте.</p>
+      <p class="support-terms">Нажимая на цену, ты соглашаешься с <a href="terms/">условиями покупок</a>. Помощь с оплатой: команда /paysupport в боте или аккаунт поддержки <a href="https://t.me/helpPauza" data-tg>@helpPauza</a>.</p>
     </div>
   </section>'''.replace('%%STAR%%', STAR)
 
@@ -81,7 +81,7 @@ TEMPLATE = r'''<!doctype html>
 <meta name="theme-color" content="#140734">
 <meta name="color-scheme" content="dark">
 <title>Пауза</title>
-<script src="shared/pauza.js?v=4"></script>
+<script src="shared/pauza.js?v=5"></script>
 <script>
 /* Ссылка вида t.me/Pauzagame_bot/play?startapp=race сразу открывает нужную игру */
 (function () {
@@ -93,7 +93,7 @@ TEMPLATE = r'''<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="shared/pauza.css?v=4">
+<link rel="stylesheet" href="shared/pauza.css?v=5">
 <style>
 /* Экран выбора: шапка, затем разделы. В каждом разделе карточки листаются вбок. */
 body.hub{overflow-y:auto;overflow-x:hidden;height:auto;min-height:100%}
@@ -165,6 +165,11 @@ body.gold .hub-head .mark i{background:var(--sun)}
 .buy-msg.good{background:rgba(61,245,176,.14);color:var(--mint)}
 .support-terms{margin:0;font-size:12px;line-height:1.45;color:var(--lilac)}
 .support-terms a{color:var(--paper)}
+.ad-slot{display:flex;flex-direction:column;gap:4px;margin:0 0 4px;padding:14px 16px;border-radius:18px;background:linear-gradient(135deg,#2E177A,#22105A);border:1px dashed rgba(185,168,240,.35);color:var(--paper);text-decoration:none}
+.ad-slot.on{border-style:solid;border-color:rgba(255,216,77,.45)}
+.ad-label{font-size:11px;letter-spacing:.04em;color:var(--lilac)}
+.ad-text{font-family:var(--font-display);font-weight:600;font-size:15px;line-height:1.3}
+.ad-cta{font-size:13px;color:var(--sun)}
 </style>
 </head>
 <body class="hub">
@@ -173,13 +178,19 @@ body.gold .hub-head .mark i{background:var(--sun)}
     <div class="mark" aria-hidden="true"><i></i><i></i></div>
     <div>
       <h1>Пауза <span class="badge" id="badge" title="Спасибо за поддержку" hidden>%%STAR%%</span></h1>
-      <p class="tag">%%COUNT%% игр на минуту, пока ждёшь ответа.</p>
+      <p class="tag">%%COUNT%% на минуту, пока ждёшь ответа.</p>
     </div>
   </header>
   <div class="hub-actions">
     <button class="chip" type="button" id="random"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="#3DF5B0" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.6" fill="#3DF5B0"/><circle cx="15.5" cy="15.5" r="1.6" fill="#3DF5B0"/><circle cx="12" cy="12" r="1.6" fill="#3DF5B0"/></svg>Случайная игра</button>
     <a class="chip" href="#support"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" fill="#FFD84D"/></svg>Поддержать</a>
   </div>
+
+  <a class="ad-slot" id="ad" href="https://t.me/helpPauza" data-tg>
+    <span class="ad-label">Реклама</span>
+    <span class="ad-text">Здесь может быть ваша реклама</span>
+    <span class="ad-cta">Написать @helpPauza →</span>
+  </a>
 
 %%ROWS%%
 
@@ -266,6 +277,20 @@ body.gold .hub-head .mark i{background:var(--sun)}
   });
   render();
   P.syncPerks().then(render);
+  /* Рекламное место: объявление из ads.json, а если его нет — приглашение рекламодателям */
+  var adEl = document.getElementById('ad');
+  P.ad().then(function (a) {
+    if (!a) return;
+    adEl.classList.add('on');
+    adEl.querySelector('.ad-label').textContent = P.adLabel(a);
+    adEl.querySelector('.ad-text').textContent = a.text;
+    adEl.querySelector('.ad-cta').textContent = (a.button || 'Подробнее') + ' →';
+    adEl.href = a.url || adEl.href;
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-tg]'), function (a) {
+    a.addEventListener('click', function (e) { if (P.inTelegram) { e.preventDefault(); P.openLink(a.href); } });
+  });
+  P.ping('hub');
   var open = new URLSearchParams(location.search).get('open');
   if (open === 'support' || P.startParam() === 'support') {
     setTimeout(function () { document.getElementById('support').scrollIntoView({ block: 'start', behavior: P.reduceMotion ? 'auto' : 'smooth' }); }, 60);
@@ -279,7 +304,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
 page = (TEMPLATE
         .replace('%%KNOWN%%', json.dumps([g['id'] for g in games], ensure_ascii=False))
         .replace('%%UNITS%%', json.dumps(units, ensure_ascii=False))
-        .replace('%%COUNT%%', str(len(games)))
+        .replace('%%COUNT%%', str(len(games)) + ' ' + ('игра' if len(games) % 10 == 1 and len(games) % 100 != 11 else 'игры' if 2 <= len(games) % 10 <= 4 and not 12 <= len(games) % 100 <= 14 else 'игр'))
         .replace('%%ROWS%%', '\n\n'.join(rows))
         .replace('%%SUPPORT%%', support_html)
         .replace('%%STAR%%', STAR))

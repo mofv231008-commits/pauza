@@ -88,6 +88,46 @@
     return Promise.reject(text);
   }
 
+  /* ---------- Ссылки, реклама и счётчик игроков ---------- */
+  var ROOT = safe(function () { return document.currentScript.src.replace(/shared\/pauza\.js.*$/, ''); }, '../');
+  var SUPPORT = 'helpPauza';
+  function openLink(url) {
+    if (!url) return;
+    if (/^https:\/\/t\.me\//.test(url)) { if (postEvent('web_app_open_tg_link', { path_full: url.slice(12) })) return; }
+    else if (postEvent('web_app_open_link', { url: url })) return;
+    window.open(url, '_blank', 'noopener');
+  }
+  /* Рекламное место. Объявление лежит в ads.json в корне сайта, код менять не нужно. */
+  var adPromise = null;
+  function today() { return new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10); }
+  function ad() {
+    if (!adPromise) {
+      adPromise = fetch(ROOT + 'ads.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (a) {
+        return a && a.active && a.text && (!a.until || today() <= a.until) ? a : null;
+      }).catch(function () { return null; });
+    }
+    return adPromise;
+  }
+  function adLabel(a) { return ['Реклама', a.advertiser, a.erid ? 'erid: ' + a.erid : ''].filter(Boolean).join(' · '); }
+  /* Счётчик: случайный номер устройства, без имён и id из Telegram. Нужен, чтобы видеть, сколько людей играет. */
+  function deviceId() {
+    return safe(function () {
+      var v = localStorage.getItem('pz_dev');
+      if (!v) { v = Math.random().toString(36).slice(2, 12) + Date.now().toString(36); localStorage.setItem('pz_dev', v); }
+      return v.replace(/[^a-z0-9]/g, '').slice(0, 32);
+    }, '');
+  }
+  function ping(game) {
+    var d = deviceId(); if (!d || !/^[a-z0-9]{1,20}$/.test(game)) return;
+    var fresh = safe(function () {
+      var k = 'pz_ping_' + game, last = Number(sessionStorage.getItem(k)) || 0;
+      if (Date.now() - last < 120000) return false;
+      sessionStorage.setItem(k, String(Date.now())); return true;
+    }, true);
+    if (!fresh) return;
+    safe(function () { fetch(BOT_API + '/hit?d=' + d + '&g=' + game, { mode: 'no-cors', keepalive: true }).catch(function () {}); });
+  }
+
   /* ---------- События от Telegram ----------
      Мобильные клиенты вызывают Telegram.WebView.receiveEvent, веб-версия присылает postMessage */
   var listeners = {};
@@ -432,6 +472,8 @@
       });
     }));
     op.appendChild(overActions);
+    var adBox = el('button', 'ad-line'); adBox.type = 'button'; adBox.hidden = true;
+    op.appendChild(adBox);
     op.appendChild(backLink());
     overScr.appendChild(op);
 
@@ -465,6 +507,7 @@
     }
     function run(isResume) {
       state = 'running'; sync();
+      if (!isResume) ping(cfg.id);
       if (cfg.onRun) cfg.onRun(!!isResume);
     }
     function begin() {
@@ -510,6 +553,14 @@
         stats.textContent = res.stats || '';
         stats.hidden = !res.stats;
         show(overScr); focus(againBtn);
+        ad().then(function (a) {
+          if (!a) return;
+          adBox.textContent = '';
+          adBox.appendChild(el('span', 'ad-label', adLabel(a)));
+          adBox.appendChild(el('span', 'ad-text', a.text));
+          adBox.onclick = function () { openLink(a.url); };
+          adBox.hidden = false;
+        });
       }, res.delay || 0);
     }
 
@@ -586,6 +637,11 @@
     rand: rand,
     pick: pick,
     shuffle: shuffle,
+    openLink: openLink,
+    ad: ad,
+    adLabel: adLabel,
+    ping: ping,
+    support: SUPPORT,
     shell: shell
   };
 })();
