@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Линии</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:12px}
+.board{--size:340px;display:grid;grid-template-columns:repeat(9,1fr);gap:3px;width:var(--size);height:var(--size);flex:none}
+.c{position:relative;border:0;padding:0;border-radius:8px;background:var(--road);cursor:pointer;touch-action:manipulation}
+.c b{position:absolute;inset:14%;border-radius:50%;box-shadow:inset -3px -4px 0 rgba(18,6,48,.25)}
+.c.sel b{animation:hop .5s ease-in-out infinite alternate}
+@keyframes hop{to{transform:translateY(-18%)}}
+.c.pop b{animation:pop .3s ease-in forwards}
+@keyframes pop{to{transform:scale(0);opacity:0}}
+.c.new b{animation:grow .25s ease-out}
+@keyframes grow{from{transform:scale(.2)}}
+.next{display:inline-flex;gap:4px;vertical-align:middle}
+.next i{display:block;width:12px;height:12px;border-radius:50%}
+.hint{margin:0;font-size:13px;color:var(--lilac);text-align:center}
+@media (prefers-reduced-motion:reduce){.c.sel b,.c.pop b,.c.new b{animation:none}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="board" id="board"></div>
+    <p class="hint">Собери 5 одинаковых шариков в линию</p>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 9, U = ['очко', 'очка', 'очков'];
+  var COLS = ['#FF6B4A', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8', '#B9A8F0', '#F4F1FF'];
+  var stage = document.getElementById('stage'), boardEl = document.getElementById('board');
+  var grid, next, sel = -1, score, removed, busy, els = [];
+
+  var shell = P.shell({
+    id: 'lines', title: 'Линии', tagline: 'Собирай по 5 шариков одного цвета в ряд.',
+    rulesHtml: '<p>Нажми на шарик, потом на пустую клетку: шарик перекатится, если к ней есть путь. Пять и больше одинаковых в линию — по горизонтали, вертикали или диагонали — исчезают и дают очки. После хода без линии появляются три новых шарика. Поле заполнено — конец игры.</p>',
+    overEyebrow: 'Поле заполнено', countdown: false,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  for (var i = 0; i < N * N; i++) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'c';
+    (function (k) { b.addEventListener('click', function () { tap(k); }); })(i);
+    boardEl.appendChild(b); els.push(b);
+  }
+  function empties() { var e = []; for (var i = 0; i < N * N; i++) if (grid[i] < 0) e.push(i); return e; }
+  function rollNext() { next = [P.rand(7), P.rand(7), P.rand(7)]; shell.setSide('<span class="next" aria-label="Следующие шарики">' + next.map(function (c) { return '<i style="background:' + COLS[c] + '"></i>'; }).join('') + '</span>'); }
+  function render(fresh, popped) {
+    for (var i = 0; i < N * N; i++) {
+      var e = els[i];
+      e.className = 'c' + (i === sel ? ' sel' : '') + (fresh && fresh.indexOf(i) !== -1 ? ' new' : '') + (popped && popped.indexOf(i) !== -1 ? ' pop' : '');
+      var c = popped && popped.indexOf(i) !== -1 ? popped.col[i] : grid[i];
+      e.innerHTML = c >= 0 ? '<b style="background:' + COLS[c] + '"></b>' : '';
+      e.setAttribute('aria-label', 'Клетка ' + (Math.floor(i / N) + 1) + '-' + (i % N + 1) + (c >= 0 ? ', шарик' : ', пусто'));
+    }
+  }
+  function path(a, b) {
+    var seen = new Array(N * N).fill(false), q = [a]; seen[a] = true;
+    while (q.length) {
+      var cur = q.shift(); if (cur === b) return true;
+      var r = Math.floor(cur / N), c = cur % N;
+      [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].forEach(function (p) {
+        if (p[0] < 0 || p[0] >= N || p[1] < 0 || p[1] >= N) return;
+        var k = p[0] * N + p[1];
+        if (!seen[k] && (grid[k] < 0 || k === b)) { seen[k] = true; q.push(k); }
+      });
+    }
+    return false;
+  }
+  function linesAt(cells) {
+    var out = {};
+    cells.forEach(function (i) {
+      var col = grid[i]; if (col < 0) return;
+      var r = Math.floor(i / N), c = i % N;
+      [[0, 1], [1, 0], [1, 1], [1, -1]].forEach(function (d) {
+        var run = [i];
+        for (var s = -1; s <= 1; s += 2) {
+          var rr = r + d[0] * s, cc = c + d[1] * s;
+          while (rr >= 0 && rr < N && cc >= 0 && cc < N && grid[rr * N + cc] === col) { run.push(rr * N + cc); rr += d[0] * s; cc += d[1] * s; }
+        }
+        if (run.length >= 5) run.forEach(function (k) { out[k] = true; });
+      });
+    });
+    return Object.keys(out).map(Number);
+  }
+  function clear(cells) {
+    if (!cells.length) return false;
+    var popped = cells.slice(); popped.col = {};
+    cells.forEach(function (k) { popped.col[k] = grid[k]; grid[k] = -1; });
+    var pts = cells.length * 2 + Math.max(0, cells.length - 5) * 4;
+    score += pts; removed += cells.length; shell.setScore(String(score));
+    P.haptic('win');
+    render(null, popped);
+    setTimeout(function () { render(); }, 300);
+    return true;
+  }
+  function addBalls() {
+    var fresh = [];
+    next.forEach(function (c) { var e = empties(); if (!e.length) return; var k = P.pick(e); grid[k] = c; fresh.push(k); });
+    rollNext();
+    var hit = linesAt(fresh);
+    if (!clear(hit)) render(fresh);
+    if (!empties().length) {
+      busy = true;
+      shell.end({ score: score, delay: 700, stats: 'убрано шариков: ' + removed,
+        phrase: 'В «Линиях» у меня ' + score + ' ' + P.plural(score, U) + '.' });
+    }
+  }
+  function tap(i) {
+    if (!shell.running || busy) return;
+    if (grid[i] >= 0) { sel = sel === i ? -1 : i; P.haptic('tap'); render(); return; }
+    if (sel < 0) return;
+    if (!path(sel, i)) { P.haptic('crash'); els[i].animate && els[i].animate([{ background: '#FF6B4A' }, { background: '' }], { duration: 300 }); return; }
+    grid[i] = grid[sel]; grid[sel] = -1; sel = -1;
+    var hit = linesAt([i]);
+    if (!clear(hit)) { render(); busy = true; setTimeout(function () { busy = false; if (shell.running) addBalls(); }, 180); }
+  }
+  function reset() {
+    grid = new Array(N * N).fill(-1); score = 0; removed = 0; sel = -1; busy = false;
+    shell.setScore('0'); rollNext(); addBalls(); rollNext(); addBalls();
+  }
+  function layout() { var r = stage.getBoundingClientRect(); boardEl.style.setProperty('--size', Math.floor(Math.min(r.width - 24, r.height - 170, 480)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout();
+  grid = new Array(N * N).fill(-1); next = [0, 1, 2];
+  [10, 20, 30, 40, 41, 52, 66, 15, 25].forEach(function (k, j) { grid[k] = j % 7; });
+  render();
+})();
+</script>
+</body>
+</html>

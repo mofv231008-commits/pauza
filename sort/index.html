@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Колбы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:18px}
+.level{margin:0;font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--lilac)}
+.rack{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--gap,14px) 12px;max-width:100%}
+.tube{--w:46px;width:var(--w);height:calc(var(--w) * 3.6);border:3px solid rgba(244,241,255,.55);border-top:0;border-radius:0 0 calc(var(--w) / 2) calc(var(--w) / 2);display:flex;flex-direction:column-reverse;padding:3px;gap:2px;background:rgba(20,7,52,.45);cursor:pointer;touch-action:manipulation;transition:transform .15s;overflow:hidden}
+.tube i{display:block;height:calc((100% - 12px) / 4);border-radius:4px;flex:none}
+.tube i:first-child{border-radius:4px 4px calc(var(--w) / 2 - 4px) calc(var(--w) / 2 - 4px)}
+.tube.sel{transform:translateY(-14px);border-color:var(--sun)}
+.tube.done{border-color:var(--mint)}
+.tools{display:flex;gap:10px}
+.tools button{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer}
+.stage[data-state="paused"] .rack,.stage[data-state="countdown"] .rack{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="level" id="level">Уровень 1</p>
+    <div class="rack" id="rack"></div>
+    <div class="tools"><button type="button" id="undo">Отменить ход</button><button type="button" id="restart">Заново</button></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['уровень', 'уровня', 'уровней'], CAP = 4;
+  var COLS = ['#FF6B4A', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8', '#B9A8F0', '#FF9A6B', '#F4F1FF'];
+  var stage = document.getElementById('stage'), rack = document.getElementById('rack'), levelEl = document.getElementById('level');
+  var tubes, start, history, sel = -1, level = 0, moves = 0, solved = 0;
+
+  var shell = P.shell({
+    id: 'sort', title: 'Колбы', tagline: 'Разлей цвета по колбам.',
+    rulesHtml: '<p>Нажми на колбу, потом на другую, чтобы перелить верхний цвет. Лить можно в пустую колбу или на такой же цвет, если есть место. Собери в каждой колбе один цвет. За 2 минуты пройди как можно больше уровней.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 120, finish, document.getElementById('timebar'));
+
+  function key(ts) { return ts.map(function (t) { return t.join(''); }).sort().join('|'); }
+  function canPour(ts, a, b) {
+    if (a === b || !ts[a].length || ts[b].length >= CAP) return false;
+    var top = ts[a][ts[a].length - 1];
+    return !ts[b].length || ts[b][ts[b].length - 1] === top;
+  }
+  function pour(ts, a, b) {
+    var top = ts[a][ts[a].length - 1], n = 0;
+    while (ts[a].length && ts[a][ts[a].length - 1] === top && ts[b].length < CAP) { ts[b].push(ts[a].pop()); n++; }
+    return n;
+  }
+  function isDone(ts) { return ts.every(function (t) { return !t.length || (t.length === CAP && t.every(function (c) { return c === t[0]; })); }); }
+  /* Проверка, что уровень решается: поиск в глубину с ограничением */
+  function solvable(ts) {
+    var seen = {}, budget = 25000;
+    function dfs(s) {
+      if (isDone(s)) return true;
+      if (--budget < 0) return null;
+      var k = key(s); if (seen[k]) return false; seen[k] = 1;
+      for (var a = 0; a < s.length; a++) for (var b = 0; b < s.length; b++) {
+        if (!canPour(s, a, b)) continue;
+        if (!s[b].length && s[a].every(function (c) { return c === s[a][0]; })) continue;
+        var c = s.map(function (t) { return t.slice(); }); pour(c, a, b);
+        var r = dfs(c); if (r) return true; if (r === null) return null;
+      }
+      return false;
+    }
+    return dfs(ts);
+  }
+  function generate(colors) {
+    for (var attempt = 0; attempt < 30; attempt++) {
+      var units = [];
+      for (var c = 0; c < colors; c++) for (var k = 0; k < CAP; k++) units.push(c);
+      P.shuffle(units);
+      var ts = [];
+      for (c = 0; c < colors; c++) ts.push(units.slice(c * CAP, c * CAP + CAP));
+      ts.push([]); ts.push([]);
+      if (isDone(ts)) continue;
+      var ok = solvable(ts.map(function (t) { return t.slice(); }));
+      if (ok === true || (ok === null && colors > 6)) return ts;
+    }
+    return ts;
+  }
+  function setLevel(l) {
+    level = l; var colors = Math.min(8, 3 + l);
+    tubes = generate(colors); start = tubes.map(function (t) { return t.slice(); });
+    history = []; sel = -1; moves = 0;
+    levelEl.textContent = 'Уровень ' + (l + 1) + ' · ' + colors + ' ' + P.plural(colors, ['цвет', 'цвета', 'цветов']);
+    layout(); render();
+  }
+  function render() {
+    rack.textContent = '';
+    tubes.forEach(function (t, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      var full = t.length === CAP && t.every(function (c) { return c === t[0]; });
+      b.className = 'tube' + (i === sel ? ' sel' : '') + (full ? ' done' : '');
+      b.setAttribute('aria-label', 'Колба ' + (i + 1) + ': ' + (t.length ? t.length + ' из 4' : 'пустая'));
+      t.forEach(function (c) { var s = document.createElement('i'); s.style.background = COLS[c]; b.appendChild(s); });
+      b.addEventListener('click', function () { tap(i); });
+      rack.appendChild(b);
+    });
+  }
+  function tap(i) {
+    if (!shell.running) return;
+    if (sel === -1) { if (tubes[i].length) { sel = i; P.haptic('tap'); } render(); return; }
+    if (sel === i) { sel = -1; render(); return; }
+    if (canPour(tubes, sel, i)) {
+      history.push(tubes.map(function (t) { return t.slice(); }));
+      pour(tubes, sel, i); moves++; sel = -1; P.haptic('coin');
+      render();
+      if (isDone(tubes)) {
+        solved++; shell.setScore(String(solved)); P.haptic('win');
+        timer.add(10);
+        levelEl.textContent = 'Готово! +10 секунд';
+        setTimeout(function () { if (shell.running) setLevel(level + 1); }, 700);
+      }
+    } else { sel = tubes[i].length ? i : -1; P.haptic('crash'); render(); }
+  }
+  document.getElementById('undo').addEventListener('click', function () { if (shell.running && history.length) { tubes = history.pop(); sel = -1; render(); } });
+  document.getElementById('restart').addEventListener('click', function () { if (shell.running) { tubes = start.map(function (t) { return t.slice(); }); history = []; sel = -1; render(); } });
+  function reset() { solved = 0; shell.setScore('0'); timer.reset(); setLevel(0); }
+  function finish() {
+    shell.end({ score: solved, delay: 300, stats: 'последний уровень: ' + (level + 1),
+      phrase: 'В «Колбах» у меня ' + solved + ' ' + P.plural(solved, U) + ' за 2 минуты.' });
+  }
+  function layout() {
+    if (!tubes) return;
+    var r = stage.getBoundingClientRect(), n = tubes.length;
+    var perRow = n <= 6 ? n : Math.ceil(n / 2), rows = Math.ceil(n / perRow);
+    var w = Math.floor(Math.min(56, (Math.min(r.width, 520) - 32 - (perRow - 1) * 12) / perRow, (r.height - 300) / rows / 3.8));
+    rack.style.maxWidth = (perRow * (w + 12)) + 'px';
+    rack.style.setProperty('--gap', '28px');
+    rack.querySelectorAll('.tube').forEach(function (t) { t.style.setProperty('--w', w + 'px'); });
+    rack.dataset.w = w;
+  }
+  var baseRender = render;
+  render = function () { baseRender(); var w = rack.dataset.w; if (w) rack.querySelectorAll('.tube').forEach(function (t) { t.style.setProperty('--w', w + 'px'); }); };
+  if (window.ResizeObserver) new ResizeObserver(function () { layout(); render(); }).observe(stage);
+  setLevel(0);
+  timer.show();
+})();
+</script>
+</body>
+</html>

@@ -373,6 +373,140 @@
    ],
    "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<g stroke=\"#B9A8F0\" stroke-width=\"3\" stroke-linecap=\"round\" fill=\"none\"><path d=\"M14 86 H50 M24 86 V14 H52 V22\"/></g>\n<g stroke=\"#F4F1FF\" stroke-width=\"3\" stroke-linecap=\"round\" fill=\"none\"><circle cx=\"52\" cy=\"29\" r=\"7\"/><path d=\"M52 36 V54 M52 41 L44 49 M52 41 L60 49\"/></g>\n<g font-size=\"15\" text-anchor=\"middle\" fill=\"#F4F1FF\"><text x=\"78\" y=\"72\">К</text><text x=\"94\" y=\"72\" fill=\"#3DF5B0\">О</text><text x=\"126\" y=\"72\">Т</text></g>\n<g fill=\"#B9A8F0\"><rect x=\"71\" y=\"76\" width=\"14\" height=\"2.5\"/><rect x=\"87\" y=\"76\" width=\"14\" height=\"2.5\"/><rect x=\"103\" y=\"76\" width=\"14\" height=\"2.5\"/><rect x=\"119\" y=\"76\" width=\"14\" height=\"2.5\"/></g>\n</svg>",
    "new": true
+  },
+  {
+   "id": "slice",
+   "title": "Нарезка",
+   "into": "Нарезку",
+   "about": "Режь фрукты взмахом пальца",
+   "section": "arcade",
+   "icon": "\\u{1F349}",
+   "unit": [
+    "фрукт",
+    "фрукта",
+    "фруктов"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/><circle cx=\"52\" cy=\"56\" r=\"16\" fill=\"#3DF5B0\"/><circle cx=\"112\" cy=\"40\" r=\"13\" fill=\"#FFD84D\"/>\n<path d=\"M88 74 a14 14 0 0 1 28 0 Z\" fill=\"#FF6B4A\"/><path d=\"M96 80 a14 14 0 0 0 28 0 Z\" fill=\"#FF6B4A\"/><rect x=\"88\" y=\"73\" width=\"28\" height=\"2\" fill=\"#FFD0C4\"/>\n<path d=\"M20 86 Q80 40 146 18\" stroke=\"#F4F1FF\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/>\n<circle cx=\"132\" cy=\"78\" r=\"10\" fill=\"#120630\" stroke=\"#FF6B4A\" stroke-width=\"2\"/><rect x=\"131\" y=\"62\" width=\"3\" height=\"7\" fill=\"#FF6B4A\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "hoops",
+   "title": "Броски",
+   "into": "Броски",
+   "about": "Забрасывай мяч в кольцо",
+   "section": "arcade",
+   "icon": "\\u{1F3C0}",
+   "unit": "points",
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/><rect y=\"62\" width=\"160\" height=\"38\" fill=\"#2A1470\"/>\n<rect x=\"56\" y=\"8\" width=\"48\" height=\"30\" rx=\"4\" fill=\"#F4F1FF\"/><rect x=\"70\" y=\"18\" width=\"20\" height=\"14\" fill=\"none\" stroke=\"#FF6B4A\" stroke-width=\"2\"/>\n<path d=\"M66 40 L72 56 M74 40 L76 56 M86 40 L84 56 M94 40 L88 56\" stroke=\"#F4F1FF\" stroke-width=\"1.5\"/><rect x=\"64\" y=\"38\" width=\"32\" height=\"4\" rx=\"2\" fill=\"#FF6B4A\"/>\n<circle cx=\"112\" cy=\"70\" r=\"12\" fill=\"#FF9A6B\"/><path d=\"M100 70 H124 M112 58 V82\" stroke=\"#120630\" stroke-opacity=\".5\" stroke-width=\"1.5\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "pong",
+   "title": "Пинг-понг",
+   "into": "Пинг-понг",
+   "about": "Отбивай и забивай компьютеру",
+   "section": "arcade",
+   "icon": "\\u{1F3D3}",
+   "unit": [
+    "гол",
+    "гола",
+    "голов"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#140734\"/><rect x=\"8\" y=\"8\" width=\"144\" height=\"84\" rx=\"6\" fill=\"#22105A\"/>\n<g fill=\"#B9A8F0\" opacity=\".4\"><rect x=\"16\" y=\"49\" width=\"10\" height=\"2\"/><rect x=\"34\" y=\"49\" width=\"10\" height=\"2\"/><rect x=\"52\" y=\"49\" width=\"10\" height=\"2\"/><rect x=\"70\" y=\"49\" width=\"10\" height=\"2\"/><rect x=\"88\" y=\"49\" width=\"10\" height=\"2\"/><rect x=\"106\" y=\"49\" width=\"10\" height=\"2\"/><rect x=\"124\" y=\"49\" width=\"10\" height=\"2\"/></g>\n<rect x=\"56\" y=\"16\" width=\"38\" height=\"7\" rx=\"3.5\" fill=\"#FF6B4A\"/><rect x=\"74\" y=\"78\" width=\"38\" height=\"7\" rx=\"3.5\" fill=\"#3DF5B0\"/><circle cx=\"98\" cy=\"60\" r=\"5\" fill=\"#F4F1FF\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "hockey",
+   "title": "Хоккей",
+   "into": "Хоккей",
+   "about": "Аэрохоккей, матч на минуту",
+   "section": "arcade",
+   "icon": "\\u{1F3D2}",
+   "unit": [
+    "гол",
+    "гола",
+    "голов"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#140734\"/><rect x=\"20\" y=\"6\" width=\"120\" height=\"88\" rx=\"14\" fill=\"#22105A\"/>\n<path d=\"M20 50 H140\" stroke=\"#6FD3FF\" stroke-opacity=\".4\" stroke-width=\"2\"/><circle cx=\"80\" cy=\"50\" r=\"16\" fill=\"none\" stroke=\"#6FD3FF\" stroke-opacity=\".4\" stroke-width=\"2\"/>\n<rect x=\"60\" y=\"4\" width=\"40\" height=\"4\" fill=\"#FF6B4A\"/><rect x=\"60\" y=\"92\" width=\"40\" height=\"4\" fill=\"#3DF5B0\"/>\n<circle cx=\"64\" cy=\"24\" r=\"10\" fill=\"#FF6B4A\"/><circle cx=\"64\" cy=\"24\" r=\"4\" fill=\"#120630\" opacity=\".3\"/><circle cx=\"96\" cy=\"74\" r=\"10\" fill=\"#3DF5B0\"/><circle cx=\"96\" cy=\"74\" r=\"4\" fill=\"#120630\" opacity=\".3\"/><circle cx=\"86\" cy=\"58\" r=\"7\" fill=\"#F4F1FF\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "balloons",
+   "title": "Шарики",
+   "into": "Шарики",
+   "about": "Лопай шарики нужного цвета",
+   "section": "skill",
+   "icon": "\\u{1F388}",
+   "unit": [
+    "шарик",
+    "шарика",
+    "шариков"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#3B1E8C\"/>\n<g stroke=\"#F4F1FF\" stroke-opacity=\".4\" fill=\"none\"><path d=\"M40 62 Q44 76 40 92\"/><path d=\"M80 48 Q76 64 80 80\"/><path d=\"M120 66 Q124 80 120 96\"/></g>\n<ellipse cx=\"40\" cy=\"46\" rx=\"13\" ry=\"16\" fill=\"#FF6B4A\"/><ellipse cx=\"80\" cy=\"32\" rx=\"13\" ry=\"16\" fill=\"#3DF5B0\"/><ellipse cx=\"120\" cy=\"50\" rx=\"13\" ry=\"16\" fill=\"#FFD84D\"/>\n<rect x=\"46\" y=\"4\" width=\"68\" height=\"16\" rx=\"8\" fill=\"#140734\" opacity=\".7\"/><ellipse cx=\"62\" cy=\"12\" rx=\"4\" ry=\"5\" fill=\"#3DF5B0\"/><rect x=\"70\" y=\"10\" width=\"36\" height=\"4\" rx=\"2\" fill=\"#F4F1FF\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "catch",
+   "title": "Ловец",
+   "into": "Ловца",
+   "about": "Лови фрукты, не камни",
+   "section": "skill",
+   "icon": "\\u{1F9FA}",
+   "unit": "points",
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#140734\"/><rect y=\"88\" width=\"160\" height=\"12\" fill=\"#22105A\"/>\n<circle cx=\"50\" cy=\"26\" r=\"7\" fill=\"#FF6B4A\"/><circle cx=\"106\" cy=\"44\" r=\"7\" fill=\"#3DF5B0\"/><path d=\"M80 10 l3 6 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z\" fill=\"#FFD84D\"/>\n<path d=\"M126 20 l6 -6 8 2 3 7 -6 6 -9 -1z\" fill=\"#4B2FB8\"/>\n<path d=\"M56 70 H104 L98 90 H62 Z\" fill=\"#FF9A6B\"/><path d=\"M68 70 L70 90 M80 70 V90 M92 70 L90 90\" stroke=\"#120630\" stroke-opacity=\".35\" stroke-width=\"2\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "aim",
+   "title": "Тир",
+   "into": "Тир",
+   "about": "Попадай в центр мишени",
+   "section": "skill",
+   "icon": "\\u{1F3AF}",
+   "unit": "points",
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<g transform=\"translate(58 52)\"><circle r=\"26\" fill=\"#F4F1FF\"/><circle r=\"19.5\" fill=\"#FF6B4A\"/><circle r=\"13\" fill=\"#F4F1FF\"/><circle r=\"6.5\" fill=\"#FF6B4A\"/></g>\n<g transform=\"translate(122 30)\"><circle r=\"13\" fill=\"#F4F1FF\"/><circle r=\"9.75\" fill=\"#FF6B4A\"/><circle r=\"6.5\" fill=\"#F4F1FF\"/><circle r=\"3.25\" fill=\"#FF6B4A\"/></g>\n<g stroke=\"#3DF5B0\" stroke-width=\"2\"><circle cx=\"60\" cy=\"50\" r=\"8\" fill=\"none\"/><path d=\"M60 38 V44 M60 56 V62 M48 50 H54 M66 50 H72\"/></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "colors",
+   "title": "Цвета",
+   "into": "Цвета",
+   "about": "Проходи только сквозь свой цвет",
+   "section": "skill",
+   "icon": "\\u{1F534}",
+   "unit": [
+    "звезда",
+    "звезды",
+    "звёзд"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#140734\"/>\n<g fill=\"none\" stroke-width=\"7\"><path d=\"M80 18 A30 30 0 0 1 110 48\" stroke=\"#3DF5B0\"/><path d=\"M110 48 A30 30 0 0 1 80 78\" stroke=\"#FF6B4A\"/><path d=\"M80 78 A30 30 0 0 1 50 48\" stroke=\"#FFD84D\"/><path d=\"M50 48 A30 30 0 0 1 80 18\" stroke=\"#FF8AD8\"/></g>\n<path d=\"M80 40 l2.4 4.8 5.3 .8 -3.8 3.7 .9 5.3 -4.8 -2.5 -4.8 2.5 .9 -5.3 -3.8 -3.7 5.3 -.8z\" fill=\"#F4F1FF\"/><circle cx=\"80\" cy=\"92\" r=\"5\" fill=\"#FFD84D\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "sort",
+   "title": "Колбы",
+   "into": "Колбы",
+   "about": "Разлей цвета по колбам",
+   "section": "puzzle",
+   "icon": "\\u{1F9EA}",
+   "unit": [
+    "уровень",
+    "уровня",
+    "уровней"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<g stroke=\"#F4F1FF\" stroke-opacity=\".6\" stroke-width=\"2\" fill=\"none\"><path d=\"M30 14 V78 a9 9 0 0 0 18 0 V14\"/><path d=\"M62 14 V78 a9 9 0 0 0 18 0 V14\"/><path d=\"M94 14 V78 a9 9 0 0 0 18 0 V14\"/><path d=\"M126 14 V78 a9 9 0 0 0 18 0 V14\"/></g>\n<g><rect x=\"32\" y=\"66\" width=\"14\" height=\"19\" rx=\"6\" fill=\"#FF6B4A\"/><rect x=\"32\" y=\"50\" width=\"14\" height=\"14\" fill=\"#3DF5B0\"/><rect x=\"32\" y=\"34\" width=\"14\" height=\"14\" fill=\"#FF6B4A\"/><rect x=\"64\" y=\"66\" width=\"14\" height=\"19\" rx=\"6\" fill=\"#3DF5B0\"/><rect x=\"64\" y=\"50\" width=\"14\" height=\"14\" fill=\"#FFD84D\"/><rect x=\"96\" y=\"66\" width=\"14\" height=\"19\" rx=\"6\" fill=\"#FFD84D\"/><rect x=\"96\" y=\"50\" width=\"14\" height=\"14\" fill=\"#FF6B4A\"/><rect x=\"96\" y=\"34\" width=\"14\" height=\"14\" fill=\"#3DF5B0\"/><rect x=\"96\" y=\"18\" width=\"14\" height=\"14\" fill=\"#FFD84D\"/></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "lines",
+   "title": "Линии",
+   "into": "Линии",
+   "about": "Пять шариков в ряд",
+   "section": "puzzle",
+   "icon": "\\u{1F7E1}",
+   "unit": "points",
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<g fill=\"#3B1E8C\"><rect x=\"20\" y=\"8\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"42\" y=\"8\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"64\" y=\"8\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"86\" y=\"8\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"108\" y=\"8\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"20\" y=\"30\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"42\" y=\"30\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"64\" y=\"30\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"86\" y=\"30\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"108\" y=\"30\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"20\" y=\"52\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"42\" y=\"52\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"64\" y=\"52\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"86\" y=\"52\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"108\" y=\"52\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"20\" y=\"74\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"42\" y=\"74\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"64\" y=\"74\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"86\" y=\"74\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"108\" y=\"74\" width=\"20\" height=\"20\" rx=\"4\"/></g>\n<g fill=\"#3DF5B0\"><circle cx=\"30\" cy=\"40\" r=\"7\"/><circle cx=\"52\" cy=\"40\" r=\"7\"/><circle cx=\"74\" cy=\"40\" r=\"7\"/><circle cx=\"96\" cy=\"40\" r=\"7\"/></g><circle cx=\"118\" cy=\"84\" r=\"7\" fill=\"#3DF5B0\"/><circle cx=\"52\" cy=\"84\" r=\"7\" fill=\"#FF6B4A\"/><circle cx=\"96\" cy=\"18\" r=\"7\" fill=\"#FFD84D\"/><circle cx=\"74\" cy=\"62\" r=\"7\" fill=\"#FF8AD8\"/>\n</svg>",
+   "new": true
   }
  ]
 }

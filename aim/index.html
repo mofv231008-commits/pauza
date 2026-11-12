@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Тир</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#22105A}.stage canvas{cursor:crosshair}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Тир. Попадай по мишеням ближе к центру"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var targets = [], marks = [], score, shots, hitsN, misses, t, spawnT, center;
+
+  var shell = P.shell({
+    id: 'aim', title: 'Тир', tagline: 'Стреляй по мишеням, пока они не исчезли.',
+    rulesHtml: '<p>Мишени появляются и сжимаются. Тапай по ним: центр — 10 очков, дальше 6, 3 и 1. Промах мимо мишени отнимает 2 очка. На всё 30 секунд.</p>',
+    startLabel: 'Огонь', overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 30, finish);
+  var view = P.canvas(canvas, stage, function () { draw(); });
+  function RR() { return Math.max(30, Math.min(view.W, 460) * 0.12); }
+  function reset() { targets = []; marks = []; score = 0; shots = 0; hitsN = 0; misses = 0; center = 0; t = 0; spawnT = 0; shell.setScore('0'); timer.reset(); }
+  function finish() {
+    targets = [];
+    var acc = shots ? Math.round(hitsN / shots * 100) : 0;
+    shell.end({ score: score, delay: 300, stats: 'точность: ' + acc + '% · в центр: ' + center,
+      phrase: 'В «Тире» у меня ' + score + ' ' + P.plural(score, U) + ' за 30 секунд.' });
+  }
+  function spawn() {
+    var r = RR(), W = view.W, H = view.H, x, y, tries = 0;
+    do { x = r + Math.random() * (W - r * 2); y = 90 + r + Math.random() * (H - 120 - r * 2); tries++; }
+    while (tries < 20 && targets.some(function (o) { return Math.hypot(o.x - x, o.y - y) < r * 2.2; }));
+    var life = Math.max(1.1, 2.2 - t * 0.04);
+    targets.push({ x: x, y: y, r: r, life: life, max: life, vx: t > 12 ? (Math.random() - 0.5) * W * 0.4 : 0 });
+  }
+  P.loop(function (dt) {
+    if (shell.running) {
+      t += dt;
+      spawnT -= dt;
+      if (spawnT <= 0 && targets.length < 3) { spawn(); spawnT = Math.max(0.35, 0.9 - t * 0.02); }
+      targets.forEach(function (o) {
+        o.life -= dt; o.x += o.vx * dt;
+        if (o.x < o.r || o.x > view.W - o.r) o.vx = -o.vx;
+      });
+      targets = targets.filter(function (o) { return o.life > 0; });
+    }
+    marks.forEach(function (m) { m.life -= dt; }); marks = marks.filter(function (m) { return m.life > 0; });
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(185,168,240,0.07)'; ctx.lineWidth = 1;
+    for (var x = 0; x < W; x += 32) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (var y = 0; y < H; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    targets.forEach(function (o) {
+      var s = o.r * Math.min(1, (o.max - o.life) * 6) * (0.35 + 0.65 * o.life / o.max);
+      [[1, '#F4F1FF'], [0.75, '#FF6B4A'], [0.5, '#F4F1FF'], [0.25, '#FF6B4A']].forEach(function (ring) {
+        ctx.fillStyle = ring[1]; ctx.beginPath(); ctx.arc(o.x, o.y, s * ring[0], 0, Math.PI * 2); ctx.fill();
+      });
+      o.cur = s;
+    });
+    marks.forEach(function (m) {
+      ctx.globalAlpha = Math.min(1, m.life * 2);
+      ctx.fillStyle = m.c; ctx.font = '800 18px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(m.text, m.x, m.y - 18 - (0.8 - m.life) * 30);
+      ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(m.x, m.y, 3, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+  canvas.addEventListener('pointerdown', function (e) {
+    if (!shell.running) return;
+    var r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    shots++;
+    for (var i = targets.length - 1; i >= 0; i--) {
+      var o = targets[i], d = Math.hypot(x - o.x, y - o.y), s = o.cur || o.r;
+      if (d <= s) {
+        var k = d / s, pts = k <= 0.25 ? 10 : k <= 0.5 ? 6 : k <= 0.75 ? 3 : 1;
+        if (pts === 10) center++;
+        score += pts; hitsN++; targets.splice(i, 1);
+        shell.setScore(String(score)); P.haptic(pts === 10 ? 'win' : 'coin');
+        marks.push({ x: x, y: y, text: '+' + pts, c: pts === 10 ? '#FFD84D' : '#3DF5B0', life: 0.8 });
+        return;
+      }
+    }
+    misses++; score = Math.max(0, score - 2); shell.setScore(String(score)); P.haptic('crash');
+    marks.push({ x: x, y: y, text: '−2', c: '#FF6B4A', life: 0.6 });
+  });
+})();
+</script>
+</body>
+</html>

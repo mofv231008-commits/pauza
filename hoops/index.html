@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Броски</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#22105A}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Броски. Смахни мяч вверх в сторону кольца"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var ball, hoop, score, made, shots, streak, floats = [], net = 0;
+
+  var shell = P.shell({
+    id: 'hoops', title: 'Броски', tagline: 'Забрасывай мяч в кольцо за 45 секунд.',
+    rulesHtml: '<p>Смахни мяч пальцем вверх, в сторону кольца: чем быстрее взмах, тем выше полёт. Попадание — 2 очка, чистое попадание без касания дужки — 3. После 5 попаданий кольцо начинает двигаться.</p>',
+    startLabel: 'Бросать', overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 45, finish);
+  var view = P.canvas(canvas, stage, function () { if (!ball) reset(); placeHoop(); });
+  function BR() { return Math.max(18, Math.min(view.W, 460) * 0.075); }
+  function placeHoop() { if (!hoop) hoop = { x: view.W / 2, y: view.H * 0.3, dir: 1 }; hoop.y = view.H * 0.3; hoop.w = BR() * 3.1; }
+  function newBall() {
+    var W = view.W;
+    ball = { x: W * (0.25 + Math.random() * 0.5), y: view.H * 0.84, vx: 0, vy: 0, flying: false, touched: false, scored: false, peak: false, s: 1 };
+  }
+  function reset() { score = 0; made = 0; shots = 0; streak = 0; floats = []; hoop = null; placeHoop(); newBall(); if (shell) shell.setScore('0'); if (timer) timer.reset(); }
+  function finish() {
+    shell.end({ score: score, delay: 300, stats: 'попаданий: ' + made + ' из ' + shots,
+      phrase: 'В «Бросках» у меня ' + score + ' ' + P.plural(score, U) + ' за 45 секунд.' });
+  }
+  function bounceOff(px, py, rr) {
+    var dx = ball.x - px, dy = ball.y - py, d = Math.hypot(dx, dy), min = BR() * ball.s + rr;
+    if (d < min && d > 0) {
+      var nx = dx / d, ny = dy / d, dot = ball.vx * nx + ball.vy * ny;
+      if (dot < 0) { ball.vx -= 1.7 * dot * nx; ball.vy -= 1.7 * dot * ny; ball.vx *= 0.85; ball.vy *= 0.85; }
+      ball.x = px + nx * min; ball.y = py + ny * min;
+      ball.touched = true;
+    }
+  }
+  P.loop(function (dt) {
+    var W = view.W, H = view.H, g = H * 2.4;
+    if (net > 0) net -= dt;
+    floats.forEach(function (f) { f.life -= dt; f.y -= 30 * dt; }); floats = floats.filter(function (f) { return f.life > 0; });
+    if (!ball || !hoop) return;
+    if (shell.running && made >= 5) {
+      hoop.x += hoop.dir * W * Math.min(0.5, 0.15 + (made - 5) * 0.03) * dt;
+      if (hoop.x < W * 0.22 || hoop.x > W * 0.78) { hoop.dir = -hoop.dir; hoop.x = P.clamp(hoop.x, W * 0.22, W * 0.78); }
+    }
+    if (ball.flying) {
+      var prevY = ball.y;
+      ball.vy += g * dt; ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+      ball.s = P.clamp(1 - (H * 0.84 - ball.y) / H * 0.55, 0.62, 1);
+      if (ball.vy > 0) ball.peak = true;
+      if (ball.peak) {
+        var rl = hoop.x - hoop.w / 2, rr = hoop.x + hoop.w / 2;
+        bounceOff(rl, hoop.y, 4); bounceOff(rr, hoop.y, 4);
+        if (!ball.scored && prevY < hoop.y && ball.y >= hoop.y && ball.x > rl && ball.x < rr && ball.vy > 0) {
+          ball.scored = true; made++; streak++;
+          var pts = ball.touched ? 2 : 3;
+          score += pts; shell.setScore(String(score)); net = 0.4;
+          floats.push({ text: (pts === 3 ? 'Чисто! ' : '') + '+' + pts, x: hoop.x, y: hoop.y - 30, life: 1 });
+          P.haptic(pts === 3 ? 'win' : 'coin');
+        }
+      }
+      if (ball.x < BR() || ball.x > W - BR()) { ball.vx = -ball.vx * 0.6; ball.x = P.clamp(ball.x, BR(), W - BR()); }
+      if (ball.y > H + BR() * 2) { if (!ball.scored) streak = 0; newBall(); }
+    }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, br = BR();
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#2A1470'; ctx.fillRect(0, H * 0.62, W, H * 0.38);
+    ctx.strokeStyle = 'rgba(185,168,240,0.18)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(W / 2, H * 0.62, W * 0.42, H * 0.06, 0, 0, Math.PI); ctx.stroke();
+    if (!hoop || !ball) return;
+    var bx = hoop.x, by = hoop.y, hw = hoop.w;
+    ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.roundRect(bx - hw * 0.95, by - hw * 1.05, hw * 1.9, hw * 1.15, 8); ctx.fill();
+    ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 3; ctx.strokeRect(bx - hw * 0.38, by - hw * 0.62, hw * 0.76, hw * 0.55);
+    ctx.fillStyle = '#B9A8F0'; ctx.fillRect(bx - 3, by + 4, 6, H);
+    var behind = ball.flying && ball.peak && ball.y < by + br;
+    function netDraw() {
+      ctx.strokeStyle = 'rgba(244,241,255,0.75)'; ctx.lineWidth = 1.5;
+      var sway = net > 0 ? Math.sin(net * 30) * 3 : 0;
+      for (var k = 0; k <= 6; k++) { var x0 = bx - hw / 2 + hw * k / 6; ctx.beginPath(); ctx.moveTo(x0, by); ctx.lineTo(bx - hw * 0.3 + hw * 0.6 * k / 6 + sway, by + hw * 0.6); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(bx - hw * 0.42, by + hw * 0.3); ctx.lineTo(bx + hw * 0.42, by + hw * 0.3); ctx.stroke();
+    }
+    function rim() { ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(bx - hw / 2, by); ctx.lineTo(bx + hw / 2, by); ctx.stroke(); }
+    function ballDraw() {
+      var r = br * ball.s;
+      ctx.fillStyle = P.gold() ? '#FFD84D' : '#FF9A6B'; ctx.beginPath(); ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(18,6,48,0.55)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(ball.x - r, ball.y); ctx.lineTo(ball.x + r, ball.y); ctx.stroke();
+      ctx.beginPath(); ctx.arc(ball.x, ball.y, r, -Math.PI / 2, Math.PI / 2); ctx.moveTo(ball.x, ball.y - r); ctx.lineTo(ball.x, ball.y + r); ctx.stroke();
+    }
+    if (behind) { ballDraw(); netDraw(); rim(); } else { netDraw(); rim(); ballDraw(); }
+    if (!ball.flying && shell.running) {
+      ctx.fillStyle = 'rgba(244,241,255,0.5)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('смахни вверх', ball.x, ball.y + br + 22);
+    }
+    floats.forEach(function (f) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.fillStyle = '#FFD84D'; ctx.font = '800 20px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f.text, f.x, f.y); });
+    ctx.globalAlpha = 1;
+  }
+  var swipe = null;
+  canvas.addEventListener('pointerdown', function (e) { if (!shell.running || ball.flying) return; var r = canvas.getBoundingClientRect(); swipe = { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }; });
+  canvas.addEventListener('pointerup', function (e) {
+    if (!swipe || !shell.running || ball.flying) { swipe = null; return; }
+    var r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    var dt = Math.max(40, performance.now() - swipe.t) / 1000, dx = x - swipe.x, dy = y - swipe.y;
+    swipe = null;
+    if (dy > -30) return;
+    /* Направление взмаха задаёт, куда полетит мяч, сила — хватит ли высоты долететь до кольца */
+    var H = view.H, g = H * 2.4, h = ball.y - hoop.y;
+    var k = P.clamp(-dy / dt / (H * 1.5), 0.7, 1.3);
+    var vy = -Math.sqrt(2 * g * (h + H * 0.08)) * k;
+    var targetX = ball.x + dx / -dy * h * 0.8;
+    var peak = vy * vy / (2 * g), tUp = -vy / g, tDown = peak > h ? Math.sqrt(2 * (peak - h) / g) : tUp;
+    ball.vx = (targetX - ball.x) / (tUp + tDown); ball.vy = vy; ball.flying = true; shots++;
+    P.haptic('tap');
+  });
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

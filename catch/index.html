@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Ловец</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Ловец. Веди корзину пальцем"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var basket, items, fx, score, lives, t, spawnT, caught, dead, targetX;
+
+  var shell = P.shell({
+    id: 'catch', title: 'Ловец', tagline: 'Лови фрукты, уворачивайся от камней.',
+    rulesHtml: '<p>Веди пальцем по экрану, корзина едет следом. Фрукт — 1 очко, звезда — 5. Камни не лови: три камня, и игра окончена. Пропущенные фрукты не страшны.</p>',
+    startLabel: 'Ловить', overEyebrow: 'Корзина сломалась', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: мышь или стрелки, P — пауза', pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { if (!basket) reset(); });
+  function S() { return Math.max(22, Math.min(view.W, 460) * 0.08); }
+  function reset() {
+    basket = { x: view.W / 2, w: view.W * 0.22 }; targetX = basket.x;
+    items = []; fx = []; score = 0; lives = 3; t = 0; spawnT = 0.5; caught = 0; dead = false;
+    if (shell) { shell.setScore('0'); side(); }
+  }
+  function side() { var s = ''; for (var i = 0; i < 3; i++) s += '<span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:' + (i < lives ? '#3DF5B0' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function spawn() {
+    var r = Math.random(), kind = r < Math.min(0.32, 0.12 + t * 0.004) ? 'rock' : r > 0.94 ? 'star' : 'fruit';
+    items.push({ x: S() + Math.random() * (view.W - S() * 2), y: -S(), kind: kind, v: view.H * (0.32 + Math.random() * 0.12 + Math.min(0.5, t * 0.008)) * (kind === 'star' ? 1.25 : 1), rot: Math.random() * 6, c: P.pick(['#FF6B4A', '#3DF5B0', '#FF8AD8', '#FF9A6B', '#B9A8F0']) });
+    spawnT = Math.max(0.26, 0.8 - t * 0.012) * (0.6 + Math.random() * 0.7);
+  }
+  P.loop(function (dt) {
+    var H = view.H, by = H - 64;
+    if (shell.running && !dead) {
+      t += dt;
+      basket.x += (targetX - basket.x) * Math.min(1, dt * 18);
+      spawnT -= dt; if (spawnT <= 0) spawn();
+      items.forEach(function (it) { it.y += it.v * dt; it.rot += dt * 2; });
+      items = items.filter(function (it) {
+        if (it.y > by - S() * 0.5 && it.y < by + S() && Math.abs(it.x - basket.x) < basket.w / 2 + S() * 0.3) {
+          if (it.kind === 'rock') {
+            lives--; side(); P.haptic('crash'); fx.push({ x: it.x, y: by, text: 'Ой!', c: '#FF6B4A', life: 0.8 });
+            if (lives <= 0) { dead = true; shell.end({ score: score, delay: 500, stats: 'поймано: ' + caught, phrase: 'В «Ловце» у меня ' + score + ' ' + P.plural(score, U) + '.' }); }
+          } else {
+            var pts = it.kind === 'star' ? 5 : 1; score += pts; caught++; shell.setScore(String(score));
+            P.haptic('coin'); fx.push({ x: it.x, y: by - 20, text: '+' + pts, c: '#FFD84D', life: 0.7 });
+          }
+          return false;
+        }
+        return it.y < H + S() * 2;
+      });
+    }
+    fx.forEach(function (f) { f.life -= dt; f.y -= 40 * dt; }); fx = fx.filter(function (f) { return f.life > 0; });
+    draw();
+  });
+  function star(ctx, x, y, r, rot) {
+    ctx.beginPath();
+    for (var k = 0; k < 10; k++) { var a = rot + k * Math.PI / 5 - Math.PI / 2, rr = k % 2 ? r * 0.45 : r; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+    ctx.closePath(); ctx.fill();
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, s = S(), by = H - 64;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, by + s * 0.9, W, H);
+    if (!basket) return;
+    items.forEach(function (it) {
+      if (it.kind === 'rock') {
+        ctx.fillStyle = '#4B2FB8'; ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot);
+        ctx.beginPath(); ctx.moveTo(-s * 0.7, 0); ctx.lineTo(-s * 0.3, -s * 0.6); ctx.lineTo(s * 0.5, -s * 0.5); ctx.lineTo(s * 0.7, s * 0.2); ctx.lineTo(0, s * 0.6); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#120630'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+      } else if (it.kind === 'star') { ctx.fillStyle = '#FFD84D'; star(ctx, it.x, it.y, s * 0.75, it.rot); }
+      else {
+        ctx.fillStyle = it.c; ctx.beginPath(); ctx.arc(it.x, it.y, s * 0.55, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#2FD99B'; ctx.beginPath(); ctx.ellipse(it.x + s * 0.12, it.y - s * 0.55, s * 0.18, s * 0.08, -0.5, 0, Math.PI * 2); ctx.fill();
+      }
+    });
+    var bw = basket.w, bx = basket.x;
+    ctx.fillStyle = P.gold() ? '#FFD84D' : '#FF9A6B';
+    ctx.beginPath(); ctx.moveTo(bx - bw / 2, by - s * 0.3); ctx.lineTo(bx + bw / 2, by - s * 0.3); ctx.lineTo(bx + bw * 0.4, by + s * 0.8); ctx.lineTo(bx - bw * 0.4, by + s * 0.8); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(18,6,48,0.35)'; ctx.lineWidth = 2;
+    for (var k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(bx - bw / 2 + bw * k / 4, by - s * 0.3); ctx.lineTo(bx - bw * 0.4 + bw * 0.8 * k / 4, by + s * 0.8); ctx.stroke(); }
+    fx.forEach(function (f) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.fillStyle = f.c; ctx.font = '800 18px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f.text, f.x, f.y); });
+    ctx.globalAlpha = 1;
+  }
+  function aim(e) { var r = canvas.getBoundingClientRect(); targetX = P.clamp(e.clientX - r.left, basket.w / 2, view.W - basket.w / 2); }
+  canvas.addEventListener('pointerdown', aim);
+  canvas.addEventListener('pointermove', function (e) { if (e.buttons || e.pointerType === 'mouse') aim(e); });
+  var keys = {};
+  window.addEventListener('keydown', function (e) { if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { keys[e.code] = 1; e.preventDefault(); } });
+  window.addEventListener('keyup', function (e) { keys[e.code] = 0; });
+  P.loop(function (dt) { if (!basket || !shell.running) return; var v = view.W * 1.4 * dt; if (keys.ArrowLeft) targetX = Math.max(basket.w / 2, targetX - v); if (keys.ArrowRight) targetX = Math.min(view.W - basket.w / 2, targetX + v); });
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

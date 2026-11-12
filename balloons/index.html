@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Шарики</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:#22105A}
+.goal{position:absolute;left:50%;top:76px;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:999px;background:rgba(20,7,52,.7);border:1px solid var(--line);font-family:var(--font-display);font-weight:600;font-size:15px;white-space:nowrap;pointer-events:none}
+.goal i{display:block;width:20px;height:24px;border-radius:50% 50% 45% 45%}
+.goal.swap{animation:swap .5s ease-out}
+@keyframes swap{0%{transform:translateX(-50%) scale(1.25)}100%{transform:translateX(-50%) scale(1)}}
+.stage[data-state="start"] .goal{display:none}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <canvas id="game" aria-label="Шарики. Лопай шарики нужного цвета"></canvas>
+  <div class="goal" id="goal" aria-live="polite"><span>Лопай</span><i id="goalDot"></i><b id="goalName"></b></div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['шарик', 'шарика', 'шариков'];
+  var COLORS = [
+    { name: 'красные', c: '#FF6B4A' }, { name: 'зелёные', c: '#3DF5B0' }, { name: 'жёлтые', c: '#FFD84D' },
+    { name: 'голубые', c: '#6FD3FF' }, { name: 'розовые', c: '#FF8AD8' }
+  ];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var goalEl = document.getElementById('goal'), goalDot = document.getElementById('goalDot'), goalName = document.getElementById('goalName');
+  var balls = [], pops = [], target, swapT, spawnT, score, wrong, t;
+
+  var shell = P.shell({
+    id: 'balloons', title: 'Шарики', tagline: 'Лопай шарики только нужного цвета.',
+    rulesHtml: '<p>Вверху написано, шарики какого цвета лопать. Цвет меняется каждые 8 секунд. Нужный шарик — +1, чужой цвет отнимает 2 секунды. На всё 40 секунд.</p>',
+    startLabel: 'Лопать', overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 40, finish);
+  var view = P.canvas(canvas, stage, function () { draw(); });
+  function BR() { return Math.max(24, Math.min(view.W, 460) * 0.085); }
+  function setTarget() {
+    var next; do { next = P.pick(COLORS); } while (target && next === target);
+    target = next; swapT = 8;
+    goalDot.style.background = target.c; goalName.textContent = target.name;
+    goalEl.classList.remove('swap'); void goalEl.offsetWidth; goalEl.classList.add('swap');
+  }
+  function reset() { balls = []; pops = []; target = null; setTarget(); spawnT = 0; score = 0; wrong = 0; t = 0; shell.setScore('0'); timer.reset(); }
+  function finish() {
+    shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong,
+      phrase: 'В «Шариках» у меня ' + score + ' ' + P.plural(score, U) + ' за 40 секунд.' });
+  }
+  function spawn() {
+    var c = Math.random() < 0.38 ? target : P.pick(COLORS);
+    var r = BR() * (0.85 + Math.random() * 0.3);
+    balls.push({ x: r + Math.random() * (view.W - r * 2), y: view.H + r * 1.5, r: r, col: c, v: view.H * (0.16 + Math.random() * 0.08 + Math.min(0.2, t * 0.005)), ph: Math.random() * 6 });
+  }
+  P.loop(function (dt) {
+    if (shell.running) {
+      t += dt;
+      swapT -= dt; if (swapT <= 0) setTarget();
+      spawnT -= dt;
+      if (spawnT <= 0) { spawn(); spawnT = Math.max(0.22, 0.5 - t * 0.006); }
+      balls.forEach(function (b) { b.y -= b.v * dt; b.ph += dt * 2; b.x += Math.sin(b.ph) * 12 * dt; });
+      balls = balls.filter(function (b) { return b.y > -b.r * 3; });
+    }
+    pops.forEach(function (p) { p.life -= dt; }); pops = pops.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    var g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#3B1E8C'); g.addColorStop(1, '#22105A');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    balls.forEach(function (b) {
+      ctx.strokeStyle = 'rgba(244,241,255,0.35)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(b.x, b.y + b.r * 1.15); ctx.quadraticCurveTo(b.x + Math.sin(b.ph) * 8, b.y + b.r * 1.8, b.x, b.y + b.r * 2.4); ctx.stroke();
+      ctx.fillStyle = b.col.c; ctx.beginPath(); ctx.ellipse(b.x, b.y, b.r * 0.88, b.r, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(b.x - 5, b.y + b.r + 5); ctx.lineTo(b.x + 5, b.y + b.r + 5); ctx.lineTo(b.x, b.y + b.r - 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.ellipse(b.x - b.r * 0.32, b.y - b.r * 0.38, b.r * 0.16, b.r * 0.26, -0.5, 0, Math.PI * 2); ctx.fill();
+    });
+    pops.forEach(function (p) {
+      ctx.globalAlpha = p.life * 2.5; ctx.strokeStyle = p.c; ctx.lineWidth = 3;
+      for (var k = 0; k < 8; k++) { var a = k * Math.PI / 4, r1 = p.r * (1.2 - p.life), r2 = r1 + 10; ctx.beginPath(); ctx.moveTo(p.x + Math.cos(a) * r1, p.y + Math.sin(a) * r1); ctx.lineTo(p.x + Math.cos(a) * r2, p.y + Math.sin(a) * r2); ctx.stroke(); }
+      if (p.text) { ctx.fillStyle = p.c; ctx.font = '800 18px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(p.text, p.x, p.y - (0.4 - p.life) * 60); }
+    });
+    ctx.globalAlpha = 1;
+  }
+  canvas.addEventListener('pointerdown', function (e) {
+    if (!shell.running) return;
+    var r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    for (var i = balls.length - 1; i >= 0; i--) {
+      var b = balls[i];
+      if (Math.hypot((x - b.x) / 0.88, y - b.y) <= b.r * 1.15) {
+        balls.splice(i, 1);
+        if (b.col === target) { score++; shell.setScore(String(score)); P.haptic('coin'); pops.push({ x: b.x, y: b.y, r: b.r, c: b.col.c, life: 0.4, text: '+1' }); }
+        else { wrong++; timer.add(-2); P.haptic('crash'); pops.push({ x: b.x, y: b.y, r: b.r, c: '#FF6B4A', life: 0.4, text: '−2 с' }); }
+        return;
+      }
+    }
+  });
+  target = COLORS[0]; goalDot.style.background = target.c; goalName.textContent = target.name;
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Хоккей</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Аэрохоккей. Води битой по нижней половине поля"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['гол', 'гола', 'голов'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var F, me, ai, puck, mine, theirs, aimX, aimY, pauseT, flashSide = 0, flashT = 0;
+
+  var shell = P.shell({
+    id: 'hockey', title: 'Хоккей', tagline: 'Аэрохоккей против компьютера, 60 секунд.',
+    rulesHtml: '<p>Води битой по своей половине поля и отбивай шайбу в ворота соперника наверху. Матч длится минуту. Счёт рекорда — сколько голов забил ты.</p>',
+    startLabel: 'На лёд', overEyebrow: 'Матч окончен', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish);
+  var view = P.canvas(canvas, stage, function () { layout(); if (!me) reset(); });
+  function layout() { var W = view.W, H = view.H; F = { x: 12, y: 74, w: W - 24, h: H - 74 - 16 }; F.goal = F.w * 0.36; F.mr = Math.max(20, F.w * 0.075); F.pr = F.mr * 0.72; }
+  function reset() {
+    if (!F) layout();
+    me = { x: F.x + F.w / 2, y: F.y + F.h * 0.82, vx: 0, vy: 0 };
+    ai = { x: F.x + F.w / 2, y: F.y + F.h * 0.16, vx: 0, vy: 0 };
+    aimX = me.x; aimY = me.y; mine = 0; theirs = 0;
+    face(1);
+    if (shell) { shell.setScore('0 : 0'); }
+  }
+  function face(toward) {
+    puck = { x: F.x + F.w / 2, y: F.y + F.h / 2 + toward * F.h * 0.12, vx: 0, vy: 0 };
+    pauseT = 0.6;
+  }
+  function finish() {
+    var res = mine > theirs ? 'Победа' : mine < theirs ? 'Поражение' : 'Ничья';
+    shell.end({ score: mine, delay: 300, eyebrow: res, tone: mine > theirs ? 'good' : null, stats: 'счёт ' + mine + ' : ' + theirs,
+      phrase: 'В «Хоккее» у меня ' + mine + ' : ' + theirs + ' против компьютера.' });
+  }
+  function collide(m) {
+    var dx = puck.x - m.x, dy = puck.y - m.y, d = Math.hypot(dx, dy), min = F.mr + F.pr;
+    if (d >= min || d === 0) return false;
+    var nx = dx / d, ny = dy / d;
+    puck.x = m.x + nx * min; puck.y = m.y + ny * min;
+    var rvx = puck.vx - m.vx, rvy = puck.vy - m.vy, dot = rvx * nx + rvy * ny;
+    if (dot < 0) { puck.vx -= 2 * dot * nx; puck.vy -= 2 * dot * ny; }
+    var sp = Math.hypot(puck.vx, puck.vy), max = view.H * 2.2;
+    if (sp > max) { puck.vx *= max / sp; puck.vy *= max / sp; }
+    if (sp < view.H * 0.35) { puck.vx += nx * view.H * 0.35; puck.vy += ny * view.H * 0.35; }
+    return true;
+  }
+  function moveMallet(m, tx, ty, maxV, dt, top) {
+    var minY = top ? F.y + F.mr : F.y + F.h / 2 + F.mr, maxY = top ? F.y + F.h / 2 - F.mr : F.y + F.h - F.mr;
+    tx = P.clamp(tx, F.x + F.mr, F.x + F.w - F.mr); ty = P.clamp(ty, minY, maxY);
+    var dx = tx - m.x, dy = ty - m.y, d = Math.hypot(dx, dy), step = Math.min(d, maxV * dt);
+    var nx = d ? m.x + dx / d * step : m.x, ny = d ? m.y + dy / d * step : m.y;
+    m.vx = (nx - m.x) / Math.max(dt, 0.001); m.vy = (ny - m.y) / Math.max(dt, 0.001);
+    m.x = nx; m.y = ny;
+  }
+  P.loop(function (dt) {
+    if (flashT > 0) flashT -= dt;
+    if (!F || !puck) { draw(); return; }
+    if (shell.running) {
+      var H = view.H;
+      moveMallet(me, aimX, aimY, H * 3.2, dt, false);
+      var skill = 0.6 + Math.min(0.3, mine * 0.06);
+      var tx, ty;
+      if (puck.y < F.y + F.h / 2 && puck.vy < H * 0.3) { tx = puck.x + (Math.random() - 0.5) * 6; ty = puck.y - F.pr * 0.6; }
+      else { tx = F.x + F.w / 2 + (puck.x - (F.x + F.w / 2)) * 0.5; ty = F.y + F.h * 0.14; }
+      moveMallet(ai, tx, ty, H * (0.9 + skill * 0.7), dt, true);
+      if (pauseT > 0) pauseT -= dt;
+      else {
+        var steps = 3;
+        for (var s = 0; s < steps; s++) {
+          puck.x += puck.vx * dt / steps; puck.y += puck.vy * dt / steps;
+          var r = F.pr, gl = F.x + F.w / 2 - F.goal / 2, gr = F.x + F.w / 2 + F.goal / 2;
+          if (puck.x < F.x + r) { puck.x = F.x + r; puck.vx = Math.abs(puck.vx) * 0.9; }
+          if (puck.x > F.x + F.w - r) { puck.x = F.x + F.w - r; puck.vx = -Math.abs(puck.vx) * 0.9; }
+          var inGoal = puck.x > gl + r * 0.3 && puck.x < gr - r * 0.3;
+          if (puck.y < F.y + r && !inGoal) { puck.y = F.y + r; puck.vy = Math.abs(puck.vy) * 0.9; }
+          if (puck.y > F.y + F.h - r && !inGoal) { puck.y = F.y + F.h - r; puck.vy = -Math.abs(puck.vy) * 0.9; }
+          if (collide(me)) P.haptic('tap');
+          collide(ai);
+          if (puck.y < F.y - r) { mine++; flashSide = -1; flashT = 0.6; P.haptic('win'); face(-1); break; }
+          if (puck.y > F.y + F.h + r) { theirs++; flashSide = 1; flashT = 0.6; P.haptic('crash'); face(1); break; }
+        }
+        var fr = Math.pow(0.55, dt); puck.vx *= fr; puck.vy *= fr;
+        shell.setScore(mine + ' : ' + theirs);
+      }
+    }
+    draw();
+  });
+  function mallet(ctx, m, color) {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(m.x, m.y, F.mr, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(18,6,48,0.3)'; ctx.beginPath(); ctx.arc(m.x, m.y, F.mr * 0.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(m.x, m.y, F.mr * 0.4, 0, Math.PI * 2); ctx.fill();
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!F) return;
+    ctx.fillStyle = '#22105A'; ctx.beginPath(); ctx.roundRect(F.x, F.y, F.w, F.h, 24); ctx.fill();
+    ctx.strokeStyle = 'rgba(111,211,255,0.35)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(F.x, F.y + F.h / 2); ctx.lineTo(F.x + F.w, F.y + F.h / 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(F.x + F.w / 2, F.y + F.h / 2, F.w * 0.16, 0, Math.PI * 2); ctx.stroke();
+    var gx = F.x + F.w / 2 - F.goal / 2;
+    ctx.fillStyle = flashT > 0 && flashSide < 0 ? '#3DF5B0' : '#FF6B4A'; ctx.fillRect(gx, F.y - 4, F.goal, 6);
+    ctx.fillStyle = flashT > 0 && flashSide > 0 ? '#FF6B4A' : '#3DF5B0'; ctx.fillRect(gx, F.y + F.h - 2, F.goal, 6);
+    if (!me) return;
+    mallet(ctx, ai, '#FF6B4A');
+    mallet(ctx, me, P.gold() ? '#FFD84D' : '#3DF5B0');
+    ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(puck.x, puck.y, F.pr, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(18,6,48,0.2)'; ctx.beginPath(); ctx.arc(puck.x, puck.y, F.pr * 0.6, 0, Math.PI * 2); ctx.fill();
+  }
+  function aim(e) { var r = canvas.getBoundingClientRect(); aimX = e.clientX - r.left; aimY = e.clientY - r.top - 30; }
+  canvas.addEventListener('pointerdown', function (e) { aim(e); });
+  canvas.addEventListener('pointermove', function (e) { if (e.buttons || e.pointerType === 'mouse') aim(e); });
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

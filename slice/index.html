@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Нарезка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#22105A}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Нарезка. Проводи пальцем по фруктам, бомбы не трогай"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['фрукт', 'фрукта', 'фруктов'];
+  var FRUITS = [
+    { c: '#FF6B4A', in: '#FFD0C4', r: 1 }, { c: '#3DF5B0', in: '#DFFFF2', r: 0.9 }, { c: '#FFD84D', in: '#FFF5CC', r: 1.05 },
+    { c: '#FF8AD8', in: '#FFE1F5', r: 0.85 }, { c: '#B9A8F0', in: '#EEE9FF', r: 0.95 }, { c: '#FF9A6B', in: '#FFE4D6', r: 1.15 }
+  ];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var items = [], halves = [], drops = [], trail = [], score, lives, spawnT, t, best, dead, comboT, combo, floats = [];
+
+  var shell = P.shell({
+    id: 'slice', title: 'Нарезка', tagline: 'Режь фрукты одним движением пальца.',
+    rulesHtml: '<p>Фрукты подлетают снизу. Проводи пальцем, чтобы разрезать их. Несколько фруктов за один взмах — бонус. Упустишь три фрукта или заденешь бомбу — игра окончена.</p>',
+    startLabel: 'Резать', overEyebrow: 'Нарезка окончена', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { draw(); });
+  function R() { return Math.max(22, Math.min(view.W, 460) * 0.075); }
+  function reset() { items = []; halves = []; drops = []; trail = []; floats = []; score = 0; lives = 3; spawnT = 0.6; t = 0; dead = false; combo = 0; comboT = 0; shell.setScore('0'); side(); }
+  function side() { var s = ''; for (var i = 0; i < 3; i++) s += '<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:' + (i < lives ? '#3DF5B0' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function launch() {
+    var W = view.W, H = view.H, n = 1 + (Math.random() < Math.min(0.6, t * 0.012) ? 1 + P.rand(2) : 0);
+    for (var k = 0; k < n; k++) {
+      var bomb = Math.random() < Math.min(0.22, 0.06 + t * 0.003);
+      var x = W * (0.15 + Math.random() * 0.7);
+      var f = P.pick(FRUITS);
+      items.push({ x: x, y: H + R(), vx: (W / 2 - x) * (0.4 + Math.random() * 0.5), vy: -H * (1.25 + Math.random() * 0.25), r: R() * (bomb ? 0.95 : f.r), f: f, bomb: bomb, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 6 });
+    }
+    spawnT = Math.max(0.55, 1.4 - t * 0.02) * (0.7 + Math.random() * 0.6);
+  }
+  function segHit(ax, ay, bx, by, cx, cy, r) {
+    var dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy;
+    var k = l ? P.clamp(((cx - ax) * dx + (cy - ay) * dy) / l, 0, 1) : 0;
+    var px = ax + dx * k - cx, py = ay + dy * k - cy;
+    return px * px + py * py <= r * r;
+  }
+  function cut(ax, ay, bx, by) {
+    if (!shell.running || dead) return;
+    items = items.filter(function (it) {
+      if (!segHit(ax, ay, bx, by, it.x, it.y, it.r * 1.05)) return true;
+      if (it.bomb) {
+        dead = true;
+        for (var k = 0; k < 30; k++) { var a = Math.random() * 6.28; drops.push({ x: it.x, y: it.y, vx: Math.cos(a) * 320, vy: Math.sin(a) * 320, life: 0.8, c: k % 2 ? '#FFD84D' : '#FF6B4A' }); }
+        shell.end({ score: score, delay: 800, haptic: 'crash', stats: 'задета бомба',
+          phrase: 'В «Нарезке» у меня ' + score + ' ' + P.plural(score, U) + '.' });
+        return false;
+      }
+      var ang = Math.atan2(by - ay, bx - ax);
+      [-1, 1].forEach(function (s) { halves.push({ x: it.x, y: it.y, vx: it.vx + Math.cos(ang + Math.PI / 2) * 90 * s, vy: it.vy * 0.4 + Math.sin(ang + Math.PI / 2) * 90 * s, r: it.r, f: it.f, ang: ang, side: s, rot: 0, vr: s * 3, life: 1.2 }); });
+      for (var k = 0; k < 10; k++) drops.push({ x: it.x, y: it.y, vx: (Math.random() - 0.5) * 300, vy: (Math.random() - 0.7) * 300, life: 0.6, c: it.f.c });
+      score++; combo++; comboT = 0.18;
+      P.haptic('coin');
+      return false;
+    });
+    shell.setScore(String(score));
+  }
+  P.loop(function (dt) {
+    var H = view.H;
+    if (shell.running && !dead) {
+      t += dt;
+      spawnT -= dt; if (spawnT <= 0) launch();
+      items.forEach(function (it) { it.x += it.vx * dt; it.y += it.vy * dt; it.vy += H * 1.25 * dt; it.rot += it.vr * dt; });
+      items = items.filter(function (it) {
+        if (it.y > H + it.r * 2 && it.vy > 0) {
+          if (!it.bomb) { lives--; side(); P.haptic('crash'); if (lives <= 0) { dead = true; shell.end({ score: score, delay: 500, stats: 'упущено три фрукта', phrase: 'В «Нарезке» у меня ' + score + ' ' + P.plural(score, U) + '.' }); } }
+          return false;
+        }
+        return true;
+      });
+      if (comboT > 0) { comboT -= dt; if (comboT <= 0) { if (combo >= 3) { score += combo; shell.setScore(String(score)); floats.push({ text: 'Комбо ×' + combo + ' +' + combo, life: 1 }); P.haptic('win'); } combo = 0; } }
+    }
+    halves.forEach(function (h) { h.x += h.vx * dt; h.y += h.vy * dt; h.vy += H * 1.25 * dt; h.rot += h.vr * dt; h.life -= dt; });
+    halves = halves.filter(function (h) { return h.life > 0 && h.y < H + 80; });
+    drops.forEach(function (d) { d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 600 * dt; d.life -= dt; });
+    drops = drops.filter(function (d) { return d.life > 0; });
+    var now = performance.now();
+    trail = trail.filter(function (p) { return now - p.t < 140; });
+    floats.forEach(function (f) { f.life -= dt; }); floats = floats.filter(function (f) { return f.life > 0; });
+    draw();
+  });
+  function fruit(ctx, it) {
+    ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot);
+    if (it.bomb) {
+      ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(0, 0, it.r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, it.r - 1.5, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#FF6B4A'; ctx.fillRect(-2, -it.r - 8, 4, 9);
+      ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(0, -it.r - 9, 3 + Math.random() * 2, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.fillStyle = it.f.c; ctx.beginPath(); ctx.arc(0, 0, it.r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.ellipse(-it.r * 0.35, -it.r * 0.35, it.r * 0.25, it.r * 0.15, -0.7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#2FD99B'; ctx.beginPath(); ctx.ellipse(it.r * 0.15, -it.r * 0.95, it.r * 0.28, it.r * 0.12, -0.4, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(185,168,240,0.05)';
+    for (var y = 0; y < H; y += 46) ctx.fillRect(0, y, W, 22);
+    halves.forEach(function (h) {
+      ctx.save(); ctx.translate(h.x, h.y); ctx.rotate(h.ang + h.rot); ctx.globalAlpha = Math.min(1, h.life * 2);
+      ctx.beginPath(); ctx.arc(0, 0, h.r, h.side > 0 ? 0 : Math.PI, h.side > 0 ? Math.PI : Math.PI * 2); ctx.closePath();
+      ctx.fillStyle = h.f.c; ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0, 0, h.r * 0.85, h.r * 0.12, 0, 0, Math.PI * 2); ctx.fillStyle = h.f.in; ctx.fill();
+      ctx.restore();
+    });
+    ctx.globalAlpha = 1;
+    items.forEach(function (it) { fruit(ctx, it); });
+    drops.forEach(function (d) { ctx.globalAlpha = Math.min(1, d.life * 2); ctx.fillStyle = d.c; ctx.beginPath(); ctx.arc(d.x, d.y, 3, 0, Math.PI * 2); ctx.fill(); });
+    ctx.globalAlpha = 1;
+    if (trail.length > 1) {
+      ctx.strokeStyle = P.gold() ? '#FFD84D' : '#F4F1FF'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (var i = 1; i < trail.length; i++) { ctx.lineWidth = 2 + i / trail.length * 6; ctx.beginPath(); ctx.moveTo(trail[i - 1].x, trail[i - 1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke(); }
+    }
+    floats.forEach(function (f) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.fillStyle = '#FFD84D'; ctx.font = '800 22px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f.text, W / 2, H * 0.3 - (1 - f.life) * 30); });
+    ctx.globalAlpha = 1;
+  }
+  var down = false;
+  function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }; }
+  canvas.addEventListener('pointerdown', function (e) { down = true; trail = [pos(e)]; });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!down) return;
+    var p = pos(e), last = trail[trail.length - 1];
+    trail.push(p);
+    if (last) cut(last.x, last.y, p.x, p.y);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (tp) { canvas.addEventListener(tp, function () { down = false; }); });
+  reset();
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

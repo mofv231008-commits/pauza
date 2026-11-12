@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Цвета</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Цвета. Тап — подпрыгнуть. Проходи только через свой цвет"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['звезда', 'звезды', 'звёзд'];
+  var COLS = ['#3DF5B0', '#FF6B4A', '#FFD84D', '#FF8AD8'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var ball, obs, cam, score, t, started, dead, bits = [];
+
+  var shell = P.shell({
+    id: 'colors', title: 'Цвета', tagline: 'Проходи только через свой цвет.',
+    rulesHtml: '<p>Тап подбрасывает шарик вверх. Сквозь кольца и полосы можно пролететь только там, где цвет совпадает с цветом шарика. Разноцветный кружок меняет цвет шарика. Звёзды дают очки.</p>',
+    startLabel: 'Играть', overEyebrow: 'Не тот цвет', countdown: false,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: пробел — прыжок, P — пауза', pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { if (!ball) reset(); });
+  function BR() { return Math.max(9, Math.min(view.W, 460) * 0.032); }
+  function reset() {
+    var H = view.H;
+    ball = { y: 0, vy: 0, c: P.rand(4) };
+    cam = -H * 0.75; obs = []; score = 0; t = 0; started = false; dead = false; bits = [];
+    var y = -H * 0.45;
+    for (var i = 0; i < 4; i++) { addObstacle(y); y -= H * 0.62; }
+    if (shell) shell.setScore('0');
+  }
+  function addObstacle(y) {
+    var H = view.H, n = obs.filter(function (o) { return o.kind !== 'switch'; }).length;
+    var kind = n > 1 && Math.random() < 0.35 ? 'bar' : 'ring';
+    obs.push({ kind: kind, y: y, dir: Math.random() < 0.5 ? -1 : 1, sp: 1.1 + Math.min(1.2, n * 0.08), off: Math.random() * 6, star: true });
+    obs.push({ kind: 'switch', y: y - H * 0.31, used: false });
+  }
+  function colorAt(o, side) {
+    if (o.kind === 'ring') {
+      var a = side < 0 ? -Math.PI / 2 : Math.PI / 2;
+      var rel = ((a - o.off) % (Math.PI * 2) + Math.PI * 4) % (Math.PI * 2);
+      return Math.floor(rel / (Math.PI / 2)) % 4;
+    }
+    var seg = view.W / 2, x = view.W / 2 - o.off * seg * 0.6;
+    return ((Math.floor(x / seg) % 4) + 4) % 4;
+  }
+  function jump() { if (!shell.running || dead) return; started = true; ball.vy = -view.H * 0.95; P.haptic('tap'); }
+  function die() {
+    dead = true;
+    for (var k = 0; k < 24; k++) { var a = Math.random() * 6.28; bits.push({ x: view.W / 2, y: ball.y, vx: Math.cos(a) * 260, vy: Math.sin(a) * 260, life: 0.8, c: COLS[k % 4] }); }
+    shell.end({ score: score, delay: 800, haptic: 'crash', stats: 'пройдено препятствий: ' + obs.filter(function (o) { return o.passed; }).length,
+      phrase: 'В «Цветах» у меня ' + score + ' ' + P.plural(score, U) + '.' });
+  }
+  P.loop(function (dt) {
+    var W = view.W, H = view.H, br = BR();
+    bits.forEach(function (b) { b.x += b.vx * dt; b.y += b.vy * dt; b.vy += 500 * dt; b.life -= dt; }); bits = bits.filter(function (b) { return b.life > 0; });
+    if (!ball) return;
+    if (shell.running && !dead) {
+      t += dt;
+      obs.forEach(function (o) { if (o.kind !== 'switch') o.off += o.dir * o.sp * dt; });
+      if (started) {
+        var prev = ball.y;
+        ball.vy += H * 2.5 * dt; ball.y += ball.vy * dt;
+        var R = W * 0.3, T = W * 0.045;
+        for (var i = 0; i < obs.length && !dead; i++) {
+          var o = obs[i];
+          if (o.kind === 'switch') {
+            if (!o.used && Math.abs(ball.y - o.y) < br + 12) { o.used = true; var nc; do { nc = P.rand(4); } while (nc === ball.c); ball.c = nc; P.haptic('coin'); }
+            continue;
+          }
+          if (o.star && Math.abs(ball.y - (o.kind === 'ring' ? o.y : o.y - H * 0.13)) < br + 12) { o.star = false; score++; shell.setScore(String(score)); P.haptic('coin'); }
+          if (o.kind === 'ring') {
+            [-1, 1].forEach(function (side) {
+              var edge = o.y + side * R;
+              if (Math.abs(ball.y - edge) < T / 2 + br * 0.8 && colorAt(o, side) !== ball.c) die();
+            });
+          } else if (Math.abs(ball.y - o.y) < T / 2 + br * 0.8 && colorAt(o) !== ball.c) die();
+          if (ball.y < o.y - (o.kind === 'ring' ? R : 0) - br) o.passed = true;
+        }
+        void prev;
+      }
+      if (ball.y - cam < H * 0.45) cam = ball.y - H * 0.45;
+      if (ball.y - cam > H + br * 2 && !dead) die();
+      var top = Math.min.apply(null, obs.map(function (o) { return o.y; }));
+      while (top - cam > -H) { addObstacle(top - H * 0.31); top = Math.min.apply(null, obs.map(function (o) { return o.y; })); }
+      obs = obs.filter(function (o) { return o.y - cam < H + W; });
+    }
+    draw();
+  });
+  function star(ctx, x, y, r) { ctx.beginPath(); for (var k = 0; k < 10; k++) { var a = k * Math.PI / 5 - Math.PI / 2, rr = k % 2 ? r * 0.45 : r; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, br = BR();
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!ball) return;
+    var R = W * 0.3, T = W * 0.045;
+    obs.forEach(function (o) {
+      var y = o.y - cam;
+      if (y < -W || y > H + W) return;
+      if (o.kind === 'switch') {
+        if (o.used) return;
+        for (var k = 0; k < 4; k++) { ctx.fillStyle = COLS[k]; ctx.beginPath(); ctx.moveTo(W / 2, y); ctx.arc(W / 2, y, 11, k * Math.PI / 2, (k + 1) * Math.PI / 2); ctx.fill(); }
+        return;
+      }
+      if (o.kind === 'ring') {
+        ctx.lineWidth = T; ctx.lineCap = 'butt';
+        for (k = 0; k < 4; k++) { ctx.strokeStyle = COLS[k]; ctx.beginPath(); ctx.arc(W / 2, y, R, o.off + k * Math.PI / 2 + 0.02, o.off + (k + 1) * Math.PI / 2 - 0.02); ctx.stroke(); }
+        if (o.star) { ctx.fillStyle = '#F4F1FF'; star(ctx, W / 2, y, 13); }
+      } else {
+        var seg = W / 2, shift = (o.off * seg * 0.6) % (seg * 4);
+        for (var x = -seg * 4 + shift - seg * 4; x < W + seg; x += seg) {
+          var idx = ((Math.round((x - shift) / seg) % 4) + 4) % 4;
+          ctx.fillStyle = COLS[idx]; ctx.fillRect(x + 1, y - T / 2, seg - 2, T);
+        }
+        if (o.star) { ctx.fillStyle = '#F4F1FF'; star(ctx, W / 2, y - H * 0.13, 13); }
+      }
+    });
+    if (!dead) { ctx.fillStyle = COLS[ball.c]; ctx.beginPath(); ctx.arc(W / 2, ball.y - cam, br, 0, Math.PI * 2); ctx.fill(); }
+    bits.forEach(function (b) { ctx.globalAlpha = Math.min(1, b.life * 2); ctx.fillStyle = b.c; ctx.fillRect(b.x - 3, b.y - cam - 3, 6, 6); });
+    ctx.globalAlpha = 1;
+    if (!started && shell.running) { ctx.fillStyle = 'rgba(244,241,255,0.6)'; ctx.font = '600 15px Onest, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Тапни, чтобы подпрыгнуть', W / 2, ball.y - cam + 50); }
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); jump(); });
+  window.addEventListener('keydown', function (e) { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); } });
+})();
+</script>
+</body>
+</html>

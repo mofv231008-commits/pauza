@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Пинг-понг</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Пинг-понг. Веди пальцем, чтобы двигать ракетку"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['гол', 'гола', 'голов'], LIVES = 3;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var me, ai, ball, goals, lives, hits, serveT, flash, aiSkill;
+
+  var shell = P.shell({
+    id: 'pong', title: 'Пинг-понг', tagline: 'Отбивай мяч и забивай компьютеру.',
+    rulesHtml: '<p>Веди пальцем по экрану, твоя ракетка внизу. Отбивай мяч краем ракетки, чтобы он летел под углом. Забивай компьютеру, а сам пропустить можно только три мяча. Каждый твой гол делает соперника сильнее.</p>',
+    startLabel: 'Подавать', overEyebrow: 'Три пропущенных', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: мышь или стрелки, P — пауза', pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { if (!me) reset(); });
+  function PW() { return view.W * 0.24; }
+  function BR() { return Math.max(7, view.W * 0.022); }
+  function reset() {
+    me = { x: view.W / 2 }; ai = { x: view.W / 2 };
+    goals = 0; lives = LIVES; hits = 0; flash = 0; aiSkill = 0.55;
+    serve(1);
+    if (shell) { shell.setScore('0'); side(); }
+  }
+  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (i < lives ? '#FF6B4A' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function serve(dir) {
+    var H = view.H;
+    ball = { x: view.W / 2, y: H / 2, vx: (Math.random() - 0.5) * view.W * 0.6, vy: dir * H * 0.42, speed: H * 0.42 };
+    serveT = 0.7;
+  }
+  function myY() { return view.H - 70; }
+  function aiY() { return 96; }
+  P.loop(function (dt) {
+    var W = view.W, H = view.H;
+    if (flash > 0) flash -= dt;
+    if (shell.running && ball) {
+      var ax = ball.vy < 0 ? ball.x + ball.vx * Math.abs((ball.y - aiY()) / ball.vy) * aiSkill : W / 2;
+      ax = P.clamp(ax, PW() / 2, W - PW() / 2);
+      var aiSpeed = W * (0.55 + aiSkill * 0.6);
+      ai.x += P.clamp(ax - ai.x, -aiSpeed * dt, aiSpeed * dt);
+      if (serveT > 0) serveT -= dt;
+      else {
+        var oy = ball.y;
+        ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+        var r = BR();
+        if (ball.x < r) { ball.x = r; ball.vx = Math.abs(ball.vx); }
+        if (ball.x > W - r) { ball.x = W - r; ball.vx = -Math.abs(ball.vx); }
+        var py = myY();
+        if (ball.vy > 0 && oy + r <= py + 4 && ball.y + r >= py && Math.abs(ball.x - me.x) <= PW() / 2 + r) {
+          ball.y = py - r;
+          hit(me.x, -1); hits++; P.haptic('tap');
+        }
+        var ay = aiY();
+        if (ball.vy < 0 && oy - r >= ay + 2 && ball.y - r <= ay + 6 && Math.abs(ball.x - ai.x) <= PW() / 2 + r) { ball.y = ay + 6 + r; hit(ai.x, 1); }
+        if (ball.y > H + 20) {
+          lives--; side(); flash = 0.4; P.haptic('crash');
+          if (lives <= 0) { ball = null; shell.end({ score: goals, delay: 400, stats: 'отбито мячей: ' + hits, phrase: 'В «Пинг-понге» у меня ' + goals + ' ' + P.plural(goals, U) + ' в ворота компьютера.' }); }
+          else serve(1);
+        } else if (ball.y < -20) {
+          goals++; shell.setScore(String(goals)); aiSkill = Math.min(0.95, aiSkill + 0.06); P.haptic('win');
+          serve(-1);
+        }
+      }
+    }
+    draw();
+  });
+  function hit(px, dir) {
+    var off = P.clamp((ball.x - px) / (PW() / 2), -1, 1);
+    ball.speed = Math.min(view.H * 1.25, ball.speed * 1.06);
+    var ang = off * 1.05;
+    ball.vx = Math.sin(ang) * ball.speed * 1.1; ball.vy = Math.cos(ang) * ball.speed * dir;
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22105A'; ctx.fillRect(10, 60, W - 20, H - 80);
+    ctx.fillStyle = 'rgba(185,168,240,0.25)';
+    for (var x = 16; x < W - 16; x += 22) ctx.fillRect(x, H / 2 + 10, 12, 3);
+    if (flash > 0) { ctx.fillStyle = 'rgba(255,107,74,' + (flash * 0.5).toFixed(2) + ')'; ctx.fillRect(0, H - 60, W, 60); }
+    if (!me) return;
+    ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.roundRect(ai.x - PW() / 2, aiY() - 6, PW(), 12, 6); ctx.fill();
+    ctx.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; ctx.beginPath(); ctx.roundRect(me.x - PW() / 2, myY(), PW(), 12, 6); ctx.fill();
+    if (ball) {
+      ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(ball.x, ball.y, BR(), 0, Math.PI * 2); ctx.fill();
+      if (serveT > 0) { ctx.strokeStyle = 'rgba(244,241,255,0.4)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(ball.x, ball.y, BR() + 6 + serveT * 20, 0, Math.PI * 2); ctx.stroke(); }
+    }
+  }
+  function moveTo(clientX) { var r = canvas.getBoundingClientRect(); me.x = P.clamp(clientX - r.left, PW() / 2, view.W - PW() / 2); }
+  canvas.addEventListener('pointerdown', function (e) { if (shell.running || shell.state === 'countdown') moveTo(e.clientX); });
+  canvas.addEventListener('pointermove', function (e) { if ((shell.running || shell.state === 'countdown') && (e.buttons || e.pointerType === 'mouse')) moveTo(e.clientX); });
+  var keys = {};
+  window.addEventListener('keydown', function (e) { if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { keys[e.code] = true; e.preventDefault(); } });
+  window.addEventListener('keyup', function (e) { keys[e.code] = false; });
+  P.loop(function (dt) { if (!me || !shell.running) return; var v = view.W * 1.3 * dt; if (keys.ArrowLeft) me.x = Math.max(PW() / 2, me.x - v); if (keys.ArrowRight) me.x = Math.min(view.W - PW() / 2, me.x + v); });
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>
