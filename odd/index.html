@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Лишний</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:16px}
+.sub{margin:0;color:var(--lilac);font-size:15px}
+.grid{--size:320px;--n:4;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:4px;width:var(--size);height:var(--size)}
+.grid button{border:0;border-radius:10px;background:var(--road);color:var(--paper);font-family:Onest,system-ui,sans-serif;font-weight:600;font-size:calc(var(--size) / var(--n) * .52);line-height:1;padding:0;cursor:pointer;touch-action:manipulation}
+.grid button.hit{background:var(--mint);color:var(--ink)}
+.grid button.miss{background:var(--coral);color:var(--ink)}
+.stage[data-state="paused"] .grid,.stage[data-state="countdown"] .grid{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="sub" id="sub">Найди знак, который отличается</p>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['находка', 'находки', 'находок'];
+  var PAIRS = [['Ш', 'Щ'], ['6', '9'], ['b', 'd'], ['p', 'q'], ['М', 'Н'], ['Е', 'Ё'], ['З', 'Э'], ['И', 'Й'], ['Ь', 'Ъ'], ['C', 'G'], ['8', 'B'], ['5', 'S'], ['O', 'Q'], ['N', 'И'], ['R', 'Я'], ['m', 'n'], ['u', 'v'], ['Ц', 'Щ'], ['Л', 'П'], ['Т', 'Г'], ['E', 'F'], ['W', 'V'], ['3', '8'], ['%', '&'], ['ё', 'е'], ['Ж', 'К'], ['Ю', 'Ы'], ['h', 'n'], ['☆', '★'], ['→', '←'], ['↑', '↓'], ['+', '÷'], ['≤', '≥'], ['(', ')'], ['[', ']']];
+  var stage = document.getElementById('stage'), grid = document.getElementById('grid');
+  var n, odd, score, wrong, busy;
+
+  var shell = P.shell({
+    id: 'odd', title: 'Лишний', tagline: 'Среди одинаковых знаков спрятался один другой.',
+    rulesHtml: '<p>Поле заполнено одинаковыми знаками, и только один чуть-чуть отличается: Ш среди Щ, 6 среди 9. Найди его и нажми. Поле с каждой находкой растёт. Промах отнимает 2 секунды. Минута.</p>',
+    startLabel: 'Искать', countdown: true, overEyebrow: 'Время вышло',
+    unit: function (k) { return P.plural(k, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  function layout() { var r = stage.getBoundingClientRect(); grid.style.setProperty('--size', Math.floor(Math.min(r.width - 24, r.height - 170, 460)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  function next() {
+    n = Math.min(9, 4 + Math.floor(score / 3));
+    var pair = P.shuffle(P.pick(PAIRS).slice()), N = n * n;
+    odd = P.rand(N);
+    grid.style.setProperty('--n', n); grid.textContent = '';
+    for (var i = 0; i < N; i++) { var b = document.createElement('button'); b.type = 'button'; b.dataset.i = i; b.textContent = i === odd ? pair[1] : pair[0]; grid.appendChild(b); }
+    busy = false;
+  }
+  grid.addEventListener('pointerdown', function (e) {
+    var t = e.target.closest('button'); if (!t || !shell.running || busy) return;
+    e.preventDefault();
+    var i = Number(t.dataset.i);
+    if (i === odd) { busy = true; score++; shell.setScore(String(score)); P.haptic('coin'); t.className = 'hit'; setTimeout(function () { if (shell.running) next(); }, 220); }
+    else { wrong++; timer.add(-2); P.haptic('crash'); t.className = 'miss'; setTimeout(function () { t.className = ''; }, 300); }
+  });
+  function reset() { score = 0; wrong = 0; shell.setScore('0'); timer.reset(); layout(); next(); }
+  function finish() { busy = true; grid.children[odd] && (grid.children[odd].className = 'hit'); shell.end({ score: score, delay: 500, stats: 'промахов: ' + wrong, phrase: 'В «Лишнем» я нахожу ' + score + ' ' + P.plural(score, ['лишний знак', 'лишних знака', 'лишних знаков']) + ' за минуту. Глаз-алмаз?' }); }
+  layout(); score = 0; next(); timer.show();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Было?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:22px}
+.sub{margin:0;color:var(--lilac);font-size:15px;text-align:center}
+.card{width:min(100%,320px);min-height:140px;border-radius:24px;background:var(--paper);color:var(--ink);display:grid;place-items:center;font-family:var(--font-display);font-weight:800;font-size:clamp(26px,8vw,36px);text-transform:lowercase;transition:transform .15s,opacity .15s}
+.card.out{transform:scale(.9);opacity:0}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(100%,340px)}
+.btns button{min-height:62px;border:0;border-radius:18px;font-family:var(--font-display);font-weight:600;font-size:16px;cursor:pointer;touch-action:manipulation}
+.new{background:var(--sky);color:var(--ink)}
+.seen{background:var(--sun);color:var(--ink)}
+.say{margin:0;min-height:1.4em;font-size:15px;color:var(--lilac)}
+.stage[data-state="paused"] .card,.stage[data-state="countdown"] .card{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="sub">Это слово уже было в этой игре?</p>
+    <div class="card" id="card">слово</div>
+    <div class="btns"><button class="new" type="button" id="no">← Новое</button><button class="seen" type="button" id="yes">Было →</button></div>
+    <p class="say" id="say"></p>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script src="../shared/nouns.js"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['ответ', 'ответа', 'ответов'], LIVES = 3;
+  var POOL = (window.PauzaNouns || ['дом', 'кот', 'мост', 'лампа', 'сосна']).filter(function (w) { return w.length <= 8; });
+  var card = document.getElementById('card'), say = document.getElementById('say');
+  var seen, order, cur, wasSeen, score, lives, busy, shown;
+
+  var shell = P.shell({
+    id: 'nback', title: 'Было?', tagline: 'Помни все слова, что уже видел.',
+    rulesHtml: '<p>Слова появляются по одному. Если такое слово уже показывали в этой игре — жми «Было», если впервые — «Новое». Слов становится всё больше, помнить их всё труднее. Три ошибки — конец.</p>',
+    startLabel: 'Запоминать', countdown: true, overEyebrow: 'Память подвела',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: стрелка влево — «Новое», вправо — «Было»',
+    onReset: reset
+  });
+  function next() {
+    var repeat = seen.length >= 2 && Math.random() < 0.42;
+    if (repeat) { var pool = seen.filter(function (w) { return w !== cur; }); cur = P.pick(pool); wasSeen = true; }
+    else { cur = order.pop(); wasSeen = false; }
+    card.classList.add('out');
+    setTimeout(function () { card.textContent = cur; card.classList.remove('out'); busy = false; }, 120);
+    shown++;
+  }
+  function answer(yes) {
+    if (!shell.running || busy) return;
+    busy = true;
+    if (yes === wasSeen) { score++; shell.setScore(String(score)); P.haptic('coin'); say.textContent = yes ? 'Да, было' : 'Верно, новое'; }
+    else { lives--; side(); P.haptic('crash'); say.textContent = yes ? '«' + cur + '» здесь впервые' : '«' + cur + '» уже было'; }
+    if (seen.indexOf(cur) === -1) seen.push(cur);
+    if (lives <= 0) { shell.end({ score: score, delay: 700, stats: 'разных слов: ' + seen.length, phrase: 'В «Было?» я помню ' + seen.length + ' ' + P.plural(seen.length, ['слово', 'слова', 'слов']) + ' и отвечаю верно ' + score + ' ' + P.plural(score, ['раз', 'раза', 'раз']) + '.' }); return; }
+    next();
+  }
+  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:3px;background:' + (i < lives ? '#3DF5B0' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function reset() { seen = []; order = P.shuffle(POOL.slice()); cur = null; score = 0; lives = LIVES; shown = 0; say.textContent = ''; shell.setScore('0'); side(); next(); }
+  document.getElementById('no').addEventListener('click', function () { answer(false); });
+  document.getElementById('yes').addEventListener('click', function () { answer(true); });
+  P.arrows(function (d) { if (d === 'left') answer(false); if (d === 'right') answer(true); });
+  P.gestures(card, { swipe: function (d) { if (d === 'left') answer(false); if (d === 'right') answer(true); } });
+})();
+</script>
+</body>
+</html>

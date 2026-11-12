@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Близнецы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:16px}
+.sub{margin:0;color:var(--lilac);font-size:15px}
+.grid{--w:340px;--c:3;display:grid;grid-template-columns:repeat(var(--c),1fr);gap:10px;width:var(--w)}
+.grid button{aspect-ratio:1;border:0;border-radius:18px;background:#2E177A;padding:6px;cursor:pointer;touch-action:manipulation;transition:transform .1s}
+.grid button svg{width:100%;height:100%;display:block}
+.grid button.sel{background:#5A3FB0;box-shadow:0 0 0 3px var(--sun) inset}
+.grid button.ok{background:var(--mint)}
+.grid button.bad{background:var(--coral)}
+.stage[data-state="paused"] .grid,.stage[data-state="countdown"] .grid{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="sub">Найди двух одинаковых монстриков</p>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['пара', 'пары', 'пар'];
+  var COL = ['#3DF5B0', '#FF6B4A', '#FFD84D', '#6FD3FF', '#FF8AD8'], DIM = [5, 3, 3, 3, 4];
+  var stage = document.getElementById('stage'), grid = document.getElementById('grid');
+  var mons, twinA, twinB, sel, score, wrong, busy, cols;
+
+  var shell = P.shell({
+    id: 'twins', title: 'Близнецы', tagline: 'Среди похожих монстриков есть ровно два одинаковых.',
+    rulesHtml: '<p>Все монстрики разные, кроме двух близнецов. Найди их и нажми по очереди. Смотри на цвет, форму, глаза, рот и то, что на макушке. Монстриков становится больше, а отличия — мельче. Ошибка отнимает 3 секунды. Минута.</p>',
+    startLabel: 'Искать', countdown: true, overEyebrow: 'Время вышло',
+    unit: function (k) { return P.plural(k, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  function layout() { var r = stage.getBoundingClientRect(), rows = Math.ceil((mons ? mons.length : 6) / cols); grid.style.setProperty('--w', Math.floor(Math.min(r.width - 24, (r.height - 170) / rows * cols, 460)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  function svg(m) {
+    var c = COL[m[0]], s = '<svg viewBox="0 0 100 100" aria-hidden="true">';
+    if (m[4] === 1) s += '<path d="M30 30 L24 8 L42 24z M70 30 L76 8 L58 24z" fill="#F4F1FF"/>';
+    if (m[4] === 2) s += '<path d="M50 24 V8" stroke="#F4F1FF" stroke-width="4"/><circle cx="50" cy="8" r="6" fill="#FFD84D"/>';
+    if (m[4] === 3) s += '<circle cx="26" cy="26" r="11" fill="' + c + '"/><circle cx="74" cy="26" r="11" fill="' + c + '"/><circle cx="26" cy="26" r="5" fill="#120630" opacity=".3"/><circle cx="74" cy="26" r="5" fill="#120630" opacity=".3"/>';
+    if (m[1] === 0) s += '<circle cx="50" cy="58" r="36" fill="' + c + '"/>';
+    else if (m[1] === 1) s += '<rect x="16" y="22" width="68" height="70" rx="16" fill="' + c + '"/>';
+    else s += '<path d="M14 92 V56 A36 36 0 0 1 86 56 V92 L74 82 L62 92 L50 82 L38 92 L26 82z" fill="' + c + '"/>';
+    var eyes = m[2] === 0 ? [50] : m[2] === 1 ? [37, 63] : [32, 50, 68], er = m[2] === 0 ? 11 : 8;
+    eyes.forEach(function (x) { s += '<circle cx="' + x + '" cy="50" r="' + er + '" fill="#F4F1FF"/><circle cx="' + (x + 2) + '" cy="51" r="' + er * 0.45 + '" fill="#120630"/>'; });
+    if (m[3] === 0) s += '<path d="M36 70 Q50 82 64 70" stroke="#120630" stroke-width="4" fill="none" stroke-linecap="round"/>';
+    else if (m[3] === 1) s += '<ellipse cx="50" cy="73" rx="8" ry="7" fill="#120630"/>';
+    else s += '<rect x="36" y="68" width="28" height="9" rx="2" fill="#120630"/><path d="M42 68 v5 M50 68 v5 M58 68 v5" stroke="#F4F1FF" stroke-width="2.5"/>';
+    return s + '</svg>';
+  }
+  function key(m) { return m.join(''); }
+  function rnd() { return DIM.map(function (d) { return P.rand(d); }); }
+  function next() {
+    var N = score < 3 ? 6 : score < 7 ? 8 : score < 12 ? 9 : 12; cols = N === 8 ? 4 : N === 12 ? 4 : 3;
+    var twin = rnd(), keys = {}, list = [twin.slice(), twin.slice()], close = Math.min(0.9, 0.3 + score * 0.06);
+    keys[key(twin)] = 1;
+    while (list.length < N) {
+      var m;
+      if (Math.random() < close) { m = twin.slice(); var k = P.rand(5); m[k] = (m[k] + 1 + P.rand(DIM[k] - 1)) % DIM[k]; if (Math.random() < 0.3) { var k2 = P.rand(5); m[k2] = P.rand(DIM[k2]); } }
+      else m = rnd();
+      if (keys[key(m)]) continue; keys[key(m)] = 1; list.push(m);
+    }
+    var order = P.shuffle(list.map(function (_, i) { return i; }));
+    mons = order.map(function (i) { return list[i]; }); twinA = order.indexOf(0); twinB = order.indexOf(1);
+    grid.style.setProperty('--c', cols); grid.textContent = '';
+    mons.forEach(function (m, i) { var b = document.createElement('button'); b.type = 'button'; b.dataset.i = i; b.innerHTML = svg(m); grid.appendChild(b); });
+    sel = -1; busy = false; layout();
+  }
+  grid.addEventListener('pointerdown', function (e) {
+    var t = e.target.closest('button'); if (!t || !shell.running || busy) return;
+    e.preventDefault();
+    var i = Number(t.dataset.i), btn = grid.children;
+    if (sel === -1) { sel = i; t.className = 'sel'; P.haptic('tap'); return; }
+    if (sel === i) { sel = -1; t.className = ''; return; }
+    busy = true;
+    var ok = (sel === twinA && i === twinB) || (sel === twinB && i === twinA);
+    if (ok) { btn[sel].className = 'ok'; t.className = 'ok'; score++; shell.setScore(String(score)); P.haptic('win'); setTimeout(function () { if (shell.running) next(); }, 400); }
+    else { btn[sel].className = 'bad'; t.className = 'bad'; wrong++; timer.add(-3); P.haptic('crash'); var a = sel; setTimeout(function () { btn[a].className = ''; t.className = ''; sel = -1; busy = false; }, 450); }
+  });
+  function reset() { score = 0; wrong = 0; shell.setScore('0'); timer.reset(); next(); }
+  function finish() { busy = true; var btn = grid.children; if (btn[twinA]) { btn[twinA].className = 'ok'; btn[twinB].className = 'ok'; } shell.end({ score: score, delay: 600, stats: 'ошибок: ' + wrong, phrase: 'В «Близнецах» я нахожу ' + score + ' ' + P.plural(score, U) + ' одинаковых монстриков за минуту.' }); }
+  score = 0; next(); timer.show();
+})();
+</script>
+</body>
+</html>

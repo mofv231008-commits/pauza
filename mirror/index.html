@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Зеркало</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:16px}
+.sub{margin:0;color:var(--lilac);font-size:15px;text-align:center}
+.pair{--g:150px;display:flex;align-items:center;gap:0}
+.pair.v{flex-direction:column}
+.axis{flex:none;width:4px;height:var(--g);margin:0 12px;border-radius:2px;background:repeating-linear-gradient(180deg,var(--sky) 0 8px,transparent 8px 14px)}
+.pair.v .axis{width:var(--g);height:4px;margin:12px 0;background:repeating-linear-gradient(90deg,var(--sky) 0 8px,transparent 8px 14px)}
+.g{--n:3;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:4px;width:var(--g);height:var(--g)}
+.g i,.g button{border-radius:8px;background:#3B1E8C;border:0;padding:0}
+.g i.on{background:var(--mint)}
+.g button{cursor:pointer;touch-action:manipulation;background:#2E177A}
+.g button.on{background:var(--sun)}
+.g.done button.on{background:var(--mint)}
+.stage[data-state="paused"] .pair,.stage[data-state="countdown"] .pair{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="sub" id="sub">Отрази узор в зеркале</p>
+    <div class="pair" id="pair"><div class="g" id="src"></div><div class="axis"></div><div class="g" id="dst"></div></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['узор', 'узора', 'узоров'];
+  var stage = document.getElementById('stage'), pair = document.getElementById('pair'), src = document.getElementById('src'), dst = document.getElementById('dst'), sub = document.getElementById('sub');
+  var n, pat, want, mine, mode, score, taps, busy;
+
+  var shell = P.shell({
+    id: 'mirror', title: 'Зеркало', tagline: 'Нарисуй узор так, как он отразится в зеркале.',
+    rulesHtml: '<p>Слева — узор, посередине — зеркало. Нажимай на клетки справа, чтобы нарисовать его отражение. Как только отражение совпадёт, появится новый узор. Позже зеркало ляжет горизонтально, а узоры станут больше. Минута.</p>',
+    startLabel: 'Отражать', countdown: true, overEyebrow: 'Время вышло',
+    unit: function (k) { return P.plural(k, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  function layout() {
+    var r = stage.getBoundingClientRect(), v = mode === 'v';
+    var g = v ? Math.min(r.width - 40, (r.height - 200) / 2, 260) : Math.min((r.width - 60) / 2, r.height - 220, 220);
+    pair.style.setProperty('--g', Math.floor(g) + 'px');
+  }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  function next() {
+    n = Math.min(6, 3 + Math.floor(score / 3)); mode = score >= 5 && Math.random() < 0.5 ? 'v' : 'h';
+    pair.className = 'pair' + (mode === 'v' ? ' v' : ''); layout();
+    sub.textContent = mode === 'v' ? 'Отрази узор вниз, как в воде' : 'Отрази узор в зеркале';
+    var N = n * n, k = Math.max(3, Math.round(N * (0.3 + Math.random() * 0.15)));
+    do { pat = new Array(N).fill(false); P.shuffle(Array.from({ length: N }, function (_, i) { return i; })).slice(0, k).forEach(function (i) { pat[i] = true; }); want = pat.map(function (_, i) { var r = Math.floor(i / n), c = i % n; return mode === 'h' ? pat[r * n + (n - 1 - c)] : pat[(n - 1 - r) * n + c]; }); } while (want.join() === pat.join());
+    mine = new Array(N).fill(false);
+    [src, dst].forEach(function (g) { g.style.setProperty('--n', n); g.textContent = ''; g.classList.remove('done'); });
+    for (var i = 0; i < N; i++) {
+      var a = document.createElement('i'); if (pat[i]) a.className = 'on'; src.appendChild(a);
+      var b = document.createElement('button'); b.type = 'button'; b.dataset.i = i; b.setAttribute('aria-label', 'Клетка ' + (i + 1)); dst.appendChild(b);
+    }
+    busy = false;
+  }
+  dst.addEventListener('pointerdown', function (e) {
+    var t = e.target.closest('button'); if (!t || !shell.running || busy) return;
+    e.preventDefault();
+    var i = Number(t.dataset.i); mine[i] = !mine[i]; t.classList.toggle('on', mine[i]); taps++; P.haptic('tap');
+    if (mine.join() === want.join()) { busy = true; score++; shell.setScore(String(score)); P.haptic('win'); dst.classList.add('done'); setTimeout(function () { if (shell.running) next(); }, 350); }
+  });
+  function reset() { score = 0; taps = 0; shell.setScore('0'); timer.reset(); next(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'нажатий: ' + taps, phrase: 'В «Зеркале» я отражаю ' + score + ' ' + P.plural(score, U) + ' за минуту.' }); }
+  score = 0; next(); timer.show();
+})();
+</script>
+</body>
+</html>

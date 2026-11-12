@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Поворот</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:16px}
+.sub{margin:0;color:var(--lilac);font-size:15px;text-align:center;max-width:320px}
+.target{width:min(40vw,22vh,170px);height:min(40vw,22vh,170px);border-radius:22px;background:#2E177A;padding:12px}
+.target svg,.opts svg{width:100%;height:100%;display:block}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(100%,320px)}
+.opts button{aspect-ratio:1.25;border:0;border-radius:18px;background:var(--road);padding:10px;cursor:pointer;touch-action:manipulation}
+.opts button.right{background:var(--mint)}
+.opts button.wrong{background:var(--coral)}
+.stage[data-state="paused"] .opts,.stage[data-state="countdown"] .opts,.stage[data-state="paused"] .target{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <div class="target" id="target"></div>
+    <p class="sub">Какая фигура — это она же, только повёрнутая? Остальные — зеркальные.</p>
+    <div class="opts" id="opts"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['ответ', 'ответа', 'ответов'];
+  var target = document.getElementById('target'), opts = document.getElementById('opts');
+  var ans, score, wrong, busy, btns = [];
+
+  var shell = P.shell({
+    id: 'rotate', title: 'Поворот', tagline: 'Покрути фигуру в уме.',
+    rulesHtml: '<p>Сверху фигура. Внизу четыре варианта: одна из них — та же фигура, повёрнутая на какой-то угол, остальные — её зеркальные отражения. Найди повёрнутую. Фигуры постепенно усложняются. Ошибка отнимает 3 секунды. Минута.</p>',
+    startLabel: 'Крутить', countdown: true, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1–4',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  for (var i = 0; i < 4; i++) { var b = document.createElement('button'); b.type = 'button'; b.dataset.i = i; opts.appendChild(b); btns.push(b); }
+  opts.addEventListener('click', function (e) { var t = e.target.closest('button'); if (t) pick(Number(t.dataset.i)); });
+  function norm(s) { var mx = Math.min.apply(null, s.map(function (p) { return p[0]; })), my = Math.min.apply(null, s.map(function (p) { return p[1]; })); return s.map(function (p) { return [p[0] - mx, p[1] - my]; }).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }); }
+  function key(s) { return norm(s).join(';'); }
+  function rot(s) { return norm(s.map(function (p) { return [-p[1], p[0]]; })); }
+  function mir(s) { return norm(s.map(function (p) { return [-p[0], p[1]]; })); }
+  function rotN(s, k) { for (var i = 0; i < k; i++) s = rot(s); return s; }
+  function shape(cells) {
+    for (var att = 0; att < 200; att++) {
+      var s = [[0, 0]], seen = { '0,0': 1 };
+      while (s.length < cells) { var p = P.pick(s), d = P.pick([[1, 0], [-1, 0], [0, 1], [0, -1]]), q = [p[0] + d[0], p[1] + d[1]], k = q.join(); if (!seen[k]) { seen[k] = 1; s.push(q); } }
+      s = norm(s);
+      var m = mir(s), rk = [0, 1, 2, 3].map(function (k) { return key(rotN(s, k)); });
+      if (rk.indexOf(key(m)) === -1 && new Set(rk).size === 4) return s;
+    }
+    return norm([[0, 0], [1, 0], [2, 0], [2, 1], [3, 1]]);
+  }
+  function draw(s, col) {
+    var w = 1 + Math.max.apply(null, s.map(function (p) { return p[0]; })), h = 1 + Math.max.apply(null, s.map(function (p) { return p[1]; })), M = Math.max(w, h, 3), ox = (M - w) / 2, oy = (M - h) / 2;
+    var out = '<svg viewBox="-0.1 -0.1 ' + (M + 0.2) + ' ' + (M + 0.2) + '" aria-hidden="true">';
+    s.forEach(function (p) { out += '<rect x="' + (p[0] + ox + 0.04) + '" y="' + (p[1] + oy + 0.04) + '" width="0.92" height="0.92" rx="0.18" fill="' + col + '"/>'; });
+    return out + '</svg>';
+  }
+  function next() {
+    var cells = score < 4 ? 5 : score < 10 ? 6 : 7, s = shape(cells), m = mir(s);
+    var right = rotN(s, 1 + P.rand(3)), wrongs = P.shuffle([0, 1, 2, 3]).slice(0, 3).map(function (k) { return rotN(m, k); });
+    var set = P.shuffle([right].concat(wrongs)); ans = set.indexOf(right);
+    target.innerHTML = draw(s, '#FFD84D');
+    btns.forEach(function (bt, i) { bt.innerHTML = draw(set[i], '#6FD3FF'); bt.className = ''; });
+    busy = false;
+  }
+  function pick(i) {
+    if (!shell.running || busy) return;
+    busy = true;
+    if (i === ans) { score++; shell.setScore(String(score)); P.haptic('coin'); btns[i].className = 'right'; }
+    else { wrong++; timer.add(-3); P.haptic('crash'); btns[i].className = 'wrong'; btns[ans].className = 'right'; }
+    setTimeout(function () { if (shell.running) next(); }, i === ans ? 250 : 800);
+  }
+  function reset() { score = 0; wrong = 0; shell.setScore('0'); timer.reset(); next(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong, phrase: 'В «Повороте» я кручу в уме ' + score + ' ' + P.plural(score, ['фигуру', 'фигуры', 'фигур']) + ' за минуту.' }); }
+  window.addEventListener('keydown', function (e) { var m = /^(?:Digit|Numpad)([1-4])$/.exec(e.code); if (m) pick(Number(m[1]) - 1); });
+  score = 0; next(); timer.show();
+})();
+</script>
+</body>
+</html>

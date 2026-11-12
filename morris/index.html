@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Мельница</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:var(--shoulder)}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Мельница. Ставь и двигай фишки по точкам доски"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['победа', 'победы', 'побед'], TOP = 70, KEY = 'pz_streak_morris';
+  var PTS = [[0, 0], [3, 0], [6, 0], [1, 1], [3, 1], [5, 1], [2, 2], [3, 2], [4, 2], [0, 3], [1, 3], [2, 3], [4, 3], [5, 3], [6, 3], [2, 4], [3, 4], [4, 4], [1, 5], [3, 5], [5, 5], [0, 6], [3, 6], [6, 6]];
+  var ADJ = [[1, 9], [0, 2, 4], [1, 14], [4, 10], [1, 3, 5, 7], [4, 13], [7, 11], [4, 6, 8], [7, 12], [0, 10, 21], [3, 9, 11, 18], [6, 10, 15], [8, 13, 17], [5, 12, 14, 20], [2, 13, 23], [11, 16], [15, 17, 19], [12, 16], [10, 19], [16, 18, 20, 22], [13, 19], [9, 22], [19, 21, 23], [14, 22]];
+  var MILLS = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [12, 13, 14], [15, 16, 17], [18, 19, 20], [21, 22, 23], [0, 9, 21], [3, 10, 18], [6, 11, 15], [1, 4, 7], [16, 19, 22], [8, 12, 17], [5, 13, 20], [2, 14, 23]];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var S = null, legal = [], sel = -1, pend = null, busy = false, note = '', quiet = 0, plies = 0, lastAi = null, cs = 40, ox = 0, oy = 0;
+
+  var shell = P.shell({
+    id: 'morris', title: 'Мельница', tagline: 'Старинная игра: собирай тройки и забирай фишки.',
+    rulesHtml: '<p>Сначала по очереди ставите по 9 фишек на точки доски. Три свои фишки на одной линии — «мельница»: сразу забираешь любую фишку соперника (кроме стоящих в мельнице, если есть другие). Когда фишки расставлены, их двигают по линиям на соседнюю свободную точку. Осталось три фишки — можно прыгать куда угодно. У кого меньше трёх фишек или нет хода — проиграл. Рекорд — серия побед.</p>',
+    startLabel: 'Расставить', countdown: false,
+    unit: function (n) { return P.plural(n, U) + ' подряд'; },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { cs = Math.floor(Math.min((view.W - 40) / 6, (view.H - TOP - 170) / 6, 64)); ox = Math.floor((view.W - cs * 6) / 2); oy = TOP + 80 + Math.floor((view.H - TOP - 150 - cs * 6) / 2); });
+  function hi(side) { return side > 0 ? 0 : 1; }
+  function count(b, side) { var n = 0; for (var i = 0; i < 24; i++) if (b[i] === side) n++; return n; }
+  function inMill(b, i) { return MILLS.some(function (m) { return m.indexOf(i) !== -1 && m.every(function (j) { return b[j] === b[i]; }); }); }
+  function removable(b, side) { var opp = [], free = []; for (var i = 0; i < 24; i++) if (b[i] === -side) { opp.push(i); if (!inMill(b, i)) free.push(i); } return free.length ? free : opp; }
+  function gen(st, side) {
+    var b = st.b, h = st.hand[hi(side)], base = [], out = [], i;
+    if (h > 0) { for (i = 0; i < 24; i++) if (!b[i]) base.push({ from: -1, to: i }); }
+    else {
+      var fly = count(b, side) === 3;
+      for (i = 0; i < 24; i++) if (b[i] === side) (fly ? PTS.map(function (_, k) { return k; }) : ADJ[i]).forEach(function (t) { if (!b[t]) base.push({ from: i, to: t }); });
+    }
+    base.forEach(function (m) {
+      var b2 = b.slice(); if (m.from >= 0) b2[m.from] = 0; b2[m.to] = side;
+      if (inMill(b2, m.to)) { var rs = removable(b2, side); if (rs.length) rs.forEach(function (r) { out.push({ from: m.from, to: m.to, rem: r }); }); else out.push({ from: m.from, to: m.to, rem: -1 }); }
+      else out.push({ from: m.from, to: m.to, rem: -1 });
+    });
+    return out;
+  }
+  function apply(st, m, side) { var b = st.b.slice(), hand = st.hand.slice(); if (m.from >= 0) b[m.from] = 0; else hand[hi(side)]--; b[m.to] = side; if (m.rem >= 0) b[m.rem] = 0; return { b: b, hand: hand }; }
+  function lost(st, side) { return count(st.b, side) + st.hand[hi(side)] < 3 || !gen(st, side).length; }
+  function evalS(st) {
+    var b = st.b, v = 10 * (count(b, -1) + st.hand[1] - count(b, 1) - st.hand[0]);
+    MILLS.forEach(function (m) { var a = 0, c = 0, e = 0; m.forEach(function (j) { if (b[j] === -1) a++; else if (b[j] === 1) c++; else e++; }); if (a === 3) v += 3; if (c === 3) v -= 3; if (a === 2 && e === 1) v += 1.2; if (c === 2 && e === 1) v -= 1.4; });
+    return v;
+  }
+  function search(st, side, depth, al, be) {
+    if (count(st.b, side) + st.hand[hi(side)] < 3) return -1000 - depth;
+    var ms = gen(st, side); if (!ms.length) return -1000 - depth;
+    if (depth === 0) return evalS(st) * (side < 0 ? 1 : -1);
+    for (var i = 0; i < ms.length; i++) { var v = -search(apply(st, ms[i], side), -side, depth - 1, -be, -al); if (v > al) al = v; if (al >= be) break; }
+    return al;
+  }
+  function aiMove() {
+    var ms = P.shuffle(gen(S, -1)), placing = S.hand[1] > 0 || S.hand[0] > 0, depth = placing ? 2 : 3, best = ms[0], bv = -Infinity;
+    ms.forEach(function (m) { var v = -search(apply(S, m, -1), 1, depth - 1, -Infinity, Infinity) + Math.random() * 0.3; if (v > bv) { bv = v; best = m; } });
+    return best;
+  }
+  function reset() { S = { b: new Array(24).fill(0), hand: [9, 9] }; legal = gen(S, 1); sel = -1; pend = null; busy = false; quiet = 0; plies = 0; lastAi = null; note = 'Поставь фишку'; shell.setScore(String(P.store.get(KEY, 0))); shell.setSide('серия'); }
+  function finish(res) {
+    busy = true; var s = res === 'win' ? P.store.get(KEY, 0) + 1 : 0; P.store.set(KEY, s);
+    var eyebrow = res === 'win' ? 'Победа' : res === 'lose' ? 'Компьютер победил' : 'Ничья';
+    note = eyebrow;
+    shell.end({ score: s, delay: 900, eyebrow: eyebrow, tone: res === 'win' ? 'good' : null, record: res === 'win', haptic: res === 'win' ? 'win' : 'crash',
+      stats: 'ходов: ' + Math.ceil(plies / 2) + (res === 'win' ? '' : ' · серия обнулилась'),
+      phrase: res === 'win' ? 'В «Мельницу» у меня ' + s + ' ' + P.plural(s, U) + ' подряд над компьютером.' : 'Сыграем в «Мельницу»? Компьютер строит тройки исподтишка.' });
+  }
+  function hint() { return pend ? 'Мельница! Забери фишку соперника' : S.hand[0] > 0 ? 'Поставь фишку · в запасе ' + S.hand[0] : count(S.b, 1) === 3 ? 'Осталось три — можно прыгать' : 'Передвинь фишку'; }
+  function done(m, side) { S = apply(S, m, side); plies++; quiet = m.rem >= 0 || m.from < 0 ? 0 : quiet + 1; }
+  function playerDone(m) {
+    done(m, 1); sel = -1; pend = null; P.haptic(m.rem >= 0 ? 'coin' : 'tap');
+    if (lost(S, -1)) return finish('win');
+    if (quiet >= 50) return finish('draw');
+    busy = true; note = 'Компьютер думает…';
+    setTimeout(function () {
+      if (!shell.running) return;
+      var am = aiMove(); done(am, -1); lastAi = { m: am, life: 1.4 };
+      if (am.rem >= 0) P.haptic('crash');
+      if (lost(S, 1)) return finish('lose');
+      if (quiet >= 50) return finish('draw');
+      legal = gen(S, 1); busy = false; note = am.rem >= 0 ? 'Компьютер собрал мельницу' : hint();
+    }, 400);
+  }
+  function choose(cands) {
+    if (!cands.length) return false;
+    if (cands[0].rem >= 0) { pend = cands; sel = cands[0].from; note = hint(); P.haptic('win'); return true; }
+    playerDone(cands[0]); return true;
+  }
+  function tap(px, py) {
+    if (!shell.running || busy) return;
+    var best = -1, bd = cs * 0.5;
+    PTS.forEach(function (p, i) { var d = Math.hypot(ox + p[0] * cs - px, oy + p[1] * cs - py); if (d < bd) { bd = d; best = i; } });
+    if (best < 0) return;
+    if (pend) { var r = pend.filter(function (m) { return m.rem === best; }); if (r.length) playerDone(r[0]); else P.haptic('crash'); return; }
+    if (S.hand[0] > 0) { if (!choose(legal.filter(function (m) { return m.to === best; }))) P.haptic('crash'); return; }
+    if (S.b[best] === 1) { sel = best; note = hint(); P.haptic('tap'); return; }
+    if (sel >= 0 && choose(legal.filter(function (m) { return m.from === sel && m.to === best; }))) return;
+    P.haptic('crash');
+  }
+  P.loop(function (dt) { if (lastAi) { lastAi.life -= dt; if (lastAi.life <= 0) lastAi = null; } draw(); });
+  function piece(ctx, x, y, side, r, alpha) {
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(x + 2, y + 3, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = side > 0 ? (P.gold() ? '#FFD84D' : '#3DF5B0') : '#FF6B4A'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(18,6,48,.3)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r * 0.6, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    if (!S) return;
+    ctx.fillStyle = '#2E177A'; ctx.beginPath(); ctx.roundRect(ox - cs * 0.5, oy - cs * 0.5, cs * 7, cs * 7, 18); ctx.fill();
+    ctx.strokeStyle = '#B9A8F0'; ctx.lineWidth = 3;
+    ADJ.forEach(function (a, i) { a.forEach(function (j) { if (j > i) { ctx.beginPath(); ctx.moveTo(ox + PTS[i][0] * cs, oy + PTS[i][1] * cs); ctx.lineTo(ox + PTS[j][0] * cs, oy + PTS[j][1] * cs); ctx.stroke(); } }); });
+    var targets = {};
+    if (!busy && shell.running && !pend) legal.forEach(function (m) { if (S.hand[0] > 0 || m.from === sel) targets[m.to] = 1; });
+    var rem = {}; if (pend) pend.forEach(function (m) { rem[m.rem] = 1; });
+    PTS.forEach(function (p, i) {
+      var x = ox + p[0] * cs, y = oy + p[1] * cs, v = S.b[i], r = cs * 0.34;
+      if (lastAi && (lastAi.m.to === i || lastAi.m.from === i || lastAi.m.rem === i)) { ctx.globalAlpha = Math.min(1, lastAi.life) * 0.5; ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(x, y, cs * 0.46, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
+      if (!v) { ctx.fillStyle = targets[i] ? '#3DF5B0' : '#B9A8F0'; ctx.beginPath(); ctx.arc(x, y, targets[i] ? 7 : 5, 0, Math.PI * 2); ctx.fill(); return; }
+      var shown = pend && i === pend[0].from ? 0 : v;
+      if (pend && i === pend[0].to) shown = 1;
+      if (shown) piece(ctx, x, y, shown, r);
+      if (rem[i]) { ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 3; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(x, y, r + 5, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+      if (i === sel && !pend) { ctx.strokeStyle = '#F4F1FF'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2); ctx.stroke(); }
+    });
+    if (pend && !S.b[pend[0].to]) piece(ctx, ox + PTS[pend[0].to][0] * cs, oy + PTS[pend[0].to][1] * cs, 1, cs * 0.34);
+    var hr = Math.min(10, cs * 0.18);
+    for (var k = 0; k < S.hand[1]; k++) piece(ctx, W / 2 - 8 * hr * 1.1 + k * hr * 2.2, oy - cs * 0.5 - 22, -1, hr);
+    for (k = 0; k < S.hand[0]; k++) piece(ctx, W / 2 - 8 * hr * 1.1 + k * hr * 2.2, oy + cs * 6.5 + 22, 1, hr);
+    ctx.fillStyle = 'rgba(244,241,255,.85)'; ctx.font = '600 14px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(note, W / 2, oy - cs * 0.5 - 46);
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var rc = canvas.getBoundingClientRect(); tap(e.clientX - rc.left, e.clientY - rc.top); });
+  S = { b: new Array(24).fill(0), hand: [9, 9] }; note = 'Поставь фишку';
+})();
+</script>
+</body>
+</html>

@@ -10,7 +10,7 @@
 <script>
 /* Ссылка вида t.me/Pauzagame_bot/play?startapp=race сразу открывает нужную игру */
 (function () {
-  var known = ["space", "race", "flight", "snake", "bounce", "tower", "reaction", "2048", "match3", "fifteen", "mines", "pairs", "simon", "shade", "arrows", "word", "math", "tetris", "runner", "jumper", "moles", "tiles", "knives", "stick", "schulte", "sudoku", "hangman", "slice", "hoops", "pong", "hockey", "balloons", "catch", "aim", "colors", "sort", "lines", "frog", "ski", "fall", "zigzag", "maze", "golf", "bubbles", "ten", "flood", "lights", "gomoku", "connect4", "reversi", "battleship", "bulls", "nonogram", "game24", "anagram", "wordsearch", "capitals", "stress", "diff", "digits", "missing", "stroop", "dots", "pattern", "shells", "tug", "duel", "typing", "voices", "cat", "wrongchat", "grandma", "asteroids", "copter", "lander", "hexagon", "orbit", "pinball", "billiards", "bowling", "darts", "penalty", "keepy", "wire", "neon", "glutton", "archery", "walls", "sokoban", "pipes", "jigsaw", "flow", "parking", "hanoi", "mahjong", "solitaire", "merge", "checkers", "corners", "tictactoe", "dotsboxes", "nim"];
+  var known = ["space", "race", "flight", "snake", "bounce", "tower", "reaction", "2048", "match3", "fifteen", "mines", "pairs", "simon", "shade", "arrows", "word", "math", "tetris", "runner", "jumper", "moles", "tiles", "knives", "stick", "schulte", "sudoku", "hangman", "slice", "hoops", "pong", "hockey", "balloons", "catch", "aim", "colors", "sort", "lines", "frog", "ski", "fall", "zigzag", "maze", "golf", "bubbles", "ten", "flood", "lights", "gomoku", "connect4", "reversi", "battleship", "bulls", "nonogram", "game24", "anagram", "wordsearch", "capitals", "stress", "diff", "digits", "missing", "stroop", "dots", "pattern", "shells", "tug", "duel", "typing", "voices", "cat", "wrongchat", "grandma", "asteroids", "copter", "lander", "hexagon", "orbit", "pinball", "billiards", "bowling", "darts", "penalty", "keepy", "wire", "neon", "glutton", "archery", "walls", "sokoban", "pipes", "jigsaw", "flow", "parking", "hanoi", "mahjong", "solitaire", "merge", "checkers", "corners", "tictactoe", "dotsboxes", "nim", "morris", "odd", "mirror", "compare", "twins", "clock", "rotate", "cubes", "nback", "multiply"];
   var wanted = window.Pauza.startParam();
   if (wanted && known.indexOf(wanted) !== -1) location.replace(wanted + '/' + location.hash);
 })();
@@ -98,7 +98,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
     <div class="mark" aria-hidden="true"><i></i><i></i></div>
     <div>
       <h1>Пауза <span class="badge" id="badge" title="Спасибо за поддержку" hidden><svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></span></h1>
-      <p class="tag">102 игр на минуту, пока ждёшь ответа.</p>
+      <p class="tag">112 игр на минуту, пока ждёшь ответа.</p>
     </div>
   </header>
   <div class="hub-actions">
@@ -658,7 +658,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
   </section>
 
   <section class="group" aria-labelledby="g-puzzle">
-    <div class="group-head"><h2 class="group-title" id="g-puzzle">Головоломки</h2><span class="group-count">19</span></div>
+    <div class="group-head"><h2 class="group-title" id="g-puzzle">Головоломки</h2><span class="group-count">21</span></div>
     <ul class="cards">
       <li><a class="card" href="2048/" data-id="2048">
         <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -820,11 +820,30 @@ body.gold .hub-head .mark i{background:var(--sun)}
           </svg></span>
         <span class="card-body"><span class="card-title">Слияние</span><span class="card-desc">Бросай кубики, одинаковые сливаются</span><span class="card-best" hidden></span></span>
       </a></li>
+      <li><a class="card" href="rotate/" data-id="rotate">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#22105A"/><g fill="#FFD84D"><rect x="20" y="30" width="14" height="14" rx="3"/><rect x="34" y="30" width="14" height="14" rx="3"/><rect x="48" y="30" width="14" height="14" rx="3"/><rect x="48" y="44" width="14" height="14" rx="3"/><rect x="20" y="16" width="14" height="14" rx="3"/></g>
+          <path d="M70 50 a14 14 0 1 1 6 12" fill="none" stroke="#B9A8F0" stroke-width="3"/><path d="M72 66 l5 -5 2 7z" fill="#B9A8F0"/>
+          <g fill="#6FD3FF"><rect x="104" y="20" width="14" height="14" rx="3"/><rect x="104" y="34" width="14" height="14" rx="3"/><rect x="104" y="48" width="14" height="14" rx="3"/><rect x="90" y="62" width="14" height="14" rx="3"/><rect x="118" y="20" width="14" height="14" rx="3"/></g>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Поворот</span><span class="card-desc">Найди повёрнутую, а не зеркальную</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="cubes/" data-id="cubes">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#22105A"/><g stroke="#120630" stroke-width="1.5" stroke-linejoin="round">
+          <polygon points="80,14 97,23 80,32 63,23" fill="#7FF8CB"/><polygon points="80,32 97,23 97,41 80,50" fill="#3DF5B0"/><polygon points="63,23 80,32 80,50 63,41" fill="#1FB97F"/>
+          <polygon points="80,50 97,41 97,59 80,68" fill="#3DF5B0"/><polygon points="63,41 80,50 80,68 63,59" fill="#1FB97F"/>
+          <polygon points="97,41 114,50 97,59 80,50" fill="#7FF8CB"/><polygon points="97,59 114,50 114,68 97,77" fill="#3DF5B0"/><polygon points="80,68 97,59 97,77 80,86" fill="#1FB97F"/>
+          <polygon points="63,59 80,68 63,77 46,68" fill="#7FF8CB"/><polygon points="63,77 80,68 80,86 63,95" fill="#3DF5B0"/><polygon points="46,68 63,77 63,95 46,86" fill="#1FB97F"/></g>
+          <text x="132" y="30" font-size="18" font-weight="800" fill="#FFD84D">?</text>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Кубики</span><span class="card-desc">Посчитай все кубики в куче</span><span class="card-best" hidden></span></span>
+      </a></li>
     </ul>
   </section>
 
   <section class="group" aria-labelledby="g-board">
-    <div class="group-head"><h2 class="group-title" id="g-board">Настольные</h2><span class="group-count">12</span></div>
+    <div class="group-head"><h2 class="group-title" id="g-board">Настольные</h2><span class="group-count">13</span></div>
     <ul class="cards">
       <li><a class="card" href="gomoku/" data-id="gomoku">
         <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -929,11 +948,18 @@ body.gold .hub-head .mark i{background:var(--sun)}
           </svg></span>
         <span class="card-body"><span class="card-title">Спички</span><span class="card-desc">Кто возьмёт последнюю — проиграл</span><span class="card-best" hidden></span></span>
       </a></li>
+      <li><a class="card" href="morris/" data-id="morris">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#22105A"/><g fill="none" stroke="#B9A8F0" stroke-width="2"><rect x="38" y="8" width="84" height="84"/><rect x="52" y="22" width="56" height="56"/><rect x="66" y="36" width="28" height="28"/><path d="M80 8 V36 M80 64 V92 M38 50 H66 M94 50 H122"/></g>
+          <g><circle cx="38" cy="8" r="6" fill="#3DF5B0"/><circle cx="80" cy="8" r="6" fill="#3DF5B0"/><circle cx="122" cy="8" r="6" fill="#3DF5B0"/><circle cx="52" cy="78" r="6" fill="#FF6B4A"/><circle cx="108" cy="50" r="6" fill="#FF6B4A"/><circle cx="66" cy="36" r="6" fill="#FF6B4A"/><circle cx="94" cy="64" r="6" fill="#3DF5B0"/></g><path d="M38 8 H122" stroke="#FFD84D" stroke-width="3" opacity=".7"/>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Мельница</span><span class="card-desc">Собирай тройки и забирай фишки</span><span class="card-best" hidden></span></span>
+      </a></li>
     </ul>
   </section>
 
   <section class="group" aria-labelledby="g-memory">
-    <div class="group-head"><h2 class="group-title" id="g-memory">Память и внимание</h2><span class="group-count">12</span></div>
+    <div class="group-head"><h2 class="group-title" id="g-memory">Память и внимание</h2><span class="group-count">16</span></div>
     <ul class="cards">
       <li><a class="card" href="pairs/" data-id="pairs">
         <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -1036,11 +1062,41 @@ body.gold .hub-head .mark i{background:var(--sun)}
           </svg></span>
         <span class="card-body"><span class="card-title">Напёрстки</span><span class="card-desc">Следи за шариком</span><span class="card-best" hidden></span></span>
       </a></li>
+      <li><a class="card" href="odd/" data-id="odd">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#22105A"/><g font-size="15" font-weight="600" fill="#F4F1FF" text-anchor="middle" font-family="sans-serif"><text x="50" y="30">Щ</text><text x="70" y="30">Щ</text><text x="90" y="30">Щ</text><text x="110" y="30">Щ</text><text x="50" y="54">Щ</text><text x="70" y="54">Щ</text><text x="110" y="54">Щ</text><text x="50" y="78">Щ</text><text x="70" y="78">Щ</text><text x="90" y="78">Щ</text><text x="110" y="78">Щ</text></g>
+          <rect x="80" y="38" width="20" height="22" rx="5" fill="#3DF5B0"/><text x="90" y="54" font-size="15" font-weight="600" fill="#120630" text-anchor="middle" font-family="sans-serif">Ш</text>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Лишний</span><span class="card-desc">Найди знак, который отличается</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="mirror/" data-id="mirror">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#22105A"/><g fill="#3B1E8C"><rect x="26" y="20" width="16" height="16" rx="3"/><rect x="44" y="38" width="16" height="16" rx="3"/><rect x="26" y="56" width="16" height="16" rx="3"/><rect x="62" y="56" width="16" height="16" rx="3"/></g><g fill="#3DF5B0"><rect x="44" y="20" width="16" height="16" rx="3"/><rect x="62" y="20" width="16" height="16" rx="3"/><rect x="26" y="38" width="16" height="16" rx="3"/><rect x="44" y="56" width="16" height="16" rx="3"/></g>
+          <path d="M80 14 V80" stroke="#6FD3FF" stroke-width="3" stroke-dasharray="6 5"/><g fill="#2E177A"><rect x="118" y="20" width="16" height="16" rx="3"/><rect x="100" y="38" width="16" height="16" rx="3"/><rect x="118" y="56" width="16" height="16" rx="3"/><rect x="82" y="56" width="16" height="16" rx="3"/><rect x="82" y="38" width="16" height="16" rx="3"/></g><g fill="#FFD84D"><rect x="100" y="20" width="16" height="16" rx="3"/><rect x="82" y="20" width="16" height="16" rx="3"/><rect x="118" y="38" width="16" height="16" rx="3"/><rect x="100" y="56" width="16" height="16" rx="3"/></g>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Зеркало</span><span class="card-desc">Нарисуй отражение узора</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="twins/" data-id="twins">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#22105A"/><g><rect x="10" y="18" width="40" height="40" rx="10" fill="#2E177A"/><circle cx="30" cy="40" r="13" fill="#3DF5B0"/><circle cx="25" cy="38" r="3.5" fill="#F4F1FF"/><circle cx="35" cy="38" r="3.5" fill="#F4F1FF"/><path d="M25 45 Q30 49 35 45" stroke="#120630" stroke-width="2" fill="none"/>
+          <rect x="60" y="18" width="40" height="40" rx="10" fill="#2E177A"/><circle cx="80" cy="40" r="13" fill="#3DF5B0"/><circle cx="80" cy="38" r="4.5" fill="#F4F1FF"/><path d="M75 45 Q80 49 85 45" stroke="#120630" stroke-width="2" fill="none"/>
+          <rect x="110" y="18" width="40" height="40" rx="10" fill="#3DF5B0" opacity=".25" stroke="#FFD84D" stroke-width="2"/><circle cx="130" cy="40" r="13" fill="#3DF5B0"/><circle cx="125" cy="38" r="3.5" fill="#F4F1FF"/><circle cx="135" cy="38" r="3.5" fill="#F4F1FF"/><path d="M125 45 Q130 49 135 45" stroke="#120630" stroke-width="2" fill="none"/>
+          <rect x="35" y="62" width="40" height="34" rx="10" fill="#2E177A"/><circle cx="55" cy="80" r="12" fill="#FF8AD8"/><rect x="85" y="62" width="40" height="34" rx="10" fill="#2E177A"/><rect x="94" y="70" width="22" height="20" rx="6" fill="#3DF5B0"/></g>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Близнецы</span><span class="card-desc">Найди двух одинаковых монстриков</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="nback/" data-id="nback">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#22105A"/><rect x="34" y="14" width="92" height="40" rx="12" fill="#F4F1FF"/><text x="80" y="40" font-size="16" font-weight="800" fill="#120630" text-anchor="middle">лампа</text>
+          <rect x="26" y="64" width="50" height="24" rx="9" fill="#6FD3FF"/><rect x="84" y="64" width="50" height="24" rx="9" fill="#FFD84D"/><g font-size="10" font-weight="700" fill="#120630" text-anchor="middle"><text x="51" y="80">Новое</text><text x="109" y="80">Было</text></g>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Было?</span><span class="card-desc">Помни все слова, что уже видел</span><span class="card-best" hidden></span></span>
+      </a></li>
     </ul>
   </section>
 
   <section class="group" aria-labelledby="g-words">
-    <div class="group-head"><h2 class="group-title" id="g-words">Слова и знания</h2><span class="group-count">8</span></div>
+    <div class="group-head"><h2 class="group-title" id="g-words">Слова и знания</h2><span class="group-count">11</span></div>
     <ul class="cards">
       <li><a class="card" href="word/" data-id="word">
         <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -1112,6 +1168,28 @@ body.gold .hub-head .mark i{background:var(--sun)}
           </svg></span>
         <span class="card-body"><span class="card-title">Ударения</span><span class="card-desc">Где ставить ударение</span><span class="card-best" hidden></span></span>
       </a></li>
+      <li><a class="card" href="compare/" data-id="compare">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#22105A"/><rect x="14" y="26" width="56" height="48" rx="12" fill="#3B1E8C"/><rect x="90" y="26" width="56" height="48" rx="12" fill="#3DF5B0"/><rect x="72" y="40" width="16" height="20" rx="5" fill="#2E177A"/>
+          <g font-size="13" font-weight="800" text-anchor="middle"><text x="42" y="55" fill="#F4F1FF">7 × 8</text><text x="118" y="55" fill="#120630">9 × 7</text><text x="80" y="55" fill="#B9A8F0">=</text></g>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Больше-меньше</span><span class="card-desc">Какой пример даёт больше</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="clock/" data-id="clock">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#22105A"/><circle cx="80" cy="50" r="40" fill="#F4F1FF"/><circle cx="80" cy="50" r="37" fill="none" stroke="#3B1E8C" stroke-width="2"/>
+          <g stroke="#3B1E8C" stroke-width="3"><path d="M80 16 v6 M80 78 v6 M46 50 h6 M108 50 h6"/></g><path d="M80 50 L96 40" stroke="#120630" stroke-width="5" stroke-linecap="round"/><path d="M80 50 L80 20" stroke="#FF6B4A" stroke-width="3" stroke-linecap="round"/><circle cx="80" cy="50" r="3.5" fill="#120630"/>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Который час</span><span class="card-desc">Назови время по стрелкам</span><span class="card-best" hidden></span></span>
+      </a></li>
+      <li><a class="card" href="multiply/" data-id="multiply">
+        <span class="art"><svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <rect width="160" height="100" fill="#22105A"/><text x="80" y="42" font-size="24" font-weight="800" fill="#F4F1FF" text-anchor="middle">7 × 8</text>
+          <g><rect x="36" y="52" width="40" height="18" rx="6" fill="#3B1E8C"/><rect x="84" y="52" width="40" height="18" rx="6" fill="#3DF5B0"/><rect x="36" y="74" width="40" height="18" rx="6" fill="#3B1E8C"/><rect x="84" y="74" width="40" height="18" rx="6" fill="#3B1E8C"/></g>
+          <g font-size="11" font-weight="800" text-anchor="middle"><text x="56" y="65" fill="#F4F1FF">54</text><text x="104" y="65" fill="#120630">56</text><text x="56" y="87" fill="#F4F1FF">63</text><text x="104" y="87" fill="#F4F1FF">48</text></g>
+          </svg></span>
+        <span class="card-body"><span class="card-title">Умножение</span><span class="card-desc">Таблица умножения на скорость</span><span class="card-best" hidden></span></span>
+      </a></li>
     </ul>
   </section>
 
@@ -1166,9 +1244,9 @@ body.gold .hub-head .mark i{background:var(--sun)}
 (function () {
   'use strict';
   var P = window.Pauza;
-  var GAMES = ["space", "race", "flight", "snake", "bounce", "tower", "reaction", "2048", "match3", "fifteen", "mines", "pairs", "simon", "shade", "arrows", "word", "math", "tetris", "runner", "jumper", "moles", "tiles", "knives", "stick", "schulte", "sudoku", "hangman", "slice", "hoops", "pong", "hockey", "balloons", "catch", "aim", "colors", "sort", "lines", "frog", "ski", "fall", "zigzag", "maze", "golf", "bubbles", "ten", "flood", "lights", "gomoku", "connect4", "reversi", "battleship", "bulls", "nonogram", "game24", "anagram", "wordsearch", "capitals", "stress", "diff", "digits", "missing", "stroop", "dots", "pattern", "shells", "tug", "duel", "typing", "voices", "cat", "wrongchat", "grandma", "asteroids", "copter", "lander", "hexagon", "orbit", "pinball", "billiards", "bowling", "darts", "penalty", "keepy", "wire", "neon", "glutton", "archery", "walls", "sokoban", "pipes", "jigsaw", "flow", "parking", "hanoi", "mahjong", "solitaire", "merge", "checkers", "corners", "tictactoe", "dotsboxes", "nim"];
+  var GAMES = ["space", "race", "flight", "snake", "bounce", "tower", "reaction", "2048", "match3", "fifteen", "mines", "pairs", "simon", "shade", "arrows", "word", "math", "tetris", "runner", "jumper", "moles", "tiles", "knives", "stick", "schulte", "sudoku", "hangman", "slice", "hoops", "pong", "hockey", "balloons", "catch", "aim", "colors", "sort", "lines", "frog", "ski", "fall", "zigzag", "maze", "golf", "bubbles", "ten", "flood", "lights", "gomoku", "connect4", "reversi", "battleship", "bulls", "nonogram", "game24", "anagram", "wordsearch", "capitals", "stress", "diff", "digits", "missing", "stroop", "dots", "pattern", "shells", "tug", "duel", "typing", "voices", "cat", "wrongchat", "grandma", "asteroids", "copter", "lander", "hexagon", "orbit", "pinball", "billiards", "bowling", "darts", "penalty", "keepy", "wire", "neon", "glutton", "archery", "walls", "sokoban", "pipes", "jigsaw", "flow", "parking", "hanoi", "mahjong", "solitaire", "merge", "checkers", "corners", "tictactoe", "dotsboxes", "nim", "morris", "odd", "mirror", "compare", "twins", "clock", "rotate", "cubes", "nback", "multiply"];
   /* Как подписать рекорд на карточке: слова после числа, 'points', 'ms' или 'clock' */
-  var units = {"space": "points", "race": "points", "flight": ["арка", "арки", "арок"], "snake": ["яблоко", "яблока", "яблок"], "bounce": ["кирпич", "кирпича", "кирпичей"], "tower": ["этаж", "этажа", "этажей"], "reaction": "ms", "2048": "points", "match3": "points", "fifteen": ["ход", "хода", "ходов"], "mines": "clock", "pairs": ["ход", "хода", "ходов"], "simon": ["шаг", "шага", "шагов"], "shade": ["квадрат", "квадрата", "квадратов"], "arrows": ["стрелка", "стрелки", "стрелок"], "word": ["попытка", "попытки", "попыток"], "math": ["пример", "примера", "примеров"], "tetris": "points", "runner": ["метр", "метра", "метров"], "jumper": ["метр", "метра", "метров"], "moles": ["крот", "крота", "кротов"], "tiles": ["плитка", "плитки", "плиток"], "knives": "points", "stick": "points", "schulte": "tenths", "sudoku": "clock", "hangman": ["слово", "слова", "слов"], "slice": ["фрукт", "фрукта", "фруктов"], "hoops": "points", "pong": ["гол", "гола", "голов"], "hockey": ["гол", "гола", "голов"], "balloons": ["шарик", "шарика", "шариков"], "catch": "points", "aim": "points", "colors": ["звезда", "звезды", "звёзд"], "sort": ["уровень", "уровня", "уровней"], "lines": "points", "frog": ["ряд", "ряда", "рядов"], "ski": "points", "fall": ["этаж", "этажа", "этажей"], "zigzag": ["поворот", "поворота", "поворотов"], "maze": ["лабиринт", "лабиринта", "лабиринтов"], "golf": ["удар", "удара", "ударов"], "bubbles": "points", "ten": ["цифра", "цифры", "цифр"], "flood": ["поле", "поля", "полей"], "lights": ["уровень", "уровня", "уровней"], "gomoku": ["победа", "победы", "побед"], "connect4": ["победа", "победы", "побед"], "reversi": ["победа", "победы", "побед"], "battleship": ["победа", "победы", "побед"], "bulls": ["попытка", "попытки", "попыток"], "nonogram": ["рисунок", "рисунка", "рисунков"], "game24": ["пример", "примера", "примеров"], "anagram": ["слово", "слова", "слов"], "wordsearch": ["слово", "слова", "слов"], "capitals": ["ответ", "ответа", "ответов"], "stress": ["слово", "слова", "слов"], "diff": ["отличие", "отличия", "отличий"], "digits": ["цифра", "цифры", "цифр"], "missing": ["раунд", "раунда", "раундов"], "stroop": ["ответ", "ответа", "ответов"], "dots": ["ответ", "ответа", "ответов"], "pattern": ["клетка", "клетки", "клеток"], "shells": ["раунд", "раунда", "раундов"], "typing": ["ответ", "ответа", "ответов"], "voices": ["голосовое", "голосовых", "голосовых"], "cat": ["письмо", "письма", "писем"], "wrongchat": ["сообщение", "сообщения", "сообщений"], "grandma": ["тарелка", "тарелки", "тарелок"], "asteroids": "points", "copter": ["метр", "метра", "метров"], "lander": ["посадка", "посадки", "посадок"], "hexagon": "tenths", "orbit": ["звезда", "звезды", "звёзд"], "pinball": "points", "billiards": ["шар", "шара", "шаров"], "bowling": ["кегля", "кегли", "кеглей"], "darts": "points", "penalty": ["гол", "гола", "голов"], "keepy": ["удар", "удара", "ударов"], "wire": ["провод", "провода", "проводов"], "neon": ["раунд", "раунда", "раундов"], "glutton": "points", "archery": "points", "walls": ["метр", "метра", "метров"], "sokoban": ["уровень", "уровня", "уровней"], "pipes": ["поле", "поля", "полей"], "jigsaw": ["картинка", "картинки", "картинок"], "flow": ["поле", "поля", "полей"], "parking": ["парковка", "парковки", "парковок"], "hanoi": ["башня", "башни", "башен"], "mahjong": ["пара", "пары", "пар"], "solitaire": ["карта", "карты", "карт"], "merge": "points", "checkers": ["победа", "победы", "побед"], "corners": ["победа", "победы", "побед"], "tictactoe": ["победа", "победы", "побед"], "dotsboxes": ["победа", "победы", "побед"], "nim": ["победа", "победы", "побед"]};
+  var units = {"space": "points", "race": "points", "flight": ["арка", "арки", "арок"], "snake": ["яблоко", "яблока", "яблок"], "bounce": ["кирпич", "кирпича", "кирпичей"], "tower": ["этаж", "этажа", "этажей"], "reaction": "ms", "2048": "points", "match3": "points", "fifteen": ["ход", "хода", "ходов"], "mines": "clock", "pairs": ["ход", "хода", "ходов"], "simon": ["шаг", "шага", "шагов"], "shade": ["квадрат", "квадрата", "квадратов"], "arrows": ["стрелка", "стрелки", "стрелок"], "word": ["попытка", "попытки", "попыток"], "math": ["пример", "примера", "примеров"], "tetris": "points", "runner": ["метр", "метра", "метров"], "jumper": ["метр", "метра", "метров"], "moles": ["крот", "крота", "кротов"], "tiles": ["плитка", "плитки", "плиток"], "knives": "points", "stick": "points", "schulte": "tenths", "sudoku": "clock", "hangman": ["слово", "слова", "слов"], "slice": ["фрукт", "фрукта", "фруктов"], "hoops": "points", "pong": ["гол", "гола", "голов"], "hockey": ["гол", "гола", "голов"], "balloons": ["шарик", "шарика", "шариков"], "catch": "points", "aim": "points", "colors": ["звезда", "звезды", "звёзд"], "sort": ["уровень", "уровня", "уровней"], "lines": "points", "frog": ["ряд", "ряда", "рядов"], "ski": "points", "fall": ["этаж", "этажа", "этажей"], "zigzag": ["поворот", "поворота", "поворотов"], "maze": ["лабиринт", "лабиринта", "лабиринтов"], "golf": ["удар", "удара", "ударов"], "bubbles": "points", "ten": ["цифра", "цифры", "цифр"], "flood": ["поле", "поля", "полей"], "lights": ["уровень", "уровня", "уровней"], "gomoku": ["победа", "победы", "побед"], "connect4": ["победа", "победы", "побед"], "reversi": ["победа", "победы", "побед"], "battleship": ["победа", "победы", "побед"], "bulls": ["попытка", "попытки", "попыток"], "nonogram": ["рисунок", "рисунка", "рисунков"], "game24": ["пример", "примера", "примеров"], "anagram": ["слово", "слова", "слов"], "wordsearch": ["слово", "слова", "слов"], "capitals": ["ответ", "ответа", "ответов"], "stress": ["слово", "слова", "слов"], "diff": ["отличие", "отличия", "отличий"], "digits": ["цифра", "цифры", "цифр"], "missing": ["раунд", "раунда", "раундов"], "stroop": ["ответ", "ответа", "ответов"], "dots": ["ответ", "ответа", "ответов"], "pattern": ["клетка", "клетки", "клеток"], "shells": ["раунд", "раунда", "раундов"], "typing": ["ответ", "ответа", "ответов"], "voices": ["голосовое", "голосовых", "голосовых"], "cat": ["письмо", "письма", "писем"], "wrongchat": ["сообщение", "сообщения", "сообщений"], "grandma": ["тарелка", "тарелки", "тарелок"], "asteroids": "points", "copter": ["метр", "метра", "метров"], "lander": ["посадка", "посадки", "посадок"], "hexagon": "tenths", "orbit": ["звезда", "звезды", "звёзд"], "pinball": "points", "billiards": ["шар", "шара", "шаров"], "bowling": ["кегля", "кегли", "кеглей"], "darts": "points", "penalty": ["гол", "гола", "голов"], "keepy": ["удар", "удара", "ударов"], "wire": ["провод", "провода", "проводов"], "neon": ["раунд", "раунда", "раундов"], "glutton": "points", "archery": "points", "walls": ["метр", "метра", "метров"], "sokoban": ["уровень", "уровня", "уровней"], "pipes": ["поле", "поля", "полей"], "jigsaw": ["картинка", "картинки", "картинок"], "flow": ["поле", "поля", "полей"], "parking": ["парковка", "парковки", "парковок"], "hanoi": ["башня", "башни", "башен"], "mahjong": ["пара", "пары", "пар"], "solitaire": ["карта", "карты", "карт"], "merge": "points", "checkers": ["победа", "победы", "побед"], "corners": ["победа", "победы", "побед"], "tictactoe": ["победа", "победы", "побед"], "dotsboxes": ["победа", "победы", "побед"], "nim": ["победа", "победы", "побед"], "morris": ["победа", "победы", "побед"], "odd": ["находка", "находки", "находок"], "mirror": ["узор", "узора", "узоров"], "compare": ["ответ", "ответа", "ответов"], "twins": ["пара", "пары", "пар"], "clock": ["ответ", "ответа", "ответов"], "rotate": ["ответ", "ответа", "ответов"], "cubes": ["ответ", "ответа", "ответов"], "nback": ["ответ", "ответа", "ответов"], "multiply": ["ответ", "ответа", "ответов"]};
   var POINTS = ['очко', 'очка', 'очков'];
   function label(u, v) {
     if (u === 'ms') return v + ' мс';

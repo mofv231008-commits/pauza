@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Кубики</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:16px}
+.sub{margin:0;color:var(--lilac);font-size:15px;text-align:center;max-width:320px}
+.pile{width:min(80vw,36vh,320px);height:min(80vw,36vh,320px)}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:min(100%,340px)}
+.opts button{min-height:64px;border:0;border-radius:18px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:800;font-size:24px;cursor:pointer;touch-action:manipulation}
+.opts button.right{background:var(--mint);color:var(--ink)}
+.opts button.wrong{background:var(--coral);color:var(--ink)}
+.stage[data-state="paused"] .opts,.stage[data-state="countdown"] .opts,.stage[data-state="paused"] .pile{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <svg class="pile" id="pile" aria-label="Кубики"></svg>
+    <p class="sub">Сколько здесь кубиков?</p>
+    <div class="opts" id="opts"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['ответ', 'ответа', 'ответов'];
+  var PAL = [['#7FF8CB', '#3DF5B0', '#1FB97F'], ['#FFE58A', '#FFD84D', '#D9A92A'], ['#A3E2FF', '#6FD3FF', '#3B9CC8'], ['#FFB3E8', '#FF8AD8', '#C85EA8']];
+  var pile = document.getElementById('pile'), opts = document.getElementById('opts');
+  var ans, score, wrong, busy, btns = [];
+
+  var shell = P.shell({
+    id: 'cubes', title: 'Кубики', tagline: 'Посчитай кубики в куче, включая спрятанные.',
+    rulesHtml: '<p>Кубики сложены в кучу. Каждый верхний кубик стоит на нижних, так что под видимыми всегда есть спрятанные. Посчитай все и выбери ответ. Кучи растут. Ошибка отнимает 3 секунды. Минута.</p>',
+    startLabel: 'Считать', countdown: true, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1–4',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  for (var i = 0; i < 4; i++) { var b = document.createElement('button'); b.type = 'button'; b.dataset.i = i; opts.appendChild(b); btns.push(b); }
+  opts.addEventListener('click', function (e) { var t = e.target.closest('button'); if (t) pick(Number(t.dataset.i)); });
+  function heights() {
+    var n = score < 4 ? 3 : 4, mh = score < 4 ? 3 : score < 10 ? 4 : 5, h = [], tot;
+    do {
+      h = []; tot = 0;
+      for (var x = 0; x < n; x++) { h.push([]); for (var y = 0; y < n; y++) { var lim = Math.min(x ? h[x - 1][y] : mh, y ? h[x][y - 1] : mh); var v = lim ? Math.max(0, lim - P.rand(3)) : 0; h[x].push(v); tot += v; } }
+    } while (tot < 4 + score * 0.6 || h[0][0] === 0);
+    return { n: n, h: h, tot: tot };
+  }
+  function draw(g) {
+    var a = 30, cubes = [], pal = P.pick(PAL), minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    function pr(x, y, z) { var X = (x - y) * a * 0.87, Y = (x + y) * a * 0.5 - z * a; minX = Math.min(minX, X); maxX = Math.max(maxX, X); minY = Math.min(minY, Y); maxY = Math.max(maxY, Y); return X.toFixed(1) + ',' + Y.toFixed(1); }
+    for (var x = 0; x < g.n; x++) for (var y = 0; y < g.n; y++) for (var z = 0; z < g.h[x][y]; z++) cubes.push([x, y, z]);
+    cubes.sort(function (p, q) { return (p[0] + p[1]) - (q[0] + q[1]) || p[2] - q[2]; });
+    var s = '';
+    for (x = 0; x <= g.n; x++) for (y = 0; y <= g.n; y++) pr(x, y, 0);
+    s += '<polygon points="' + [pr(0, 0, 0), pr(g.n, 0, 0), pr(g.n, g.n, 0), pr(0, g.n, 0)].join(' ') + '" fill="#2E177A"/>';
+    cubes.forEach(function (c) {
+      var x = c[0], y = c[1], z = c[2];
+      s += '<polygon points="' + [pr(x, y, z + 1), pr(x + 1, y, z + 1), pr(x + 1, y + 1, z + 1), pr(x, y + 1, z + 1)].join(' ') + '" fill="' + pal[0] + '" stroke="#120630" stroke-width="1.5" stroke-linejoin="round"/>';
+      s += '<polygon points="' + [pr(x + 1, y, z), pr(x + 1, y + 1, z), pr(x + 1, y + 1, z + 1), pr(x + 1, y, z + 1)].join(' ') + '" fill="' + pal[1] + '" stroke="#120630" stroke-width="1.5" stroke-linejoin="round"/>';
+      s += '<polygon points="' + [pr(x, y + 1, z), pr(x + 1, y + 1, z), pr(x + 1, y + 1, z + 1), pr(x, y + 1, z + 1)].join(' ') + '" fill="' + pal[2] + '" stroke="#120630" stroke-width="1.5" stroke-linejoin="round"/>';
+    });
+    var mh = 0; g.h.forEach(function (r) { r.forEach(function (v) { mh = Math.max(mh, v); }); }); pr(0, 0, mh);
+    var pad = 8, w = maxX - minX + pad * 2, hh = maxY - minY + pad * 2, side = Math.max(w, hh);
+    pile.setAttribute('viewBox', (minX - pad - (side - w) / 2).toFixed(1) + ' ' + (minY - pad - (side - hh) / 2).toFixed(1) + ' ' + side.toFixed(1) + ' ' + side.toFixed(1));
+    pile.innerHTML = s;
+  }
+  function next() {
+    var g = heights(); draw(g);
+    var set = [g.tot]; P.shuffle([-1, 1, -2, 2, 3, -3, 4]).forEach(function (d) { var v = g.tot + d; if (set.length < 4 && v > 0 && set.indexOf(v) === -1) set.push(v); });
+    set.sort(function (p, q) { return p - q; }); ans = set.indexOf(g.tot);
+    btns.forEach(function (bt, i) { bt.textContent = set[i]; bt.className = ''; });
+    busy = false;
+  }
+  function pick(i) {
+    if (!shell.running || busy) return;
+    busy = true;
+    if (i === ans) { score++; shell.setScore(String(score)); P.haptic('coin'); btns[i].className = 'right'; }
+    else { wrong++; timer.add(-3); P.haptic('crash'); btns[i].className = 'wrong'; btns[ans].className = 'right'; }
+    setTimeout(function () { if (shell.running) next(); }, i === ans ? 250 : 800);
+  }
+  function reset() { score = 0; wrong = 0; shell.setScore('0'); timer.reset(); next(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong, phrase: 'В «Кубиках» я пересчитываю ' + score + ' ' + P.plural(score, ['кучу', 'кучи', 'куч']) + ' за минуту.' }); }
+  window.addEventListener('keydown', function (e) { var m = /^(?:Digit|Numpad)([1-4])$/.exec(e.code); if (m) pick(Number(m[1]) - 1); });
+  score = 0; next(); timer.show();
+})();
+</script>
+</body>
+</html>

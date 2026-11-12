@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Умножение</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:22px}
+.q{margin:0;font-family:var(--font-display);font-weight:800;font-size:clamp(40px,13vw,60px);text-align:center;line-height:1}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(100%,340px)}
+.opts button{min-height:72px;border:0;border-radius:18px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:800;font-size:26px;cursor:pointer;touch-action:manipulation}
+.opts button.right{background:var(--mint);color:var(--ink)}
+.opts button.wrong{background:var(--coral);color:var(--ink)}
+.streak{margin:0;min-height:1.4em;color:var(--sun);font-size:15px}
+.stage[data-state="paused"] .opts,.stage[data-state="countdown"] .opts,.stage[data-state="paused"] .q{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="q" id="q">7 × 8</p>
+    <div class="opts" id="opts"></div>
+    <p class="streak" id="streak"></p>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['ответ', 'ответа', 'ответов'];
+  var q = document.getElementById('q'), opts = document.getElementById('opts'), streakEl = document.getElementById('streak');
+  var ans, score, wrong, run, bestRun, busy, btns = [];
+
+  var shell = P.shell({
+    id: 'multiply', title: 'Умножение', tagline: 'Таблица умножения на скорость.',
+    rulesHtml: '<p>Выбери правильный ответ из четырёх. Сначала — таблица до 9 × 9, потом появятся деление и числа побольше. Ошибка отнимает 3 секунды. Минута.</p>',
+    startLabel: 'Поехали', countdown: true, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1–4',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  for (var i = 0; i < 4; i++) { var b = document.createElement('button'); b.type = 'button'; b.dataset.i = i; opts.appendChild(b); btns.push(b); }
+  opts.addEventListener('click', function (e) { var t = e.target.closest('button'); if (t) pick(Number(t.dataset.i)); });
+  function next() {
+    var hi = score < 8 ? 9 : score < 18 ? 12 : 15, a = 2 + P.rand(hi - 1), b2 = 2 + P.rand(8), div = score >= 8 && Math.random() < 0.35;
+    var text, val, near = [];
+    if (div) { text = a * b2 + ' : ' + b2; val = a; near = [a + 1, a - 1, a + 2, b2, a + 10]; }
+    else { text = a + ' × ' + b2; val = a * b2; near = [(a + 1) * b2, (a - 1) * b2, a * (b2 + 1), a * (b2 - 1), val + 10, val - 10, Number(String(val).split('').reverse().join(''))]; }
+    var set = [val];
+    P.shuffle(near).forEach(function (n) { if (set.length < 4 && n > 0 && set.indexOf(n) === -1) set.push(n); });
+    while (set.length < 4) { var x = val + P.rand(9) - 4; if (x > 0 && set.indexOf(x) === -1) set.push(x); }
+    set = P.shuffle(set); ans = set.indexOf(val);
+    q.textContent = text; btns.forEach(function (bt, i) { bt.textContent = set[i]; bt.className = ''; });
+    busy = false;
+  }
+  function pick(i) {
+    if (!shell.running || busy) return;
+    busy = true;
+    if (i === ans) { score++; run++; bestRun = Math.max(bestRun, run); shell.setScore(String(score)); P.haptic('coin'); btns[i].className = 'right'; streakEl.textContent = run >= 5 ? 'Серия ' + run + ' без ошибок!' : ''; }
+    else { wrong++; run = 0; timer.add(-3); P.haptic('crash'); btns[i].className = 'wrong'; btns[ans].className = 'right'; streakEl.textContent = ''; }
+    setTimeout(function () { if (shell.running) next(); }, i === ans ? 180 : 600);
+  }
+  function reset() { score = 0; wrong = 0; run = 0; bestRun = 0; streakEl.textContent = ''; shell.setScore('0'); timer.reset(); next(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong + ' · лучшая серия: ' + bestRun, phrase: 'В «Умножении» у меня ' + score + ' ' + P.plural(score, U) + ' за минуту. Таблицу помнишь?' }); }
+  window.addEventListener('keydown', function (e) { var m = /^(?:Digit|Numpad)([1-4])$/.exec(e.code); if (m) pick(Number(m[1]) - 1); });
+  score = 0; next(); timer.show();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Который час</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:20px}
+.dial{width:min(64vw,32vh,260px);height:min(64vw,32vh,260px)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(100%,340px)}
+.opts button{min-height:64px;border:0;border-radius:18px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:800;font-size:24px;cursor:pointer;touch-action:manipulation;font-variant-numeric:tabular-nums}
+.opts button.right{background:var(--mint);color:var(--ink)}
+.opts button.wrong{background:var(--coral);color:var(--ink)}
+.stage[data-state="paused"] .opts,.stage[data-state="countdown"] .opts,.stage[data-state="paused"] .dial{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <svg class="dial" id="dial" viewBox="-110 -110 220 220" aria-label="Циферблат"></svg>
+    <div class="opts" id="opts"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['ответ', 'ответа', 'ответов'];
+  var dial = document.getElementById('dial'), opts = document.getElementById('opts');
+  var ans, score, wrong, busy, btns = [];
+
+  var shell = P.shell({
+    id: 'clock', title: 'Который час', tagline: 'Посмотри на стрелки и назови время.',
+    rulesHtml: '<p>Короткая стрелка — часы, длинная — минуты. Выбери, какое время показывают часы. Сначала минуты кратны пяти, потом любые, а затем с циферблата пропадут цифры. Ошибка отнимает 3 секунды. Минута.</p>',
+    startLabel: 'Смотреть', countdown: true, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: клавиши 1–4',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  for (var i = 0; i < 4; i++) { var b = document.createElement('button'); b.type = 'button'; b.dataset.i = i; opts.appendChild(b); btns.push(b); }
+  opts.addEventListener('click', function (e) { var t = e.target.closest('button'); if (t) pick(Number(t.dataset.i)); });
+  function fmt(h, m) { return h + ':' + (m < 10 ? '0' : '') + m; }
+  function draw(h, m, nums) {
+    var s = '<circle r="104" fill="#F4F1FF"/><circle r="98" fill="none" stroke="#3B1E8C" stroke-width="3"/>';
+    for (var k = 0; k < 60; k++) { var a = k * Math.PI / 30, big = k % 5 === 0, r1 = big ? 82 : 88; s += '<line x1="' + (Math.sin(a) * r1).toFixed(1) + '" y1="' + (-Math.cos(a) * r1).toFixed(1) + '" x2="' + (Math.sin(a) * 94).toFixed(1) + '" y2="' + (-Math.cos(a) * 94).toFixed(1) + '" stroke="#3B1E8C" stroke-width="' + (big ? 3.5 : 1.2) + '"/>'; }
+    if (nums) for (k = 1; k <= 12; k++) { var b2 = k * Math.PI / 6; s += '<text x="' + (Math.sin(b2) * 68).toFixed(1) + '" y="' + (-Math.cos(b2) * 68 + 7).toFixed(1) + '" text-anchor="middle" font-size="19" font-weight="700" fill="#22105A" font-family="Onest, system-ui, sans-serif">' + k + '</text>'; }
+    var ha = ((h % 12) + m / 60) * 30, ma = m * 6;
+    s += '<line x1="0" y1="10" x2="0" y2="-50" stroke="#120630" stroke-width="8" stroke-linecap="round" transform="rotate(' + ha + ')"/>';
+    s += '<line x1="0" y1="14" x2="0" y2="-82" stroke="#FF6B4A" stroke-width="4.5" stroke-linecap="round" transform="rotate(' + ma + ')"/>';
+    s += '<circle r="6" fill="#120630"/>';
+    dial.innerHTML = s;
+  }
+  function next() {
+    var any = score >= 6, nums = score < 14, h = 1 + P.rand(12), m = any ? P.rand(60) : P.rand(12) * 5;
+    draw(h, m, nums);
+    var right = fmt(h, m), cands = [], sw = Math.round(m / 5) || 12, swm = (h % 12) * 5;
+    cands.push(fmt(sw, swm), fmt(h % 12 + 1, m), fmt(h === 1 ? 12 : h - 1, m), fmt(h, (m + 5) % 60), fmt(h, (m + 55) % 60), fmt(h, (60 - m) % 60), fmt(12 - h || 12, m), fmt(h, (m + 30) % 60));
+    var set = [right]; P.shuffle(cands).forEach(function (c) { if (set.length < 4 && set.indexOf(c) === -1) set.push(c); });
+    set = P.shuffle(set); ans = set.indexOf(right);
+    btns.forEach(function (bt, i) { bt.textContent = set[i]; bt.className = ''; });
+    busy = false;
+  }
+  function pick(i) {
+    if (!shell.running || busy) return;
+    busy = true;
+    if (i === ans) { score++; shell.setScore(String(score)); P.haptic('coin'); btns[i].className = 'right'; }
+    else { wrong++; timer.add(-3); P.haptic('crash'); btns[i].className = 'wrong'; btns[ans].className = 'right'; }
+    setTimeout(function () { if (shell.running) next(); }, i === ans ? 220 : 700);
+  }
+  function reset() { score = 0; wrong = 0; shell.setScore('0'); timer.reset(); next(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong, phrase: 'В «Который час» я узнаю время по стрелкам ' + score + ' ' + P.plural(score, ['раз', 'раза', 'раз']) + ' за минуту.' }); }
+  window.addEventListener('keydown', function (e) { var m = /^(?:Digit|Numpad)([1-4])$/.exec(e.code); if (m) pick(Number(m[1]) - 1); });
+  score = 0; next(); timer.show();
+})();
+</script>
+</body>
+</html>
