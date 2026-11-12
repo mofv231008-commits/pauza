@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Заливка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:16px}
+.info{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac)}
+.info b{color:var(--paper)}
+.board{--size:340px;display:grid;grid-template-columns:repeat(12,1fr);width:var(--size);height:var(--size);border-radius:14px;overflow:hidden;flex:none}
+.board i{display:block;transition:background-color .18s}
+.pal{display:flex;gap:10px}
+.pal button{width:48px;height:48px;border-radius:50%;border:3px solid transparent;cursor:pointer;touch-action:manipulation;padding:0}
+.pal button.cur{border-color:var(--paper);opacity:.35}
+.stage[data-state="paused"] .board,.stage[data-state="countdown"] .board{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <p class="info" id="info">Ходов: <b>0</b> из 25</p>
+    <div class="board" id="board"></div>
+    <div class="pal" id="pal"></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 12, U = ['поле', 'поля', 'полей'];
+  var COLS = ['#FF6B4A', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8', '#B9A8F0'];
+  var NAMES = ['красный', 'зелёный', 'жёлтый', 'голубой', 'розовый', 'сиреневый'];
+  var stage = document.getElementById('stage'), boardEl = document.getElementById('board'), palEl = document.getElementById('pal'), info = document.getElementById('info');
+  var g, moves, limit, won, els = [], btns = [], busy;
+
+  var shell = P.shell({
+    id: 'flood', title: 'Заливка', tagline: 'Залей всё поле одним цветом за ограниченное число ходов.',
+    rulesHtml: '<p>Заливка начинается из левого верхнего угла. Нажми на цвет внизу — вся залитая область станет этого цвета и захватит соседние клетки такого же цвета. Залей всё поле, пока не кончились ходы. С каждым полем ходов чуть меньше.</p>',
+    overEyebrow: 'Ходы закончились', countdown: false,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  for (var i = 0; i < N * N; i++) { var e = document.createElement('i'); boardEl.appendChild(e); els.push(e); }
+  COLS.forEach(function (c, k) {
+    var b = document.createElement('button'); b.type = 'button'; b.style.background = c; b.setAttribute('aria-label', NAMES[k]);
+    b.addEventListener('click', function () { pick(k); });
+    palEl.appendChild(b); btns.push(b);
+  });
+  function region() {
+    var col = g[0], seen = new Array(N * N).fill(false), q = [0]; seen[0] = true;
+    for (var i = 0; i < q.length; i++) {
+      var k = q[i], r = Math.floor(k / N), c = k % N;
+      [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].forEach(function (p) {
+        if (p[0] < 0 || p[1] < 0 || p[0] >= N || p[1] >= N) return;
+        var j = p[0] * N + p[1];
+        if (!seen[j] && g[j] === col) { seen[j] = true; q.push(j); }
+      });
+    }
+    return q;
+  }
+  function render() {
+    g.forEach(function (c, i) { els[i].style.background = COLS[c]; });
+    btns.forEach(function (b, k) { b.classList.toggle('cur', k === g[0]); });
+    info.innerHTML = 'Поле ' + (won + 1) + ' · ходов: <b>' + moves + '</b> из ' + limit;
+  }
+  function newBoard() { g = []; for (var i = 0; i < N * N; i++) g.push(P.rand(6)); moves = 0; limit = Math.max(18, 25 - won); busy = false; render(); }
+  function pick(k) {
+    if (!shell.running || busy || k === g[0]) return;
+    region().forEach(function (i) { g[i] = k; });
+    moves++; P.haptic('tap');
+    render();
+    if (region().length === N * N) {
+      won++; shell.setScore(String(won)); busy = true; P.haptic('win');
+      info.innerHTML = 'Залито за <b>' + moves + '</b> ' + P.plural(moves, ['ход', 'хода', 'ходов']) + '!';
+      setTimeout(function () { if (shell.running) newBoard(); }, 900);
+    } else if (moves >= limit) {
+      busy = true;
+      shell.end({ score: won, delay: 500, stats: 'на последнем поле залито ' + Math.round(region().length / (N * N) * 100) + '%',
+        phrase: 'В «Заливке» у меня ' + won + ' ' + P.plural(won, U) + ' подряд.' });
+    }
+  }
+  function reset() { won = 0; shell.setScore('0'); newBoard(); }
+  window.addEventListener('keydown', function (e) { var m = /^Digit([1-6])$/.exec(e.code); if (m) pick(Number(m[1]) - 1); });
+  function layout() { var r = stage.getBoundingClientRect(); boardEl.style.setProperty('--size', Math.floor(Math.min(r.width - 32, r.height - 240, 460)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); won = 0; newBoard();
+})();
+</script>
+</body>
+</html>

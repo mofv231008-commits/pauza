@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Вниз</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Вниз. Держи палец слева или справа, чтобы катить шарик"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['этаж', 'этажа', 'этажей'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var ball, plats, rise, t, score, dead, hold = 0, spawnY;
+
+  var shell = P.shell({
+    id: 'fall', title: 'Вниз', tagline: 'Спускайся по платформам, пока они ползут вверх.',
+    rulesHtml: '<p>Платформы поднимаются. Держи палец слева или справа, шарик катится туда и падает в просветы. Не дай платформам утащить шарик к шипам наверху и не падай за нижний край. Красные платформы с шипами трогать нельзя.</p>',
+    startLabel: 'Вниз', overEyebrow: 'Шарик пропал', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: стрелки влево и вправо, P — пауза',
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { if (!ball) reset(); });
+  function BR() { return Math.max(9, Math.min(view.W, 460) * 0.032); }
+  function top() { return 70; }
+  function addRow(y) {
+    var W = view.W, gap = W * (0.2 + Math.random() * 0.08), gx = Math.random() * (W - gap);
+    var spiky = t > 4 && Math.random() < Math.min(0.3, 0.1 + t * 0.004);
+    if (gx > 6) plats.push({ x: 0, w: gx, y: y, spiky: spiky && Math.random() < 0.5 });
+    if (gx + gap < W - 6) plats.push({ x: gx + gap, w: W - gx - gap, y: y, spiky: spiky && Math.random() < 0.5 });
+  }
+  function reset() {
+    var H = view.H;
+    ball = { x: view.W / 2, y: H * 0.3, vy: 0, vx: 0, on: null }; plats = []; rise = H * 0.12; t = 0; score = 0; dead = false;
+    plats.push({ x: view.W * 0.25, w: view.W * 0.5, y: H * 0.36, spiky: false, passed: true, counted: true });
+    for (var y = H * 0.56; y < H + 60; y += H * 0.2) addRow(y);
+    spawnY = H * 0.2;
+    if (shell) shell.setScore('0');
+  }
+  function die(why) {
+    if (dead) return; dead = true;
+    shell.end({ score: score, delay: 500, haptic: 'crash', stats: why, phrase: 'В игре «Вниз» у меня ' + score + ' ' + P.plural(score, U) + '.' });
+  }
+  P.loop(function (dt) {
+    var W = view.W, H = view.H, r = BR();
+    if (!ball) return;
+    if (shell.running && !dead) {
+      t += dt;
+      rise = H * (0.12 + Math.min(0.22, t * 0.004));
+      var dy = rise * dt;
+      plats.forEach(function (p) { p.y -= dy; });
+      spawnY += dy;
+      if (spawnY >= H * 0.2) { spawnY -= H * 0.2; addRow(H + 20); }
+      plats = plats.filter(function (p) { return p.y > top() - 30; });
+      ball.vx += (hold * W * 0.75 - ball.vx) * Math.min(1, dt * 12);
+      ball.x = P.clamp(ball.x + ball.vx * dt, r, W - r);
+      var prevY = ball.y;
+      ball.vy += H * 2.4 * dt; ball.y += ball.vy * dt;
+      plats.forEach(function (p) {
+        var pTop = p.y;
+        if (ball.x + r * 0.6 > p.x && ball.x - r * 0.6 < p.x + p.w && prevY + r <= pTop + dy + 1 && ball.y + r >= pTop) {
+          if (p.spiky) { die('шипы на платформе'); return; }
+          ball.y = pTop - r; ball.vy = 0;
+        }
+      });
+      plats.forEach(function (p) { if (!p.passed && ball.y - r > p.y + 6) { p.passed = true; } });
+      var rows = {}; plats.forEach(function (p) { if (p.passed && !p.counted) { p.counted = true; rows[Math.round(p.y)] = true; } });
+      var n = Object.keys(rows).length; if (n) { score += n; shell.setScore(String(score)); }
+      if (ball.y - r <= top() + 8) die('шипы наверху');
+      if (ball.y - r > H) die('упал вниз');
+    }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, r = BR();
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(185,168,240,0.05)'; for (var x = 0; x < W; x += 28) ctx.fillRect(x, 0, 1, H);
+    if (!ball) return;
+    ctx.fillStyle = '#FF6B4A';
+    for (x = 0; x < W; x += 16) { ctx.beginPath(); ctx.moveTo(x, top()); ctx.lineTo(x + 8, top() + 12); ctx.lineTo(x + 16, top()); ctx.fill(); }
+    plats.forEach(function (p) {
+      ctx.fillStyle = p.spiky ? '#FF6B4A' : '#3DF5B0';
+      ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, 10, 5); ctx.fill();
+      if (p.spiky) for (var sx = p.x + 2; sx < p.x + p.w - 10; sx += 12) { ctx.beginPath(); ctx.moveTo(sx, p.y); ctx.lineTo(sx + 5, p.y - 8); ctx.lineTo(sx + 10, p.y); ctx.fill(); }
+    });
+    if (!dead) {
+      ctx.fillStyle = P.gold() ? '#FFD84D' : '#F4F1FF'; ctx.beginPath(); ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(18,6,48,0.2)'; ctx.beginPath(); ctx.arc(ball.x + r * 0.3, ball.y + r * 0.3, r * 0.5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  var pointers = {};
+  function upd() { var sum = 0; Object.keys(pointers).forEach(function (k) { sum += pointers[k]; }); hold = P.clamp(sum, -1, 1); }
+  function sideOf(e) { var rr = canvas.getBoundingClientRect(); return e.clientX - rr.left < rr.width / 2 ? -1 : 1; }
+  canvas.addEventListener('pointerdown', function (e) { pointers[e.pointerId] = sideOf(e); upd(); });
+  canvas.addEventListener('pointermove', function (e) { if (pointers[e.pointerId] != null) { pointers[e.pointerId] = sideOf(e); upd(); } });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (tp) { canvas.addEventListener(tp, function (e) { delete pointers[e.pointerId]; upd(); }); });
+  var keys = {};
+  function kupd() { hold = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0); }
+  window.addEventListener('keydown', function (e) { if (/Arrow(Left|Right)|Key[AD]/.test(e.code)) { keys[e.code] = 1; e.preventDefault(); kupd(); } });
+  window.addEventListener('keyup', function (e) { if (keys[e.code]) { keys[e.code] = 0; kupd(); } });
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

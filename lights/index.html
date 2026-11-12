@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Свет</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:#140734}
+.play{gap:16px}
+.info{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac)}
+.board{--size:320px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:var(--size);height:var(--size);flex:none}
+.l{border:0;border-radius:16px;background:#22105A;cursor:pointer;touch-action:manipulation;transition:background-color .15s,box-shadow .15s;padding:0}
+.l.on{background:var(--sun);box-shadow:0 0 22px rgba(255,216,77,.45)}
+.tools button{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line);background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer}
+.stage[data-state="paused"] .board,.stage[data-state="countdown"] .board{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="info" id="info">Погаси все лампы</p>
+    <div class="board" id="board"></div>
+    <div class="tools"><button type="button" id="again">Начать уровень заново</button></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var N = 5, U = ['уровень', 'уровня', 'уровней'];
+  var stage = document.getElementById('stage'), boardEl = document.getElementById('board'), info = document.getElementById('info');
+  var on, start, level, solved, moves, busy, els = [];
+
+  var shell = P.shell({
+    id: 'lights', title: 'Свет', tagline: 'Погаси все лампы.',
+    rulesHtml: '<p>Нажатие на лампу переключает её и четыре соседние: сверху, снизу, слева и справа. Погаси все лампы. С каждым уровнем включённых ламп больше. За 90 секунд пройди как можно больше уровней, за каждый — ещё 5 секунд.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 90, finish, document.getElementById('timebar'));
+  for (var i = 0; i < N * N; i++) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'l';
+    (function (k) { b.addEventListener('click', function () { press(k, true); }); })(i);
+    boardEl.appendChild(b); els.push(b);
+  }
+  function toggle(st, k) { var r = Math.floor(k / N), c = k % N; [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].forEach(function (p) { if (p[0] >= 0 && p[1] >= 0 && p[0] < N && p[1] < N) st[p[0] * N + p[1]] = !st[p[0] * N + p[1]]; }); }
+  function render() { on.forEach(function (v, i) { els[i].className = 'l' + (v ? ' on' : ''); els[i].setAttribute('aria-label', 'Лампа ' + (i + 1) + (v ? ', горит' : ', не горит')); }); }
+  function setLevel(l) {
+    level = l; on = new Array(N * N).fill(false);
+    var presses = Math.min(12, 3 + l), used = {};
+    while (Object.keys(used).length < presses) used[P.rand(N * N)] = 1;
+    Object.keys(used).forEach(function (k) { toggle(on, Number(k)); });
+    if (on.every(function (v) { return !v; })) return setLevel(l);
+    start = on.slice(); moves = 0; busy = false;
+    info.textContent = 'Уровень ' + (l + 1) + ' · погаси все лампы';
+    render();
+  }
+  function press(k, user) {
+    if (!shell.running || busy) return;
+    toggle(on, k); moves++; render(); if (user) P.haptic('tap');
+    if (on.every(function (v) { return !v; })) {
+      solved++; shell.setScore(String(solved)); busy = true; timer.add(5); P.haptic('win');
+      info.textContent = 'Темно! +5 секунд';
+      setTimeout(function () { if (shell.running) setLevel(level + 1); }, 600);
+    }
+  }
+  document.getElementById('again').addEventListener('click', function () { if (shell.running && !busy) { on = start.slice(); moves = 0; render(); } });
+  function reset() { solved = 0; shell.setScore('0'); timer.reset(); setLevel(0); }
+  function finish() { shell.end({ score: solved, delay: 300, stats: 'последний уровень: ' + (level + 1), phrase: 'В «Свете» у меня ' + solved + ' ' + P.plural(solved, U) + ' за полторы минуты.' }); }
+  function layout() { var r = stage.getBoundingClientRect(); boardEl.style.setProperty('--size', Math.floor(Math.min(r.width - 40, r.height - 260, 420)) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout(); setLevel(0); timer.show();
+})();
+</script>
+</body>
+</html>

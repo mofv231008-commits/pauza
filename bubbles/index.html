@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Пузыри</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Пузыри. Прицелься пальцем и отпусти, чтобы выстрелить"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var NC = 9, U = ['очко', 'очка', 'очков'];
+  var COLS = ['#FF6B4A', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var grid, shift, R, top0, cur, nxt, shot, aim, score, misses, shots, falling, pops, colorsN, dead;
+
+  var shell = P.shell({
+    id: 'bubbles', title: 'Пузыри', tagline: 'Стреляй пузырями и собирай по три одного цвета.',
+    rulesHtml: '<p>Веди пальцем, чтобы прицелиться, отпусти — выстрел. Три и больше пузырей одного цвета лопаются, а повисшие без опоры падают и дают двойные очки. Каждые пять промахов сверху появляется новый ряд. Пузыри дошли до линии внизу — конец.</p>',
+    startLabel: 'Стрелять', overEyebrow: 'Пузыри дошли до низа', countdown: false,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { R = Math.min(view.W - 20, 460) / (NC * 2); top0 = 74; draw(); });
+  function odd(r) { return (r + shift) % 2 === 1; }
+  function width(r) { return odd(r) ? NC - 1 : NC; }
+  function ox() { return (view.W - R * NC * 2) / 2; }
+  function cx(r, c) { return ox() + R + c * R * 2 + (odd(r) ? R : 0); }
+  function cy(r) { return top0 + R + r * R * 1.732; }
+  function shooterY() { return view.H - R * 3; }
+  function newRow(r) { var row = []; for (var c = 0; c < width(r); c++) row.push(P.rand(colorsN)); return row; }
+  function reset() {
+    shift = 0; colorsN = 4; grid = [];
+    for (var r = 0; r < 6; r++) grid.push(newRow(r));
+    score = 0; misses = 0; shots = 0; falling = []; pops = []; shot = null; aim = null; dead = false;
+    cur = pickColor(); nxt = pickColor();
+    shell.setScore('0'); side();
+  }
+  function side() { shell.setSide('<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + COLS[nxt] + '"></span> ' + (5 - misses)); }
+  function present() { var s = {}; grid.forEach(function (row) { row.forEach(function (c) { if (c >= 0) s[c] = 1; }); }); return Object.keys(s).map(Number); }
+  function pickColor() { var p = present(); return p.length ? P.pick(p) : P.rand(colorsN); }
+  function neighbors(r, c) {
+    var o = odd(r), n = [[r, c - 1], [r, c + 1]];
+    if (o) n.push([r - 1, c], [r - 1, c + 1], [r + 1, c], [r + 1, c + 1]);
+    else n.push([r - 1, c - 1], [r - 1, c], [r + 1, c - 1], [r + 1, c]);
+    return n.filter(function (p) { return p[0] >= 0 && p[0] < grid.length && p[1] >= 0 && p[1] < width(p[0]); });
+  }
+  function at(r, c) { return grid[r] && grid[r][c] != null ? grid[r][c] : -1; }
+  function snap(x, y) {
+    var best = null, bd = Infinity;
+    var r0 = Math.max(0, Math.round((y - top0 - R) / (R * 1.732)));
+    for (var r = Math.max(0, r0 - 1); r <= r0 + 1; r++) {
+      while (grid.length <= r) grid.push(new Array(width(grid.length)).fill(-1));
+      for (var c = 0; c < width(r); c++) {
+        if (at(r, c) >= 0) continue;
+        var d = Math.hypot(cx(r, c) - x, cy(r) - y);
+        if (d < bd && (r === 0 || neighbors(r, c).some(function (p) { return at(p[0], p[1]) >= 0; }))) { bd = d; best = [r, c]; }
+      }
+    }
+    return best;
+  }
+  function settle(r, c, col) {
+    grid[r][c] = col;
+    var same = [[r, c]], seen = {}; seen[r + ',' + c] = 1;
+    for (var i = 0; i < same.length; i++) neighbors(same[i][0], same[i][1]).forEach(function (p) { var k = p[0] + ',' + p[1]; if (!seen[k] && at(p[0], p[1]) === col) { seen[k] = 1; same.push(p); } });
+    var gained = 0;
+    if (same.length >= 3) {
+      same.forEach(function (p) { pops.push({ x: cx(p[0], p[1]), y: cy(p[0]), c: COLS[col], life: 0.35 }); grid[p[0]][p[1]] = -1; });
+      gained += same.length * 10;
+      var hold = {}, q = [];
+      for (var cc = 0; cc < width(0); cc++) if (at(0, cc) >= 0) { hold['0,' + cc] = 1; q.push([0, cc]); }
+      for (i = 0; i < q.length; i++) neighbors(q[i][0], q[i][1]).forEach(function (p) { var k = p[0] + ',' + p[1]; if (!hold[k] && at(p[0], p[1]) >= 0) { hold[k] = 1; q.push(p); } });
+      for (var rr = 0; rr < grid.length; rr++) for (cc = 0; cc < width(rr); cc++) if (at(rr, cc) >= 0 && !hold[rr + ',' + cc]) {
+        falling.push({ x: cx(rr, cc), y: cy(rr), vy: 0, c: COLS[grid[rr][cc]] }); grid[rr][cc] = -1; gained += 20;
+      }
+      score += gained; shell.setScore(String(score)); P.haptic(gained > 50 ? 'win' : 'coin');
+    } else {
+      misses++; P.haptic('tap');
+      if (misses >= 5) { misses = 0; shift ^= 1; grid.unshift(newRow(0)); }
+    }
+    while (grid.length && grid[grid.length - 1].every(function (v) { return v < 0; })) grid.pop();
+    if (!present().length) { score += 200; shell.setScore(String(score)); colorsN = Math.min(5, colorsN + 1); for (var k = 0; k < 5; k++) grid.push(newRow(grid.length)); }
+    else if (score > 600 && colorsN < 5) colorsN = 5;
+    side();
+    var lowest = -1; grid.forEach(function (row, ri) { if (row.some(function (v) { return v >= 0; })) lowest = ri; });
+    if (lowest >= 0 && cy(lowest) + R > shooterY() - R * 2.2) {
+      dead = true;
+      shell.end({ score: score, delay: 500, haptic: 'crash', stats: 'выстрелов: ' + shots,
+        phrase: 'В «Пузырях» у меня ' + score + ' ' + P.plural(score, U) + '.' });
+    }
+  }
+  function fire() {
+    if (!aim || shot || !shell.running || dead) return;
+    var sx = view.W / 2, sy = shooterY();
+    var a = Math.atan2(aim.y - sy, aim.x - sx);
+    a = P.clamp(a, -Math.PI + 0.18, -0.18);
+    var v = view.H * 1.9;
+    shot = { x: sx, y: sy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, c: cur };
+    cur = nxt; nxt = pickColor(); shots++; side();
+  }
+  P.loop(function (dt) {
+    if (!grid || !R) return;
+    if (shot) {
+      var steps = 6;
+      for (var s = 0; s < steps && shot; s++) {
+        shot.x += shot.vx * dt / steps; shot.y += shot.vy * dt / steps;
+        var lx = ox() + R, rx = ox() + R * (NC * 2 - 1);
+        if (shot.x < lx) { shot.x = lx; shot.vx = Math.abs(shot.vx); }
+        if (shot.x > rx) { shot.x = rx; shot.vx = -Math.abs(shot.vx); }
+        var hit = shot.y <= top0 + R;
+        for (var r = 0; r < grid.length && !hit; r++) for (var c = 0; c < width(r) && !hit; c++) if (at(r, c) >= 0 && Math.hypot(cx(r, c) - shot.x, cy(r) - shot.y) < R * 1.75) hit = true;
+        if (hit) { var cell = snap(shot.x, shot.y); var col = shot.c; shot = null; if (cell) settle(cell[0], cell[1], col); }
+      }
+    }
+    falling.forEach(function (f) { f.vy += 1600 * dt; f.y += f.vy * dt; }); falling = falling.filter(function (f) { return f.y < view.H + 40; });
+    pops.forEach(function (p) { p.life -= dt; }); pops = pops.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function bubble(ctx, x, y, col, r) {
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.arc(x - r * 0.3, y - r * 0.3, r * 0.28, 0, Math.PI * 2); ctx.fill();
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!grid || !R) return;
+    ctx.fillStyle = '#22105A'; ctx.fillRect(ox(), top0, R * NC * 2, shooterY() - top0 + R * 2);
+    ctx.fillStyle = 'rgba(255,107,74,0.5)'; ctx.fillRect(ox(), shooterY() - R * 2.2, R * NC * 2, 2);
+    grid.forEach(function (row, r) { row.forEach(function (c, i) { if (c >= 0) bubble(ctx, cx(r, i), cy(r), COLS[c], R * 0.94); }); });
+    pops.forEach(function (p) { ctx.globalAlpha = p.life / 0.35; bubble(ctx, p.x, p.y, p.c, R * (1.4 - p.life)); }); ctx.globalAlpha = 1;
+    falling.forEach(function (f) { bubble(ctx, f.x, f.y, f.c, R * 0.94); });
+    var sx = W / 2, sy = shooterY();
+    if (aim && !shot && shell.running) {
+      var a = P.clamp(Math.atan2(aim.y - sy, aim.x - sx), -Math.PI + 0.18, -0.18);
+      ctx.strokeStyle = 'rgba(244,241,255,0.5)'; ctx.setLineDash([4, 8]); ctx.lineWidth = 2;
+      var x = sx, y = sy, vx = Math.cos(a), vy = Math.sin(a), lx = ox() + R, rx = ox() + R * (NC * 2 - 1);
+      ctx.beginPath(); ctx.moveTo(x, y);
+      for (var k = 0; k < 2; k++) {
+        var tt = vx < 0 ? (lx - x) / vx : (rx - x) / vx, ty = (top0 + R - y) / vy, step = Math.min(tt, ty);
+        x += vx * step; y += vy * step; ctx.lineTo(x, y);
+        if (step === ty) break; vx = -vx;
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    if (shot) bubble(ctx, shot.x, shot.y, COLS[shot.c], R * 0.94);
+    bubble(ctx, sx, sy, COLS[cur], R * 0.94);
+    ctx.strokeStyle = P.gold() ? '#FFD84D' : '#B9A8F0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(sx, sy, R * 1.35, Math.PI * 0.15, Math.PI * 0.85); ctx.stroke();
+  }
+  function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: Math.min(e.clientY - r.top, shooterY() - 10) }; }
+  canvas.addEventListener('pointerdown', function (e) { if (shell.running) aim = pos(e); });
+  canvas.addEventListener('pointermove', function (e) { if (aim || e.pointerType === 'mouse') aim = shell.running ? pos(e) : null; });
+  canvas.addEventListener('pointerup', function (e) { if (aim) { aim = pos(e); fire(); } if (e.pointerType !== 'mouse') aim = null; });
+  canvas.addEventListener('pointercancel', function () { aim = null; });
+  shift = 0; colorsN = 4; grid = []; falling = []; pops = []; for (var r = 0; r < 6; r++) grid.push(newRow(r)); cur = 0; nxt = 1;
+})();
+</script>
+</body>
+</html>

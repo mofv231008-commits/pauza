@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Переход</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#22105A}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Переход. Тап — прыжок вперёд, свайп — в сторону или назад"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var COLS = 9, U = ['ряд', 'ряда', 'рядов'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var lanes, frog, best, cam, dead, hop, t, idle;
+
+  var shell = P.shell({
+    id: 'frog', title: 'Переход', tagline: 'Перейди дороги и реки как можно дальше.',
+    rulesHtml: '<p>Тап — прыжок вперёд, свайп влево, вправо или вниз — прыжок в ту сторону. На дороге не попадай под машины, реку переходи по брёвнам. Долго стоять нельзя: через 6 секунд без движения вперёд прилетит ястреб.</p>',
+    startLabel: 'Прыгать', overEyebrow: 'Переход не удался', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { draw(); });
+  function C() { return view.W / COLS; }
+  function makeLane(i) {
+    if (i < 3) return { type: 'grass', objs: [] };
+    var prev = lanes[i - 1], r = Math.random(), type;
+    if (prev.type !== 'grass' && prev.run >= (prev.type === 'road' ? 3 : 2)) type = 'grass';
+    else if (prev.type === 'road' || prev.type === 'river') type = r < 0.75 ? prev.type : 'grass';
+    else type = r < 0.55 ? 'road' : r < 0.9 ? 'river' : 'grass';
+    var lane = { type: type, run: prev.type === type ? prev.run + 1 : 1, objs: [], dir: Math.random() < 0.5 ? -1 : 1 };
+    var lvl = Math.min(1, i / 120);
+    if (type === 'road') {
+      lane.speed = (1.4 + Math.random() * 1.6 + lvl * 2) * lane.dir;
+      var w = Math.random() < 0.25 ? 2.2 : 1.2, x = Math.random() * 4;
+      while (x < COLS + 6) { lane.objs.push({ x: x, w: w, c: P.pick(['#FF6B4A', '#FFD84D', '#6FD3FF', '#FF8AD8']) }); x += w + 2.4 + Math.random() * 3.5 - lvl; }
+    } else if (type === 'river') {
+      lane.speed = (0.9 + Math.random() * 1.1 + lvl) * lane.dir;
+      var lw = 2.4 + Math.random() * 1.6 - lvl * 0.8, lx = Math.random() * 2;
+      while (lx < COLS + 6) { lane.objs.push({ x: lx, w: lw }); lx += lw + 1.4 + Math.random() * 1.6 + lvl; }
+    } else if (Math.random() < 0.5) {
+      for (var k = 0; k < 2; k++) lane.objs.push({ x: P.rand(COLS), tree: true });
+    }
+    lane.span = COLS + 6;
+    return lane;
+  }
+  function lane(i) { while (lanes.length <= i) lanes.push(makeLane(lanes.length)); return lanes[i]; }
+  function reset() {
+    lanes = []; lane(30);
+    frog = { x: 4, row: 0, fx: 4, frow: 0 }; best = 0; cam = 0; dead = false; hop = 0; t = 0; idle = 0;
+    shell.setScore('0');
+  }
+  function blocked(x, row) { var l = lane(row); return l.type === 'grass' && l.objs.some(function (o) { return o.tree && o.x === Math.round(x); }); }
+  function move(dx, dy) {
+    if (!shell.running || dead || hop > 0) return;
+    var nx = Math.round(frog.x) + dx, nr = frog.row + dy;
+    if (nx < 0 || nx >= COLS || nr < 0 || nr < best - 4) return;
+    if (blocked(nx, nr)) return;
+    frog.fx = frog.x; frog.frow = frog.row;
+    if (dx !== 0) frog.x = nx;
+    frog.row = nr; hop = 0.12;
+    P.haptic('tap');
+    if (nr > best) { best = nr; idle = 0; shell.setScore(String(best)); }
+  }
+  function die(why) {
+    if (dead) return;
+    dead = true;
+    shell.end({ score: best, delay: 700, haptic: 'crash', stats: why,
+      phrase: 'В «Переходе» у меня ' + best + ' ' + P.plural(best, U) + '.' });
+  }
+  P.loop(function (dt) {
+    if (!lanes) return;
+    if (shell.running && !dead) {
+      t += dt; idle += dt;
+      for (var i = Math.max(0, frog.row - 6); i < frog.row + 16; i++) {
+        var l = lane(i);
+        if (!l.speed) continue;
+        l.objs.forEach(function (o) { o.x += l.speed * dt; if (l.speed > 0 && o.x > COLS + 3) o.x -= l.span; if (l.speed < 0 && o.x + o.w < -3) o.x += l.span; });
+      }
+      if (hop > 0) hop -= dt;
+      var cur = lane(frog.row);
+      if (hop <= 0) {
+        if (cur.type === 'road' && cur.objs.some(function (o) { return frog.x + 0.85 > o.x + 0.08 && frog.x + 0.15 < o.x + o.w - 0.08; })) die('сбила машина');
+        if (cur.type === 'river') {
+          var log = cur.objs.find(function (o) { return frog.x + 0.5 >= o.x + 0.05 && frog.x + 0.5 <= o.x + o.w - 0.05; });
+          if (!log) die('прыжок в реку');
+          else { frog.x += cur.speed * dt; if (frog.x < -0.4 || frog.x > COLS - 0.6) die('бревно уплыло за край'); }
+        }
+      }
+      if (idle > 6) die('ястреб не дождался');
+      var target = frog.row - 3.5;
+      cam += (target - cam) * Math.min(1, dt * 5);
+    }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, c = C();
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    if (!lanes) return;
+    var rowsOnScreen = Math.ceil(H / c) + 2;
+    function yOf(row) { return H - (row - cam + 1) * c; }
+    for (var i = Math.max(0, Math.floor(cam) - 1); i < cam + rowsOnScreen; i++) {
+      var l = lane(i), y = yOf(i);
+      ctx.fillStyle = l.type === 'road' ? '#140734' : l.type === 'river' ? '#1F3E9E' : (i % 2 ? '#2A1470' : '#2E177A');
+      ctx.fillRect(0, y, W, c + 1);
+      if (l.type === 'road' && lane(i + 1).type === 'road') { ctx.fillStyle = 'rgba(244,241,255,0.25)'; for (var x = 0; x < W; x += c) ctx.fillRect(x + c * 0.2, y - 1, c * 0.6, 2); }
+      l.objs.forEach(function (o) {
+        if (o.tree) { ctx.fillStyle = '#3DF5B0'; ctx.beginPath(); ctx.arc((o.x + 0.5) * c, y + c / 2, c * 0.36, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#2FD99B'; ctx.beginPath(); ctx.arc((o.x + 0.42) * c, y + c * 0.42, c * 0.18, 0, Math.PI * 2); ctx.fill(); return; }
+        if (l.type === 'road') {
+          ctx.fillStyle = o.c; ctx.beginPath(); ctx.roundRect(o.x * c + 2, y + c * 0.16, o.w * c - 4, c * 0.68, 7); ctx.fill();
+          ctx.fillStyle = 'rgba(18,6,48,0.45)'; var wx = l.speed > 0 ? o.x * c + o.w * c * 0.62 : o.x * c + o.w * c * 0.12; ctx.fillRect(wx, y + c * 0.24, o.w * c * 0.24, c * 0.52);
+        } else { ctx.fillStyle = '#FF9A6B'; ctx.beginPath(); ctx.roundRect(o.x * c + 2, y + c * 0.18, o.w * c - 4, c * 0.64, c * 0.3); ctx.fill(); ctx.fillStyle = 'rgba(18,6,48,0.18)'; ctx.fillRect(o.x * c + 6, y + c * 0.45, o.w * c - 12, 3); }
+      });
+    }
+    var k = hop > 0 ? hop / 0.12 : 0;
+    var fx = (frog.x * (1 - k) + frog.fx * k + 0.5) * c, fy = yOf(frog.row * (1 - k) + frog.frow * k) + c / 2 - Math.sin(k * Math.PI) * c * 0.25;
+    if (!dead) {
+      var s = c * 0.36;
+      ctx.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; ctx.beginPath(); ctx.roundRect(fx - s, fy - s, s * 2, s * 2, s * 0.6); ctx.fill();
+      ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(fx - s * 0.45, fy - s * 0.55, s * 0.32, 0, Math.PI * 2); ctx.arc(fx + s * 0.45, fy - s * 0.55, s * 0.32, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(fx - s * 0.45, fy - s * 0.6, s * 0.15, 0, Math.PI * 2); ctx.arc(fx + s * 0.45, fy - s * 0.6, s * 0.15, 0, Math.PI * 2); ctx.fill();
+    }
+    if (shell.running && idle > 4) { ctx.fillStyle = 'rgba(255,107,74,' + ((idle - 4) / 2 * 0.35).toFixed(2) + ')'; ctx.fillRect(0, 0, W, H); }
+  }
+  P.gestures(canvas, {
+    tap: function () { move(0, 1); },
+    swipe: function (d) { if (d === 'left') move(-1, 0); else if (d === 'right') move(1, 0); else if (d === 'down') move(0, -1); else move(0, 1); }
+  });
+  P.arrows(function (d) { if (d === 'left') move(-1, 0); else if (d === 'right') move(1, 0); else if (d === 'down') move(0, -1); else move(0, 1); });
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

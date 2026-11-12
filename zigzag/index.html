@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Зигзаг</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#22105A}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Зигзаг. Тап меняет направление шарика"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['поворот', 'поворота', 'поворотов'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var pts, ball, dir, speed, cam, score, seg, gems, got, dead, fallT, t;
+
+  var shell = P.shell({
+    id: 'zigzag', title: 'Зигзаг', tagline: 'Поворачивай вовремя и не слетай с дорожки.',
+    rulesHtml: '<p>Шарик сам катится вперёд по дорожке. Тап меняет направление: влево-вверх или вправо-вверх. Поворачивай на углах, чтобы не скатиться. Кристаллы дают +2. Шарик постепенно разгоняется.</p>',
+    startLabel: 'Катить', overEyebrow: 'Шарик скатился', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: пробел — поворот, P — пауза', pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { if (!pts) reset(); });
+  function u() { return Math.min(view.W, 460) * 0.1; }
+  function halfW() { return u() * 0.62; }
+  function extend() {
+    var W = view.W, last = pts[pts.length - 1], d = pts.length % 2 ? -1 : 1;
+    var len = u() * (1.2 + Math.random() * 3.6);
+    var minX = u() * 1.2, maxX = W - u() * 1.2;
+    var room = d > 0 ? maxX - last.x : last.x - minX;
+    len = Math.max(u() * 0.9, Math.min(len, room));
+    var p = { x: last.x + d * len, y: last.y - len };
+    pts.push(p);
+    if (Math.random() < 0.4) { var k = 0.3 + Math.random() * 0.4; gems.push({ x: last.x + d * len * k, y: last.y - len * k }); }
+  }
+  function reset() {
+    var W = view.W, H = view.H;
+    pts = [{ x: W / 2, y: H * 0.2 }, { x: W / 2 - u() * 1.5, y: H * 0.2 - u() * 1.5 }];
+    gems = []; got = 0;
+    for (var i = 0; i < 30; i++) extend();
+    ball = { x: pts[0].x, y: pts[0].y }; dir = -1; speed = u() * 2.6; cam = ball.y - H * 0.7; score = 0; seg = 0; dead = false; fallT = 0; t = 0;
+    if (shell) shell.setScore('0');
+  }
+  function distSeg(px, py, a, b) {
+    var dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy, k = l ? P.clamp(((px - a.x) * dx + (py - a.y) * dy) / l, 0, 1) : 0;
+    return Math.hypot(a.x + dx * k - px, a.y + dy * k - py);
+  }
+  function turn() { if (!shell.running || dead) return; dir = -dir; P.haptic('tap'); }
+  P.loop(function (dt) {
+    var H = view.H;
+    if (!pts) return;
+    if (shell.running && !dead) {
+      t += dt;
+      speed = u() * (2.6 + Math.min(3, t * 0.05));
+      var v = speed / Math.SQRT2;
+      ball.x += dir * v * dt; ball.y -= v * dt;
+      cam += (ball.y - H * 0.7 - cam) * Math.min(1, dt * 6);
+      var best = Infinity, bi = seg;
+      for (var i = Math.max(0, seg - 1); i < Math.min(pts.length - 1, seg + 3); i++) {
+        var d = distSeg(ball.x, ball.y, pts[i], pts[i + 1]);
+        if (d < best) { best = d; bi = i; }
+      }
+      if (bi > seg) { score += bi - seg; seg = bi; shell.setScore(String(score)); }
+      gems = gems.filter(function (g) {
+        if (Math.hypot(g.x - ball.x, g.y - ball.y) < halfW()) { score += 2; got++; shell.setScore(String(score)); P.haptic('coin'); return false; }
+        return g.y < cam + H + 40;
+      });
+      if (best > halfW()) {
+        dead = true; fallT = 0.6;
+        shell.end({ score: score, delay: 700, haptic: 'crash', stats: 'кристаллов: ' + got,
+          phrase: 'В «Зигзаге» у меня ' + score + ' ' + P.plural(score, U) + '.' });
+      }
+      while (pts[pts.length - 1].y > cam - H) extend();
+      if (seg > 6) { var cut = seg - 4; pts.splice(0, cut); seg -= cut; }
+    }
+    if (fallT > 0) fallT -= dt;
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    if (!pts) return;
+    ctx.save(); ctx.translate(0, -cam);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = '#140734'; ctx.lineWidth = halfW() * 2 + 8;
+    ctx.beginPath(); pts.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y + 8); else ctx.moveTo(p.x, p.y + 8); }); ctx.stroke();
+    ctx.strokeStyle = '#6FD3FF'; ctx.lineWidth = halfW() * 2;
+    ctx.beginPath(); pts.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke();
+    ctx.strokeStyle = 'rgba(244,241,255,0.35)'; ctx.lineWidth = 2;
+    ctx.beginPath(); pts.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke();
+    gems.forEach(function (g) { ctx.fillStyle = '#FF8AD8'; ctx.beginPath(); ctx.moveTo(g.x, g.y - 9); ctx.lineTo(g.x + 7, g.y); ctx.lineTo(g.x, g.y + 9); ctx.lineTo(g.x - 7, g.y); ctx.fill(); });
+    var r = halfW() * 0.5 * (dead ? Math.max(0.1, fallT / 0.6) : 1);
+    ctx.fillStyle = P.gold() ? '#FFD84D' : '#FF6B4A'; ctx.beginPath(); ctx.arc(ball.x, ball.y + (dead ? (0.6 - fallT) * 30 : 0), r, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); turn(); });
+  window.addEventListener('keydown', function (e) { if (e.code === 'Space' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') { e.preventDefault(); turn(); } });
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

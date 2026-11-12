@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Слалом</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#E9E4FF}.stage .score{color:var(--ink);text-shadow:none}.stage .best{color:#3B1E8C}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Слалом. Держи палец слева или справа, чтобы поворачивать"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var skier, things, trail, speed, gates, lives, t, nextGate, nextTree, steer = 0, dead, msg;
+
+  var shell = P.shell({
+    id: 'ski', title: 'Слалом', tagline: 'Проезжай между флажками и объезжай ёлки.',
+    rulesHtml: '<p>Держи палец на левой или правой половине экрана, лыжник поворачивает туда. Проезжай между парами флажков: каждые ворота — очко. Пропустишь ворота — минус жизнь, всего их три. Врежешься в ёлку — конец спуска.</p>',
+    startLabel: 'Вниз', overEyebrow: 'Спуск окончен', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: стрелки влево и вправо, P — пауза', pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { if (!skier) reset(); });
+  function S() { return Math.max(20, Math.min(view.W, 460) * 0.068); }
+  function reset() {
+    skier = { x: view.W / 2, vx: 0, ang: 0 }; things = []; trail = []; speed = view.H * 0.35; gates = 0; lives = 3; t = 0;
+    nextGate = view.H * 0.5; nextTree = view.H * 0.3; dead = false; msg = null;
+    if (shell) { shell.setScore('0'); side(); }
+  }
+  function side() { var s = ''; for (var i = 0; i < 3; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (i < lives ? '#FF6B4A' : 'rgba(59,30,140,.25)') + '"></span>'; shell.setSide(s); }
+  function sy() { return view.H * 0.28; }
+  P.loop(function (dt) {
+    var W = view.W, H = view.H, s = S();
+    if (!skier) return;
+    if (shell.running && !dead) {
+      t += dt;
+      speed = H * (0.35 + Math.min(0.55, t * 0.008));
+      skier.ang += (steer * 0.9 - skier.ang) * Math.min(1, dt * 6);
+      skier.x = P.clamp(skier.x + Math.sin(skier.ang) * speed * 1.2 * dt, s, W - s);
+      var dy = speed * Math.cos(skier.ang * 0.6) * dt;
+      things.forEach(function (o) { o.y -= dy; });
+      trail.forEach(function (p) { p.y -= dy; }); trail.push({ x: skier.x, y: sy() + s * 0.6 }); if (trail.length > 70) trail.shift();
+      nextGate -= dy; nextTree -= dy;
+      if (nextGate <= 0) {
+        var gw = W * Math.max(0.24, 0.42 - t * 0.003), gx = gw / 2 + s + Math.random() * (W - gw - s * 2);
+        things.push({ kind: 'gate', x: gx, y: H + 30, w: gw, done: false, c: gates % 2 ? '#FF6B4A' : '#6FD3FF' });
+        nextGate = H * (0.42 + Math.random() * 0.12);
+      }
+      if (nextTree <= 0) {
+        var tx = Math.random() * W;
+        if (!things.some(function (o) { return o.kind === 'gate' && Math.abs(o.y - (H + 30)) < s * 4 && Math.abs(tx - o.x) < o.w / 2 + s * 2; })) things.push({ kind: 'tree', x: tx, y: H + 30 });
+        nextTree = H * Math.max(0.1, 0.3 - t * 0.003) * (0.5 + Math.random());
+      }
+      var y0 = sy();
+      things.forEach(function (o) {
+        if (o.kind === 'tree' && Math.abs(o.y - y0) < s * 0.9 && Math.abs(o.x - skier.x) < s * 0.85) {
+          dead = true; shell.end({ score: gates, delay: 600, haptic: 'crash', stats: 'встреча с ёлкой · ворот пройдено: ' + gates, phrase: 'В «Слаломе» у меня ' + gates + ' ' + P.plural(gates, U) + '.' });
+        }
+        if (o.kind === 'gate' && !o.done && o.y < y0) {
+          o.done = true;
+          if (Math.abs(skier.x - o.x) < o.w / 2) { gates++; shell.setScore(String(gates)); P.haptic('coin'); o.ok = true; }
+          else { lives--; side(); P.haptic('crash'); msg = { text: 'Мимо ворот', life: 1 }; if (lives <= 0) { dead = true; shell.end({ score: gates, delay: 500, stats: 'пропущено трое ворот · пройдено: ' + gates, phrase: 'В «Слаломе» у меня ' + gates + ' ' + P.plural(gates, U) + '.' }); } }
+        }
+      });
+      things = things.filter(function (o) { return o.y > -60; });
+    }
+    if (msg) { msg.life -= dt; if (msg.life <= 0) msg = null; }
+    draw();
+  });
+  function flag(ctx, x, y, c, dir) {
+    ctx.fillStyle = '#3B1E8C'; ctx.fillRect(x - 1.5, y - 26, 3, 28);
+    ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x, y - 26); ctx.lineTo(x + 16 * dir, y - 20); ctx.lineTo(x, y - 14); ctx.fill();
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, s = S();
+    ctx.fillStyle = '#E9E4FF'; ctx.fillRect(0, 0, W, H);
+    if (!skier) return;
+    ctx.strokeStyle = 'rgba(59,30,140,0.18)'; ctx.lineWidth = 3;
+    [-0.25, 0.25].forEach(function (o) { ctx.beginPath(); trail.forEach(function (p, i) { if (i) ctx.lineTo(p.x + o * s, p.y); else ctx.moveTo(p.x + o * s, p.y); }); ctx.stroke(); });
+    things.forEach(function (o) {
+      if (o.kind === 'tree') {
+        ctx.fillStyle = '#2FD99B'; ctx.beginPath(); ctx.moveTo(o.x, o.y - s * 1.6); ctx.lineTo(o.x + s * 0.8, o.y + s * 0.2); ctx.lineTo(o.x - s * 0.8, o.y + s * 0.2); ctx.fill();
+        ctx.fillStyle = '#1FB97F'; ctx.beginPath(); ctx.moveTo(o.x, o.y - s * 1.6); ctx.lineTo(o.x + s * 0.8, o.y + s * 0.2); ctx.lineTo(o.x, o.y + s * 0.2); ctx.fill();
+        ctx.fillStyle = '#7A4A2A'; ctx.fillRect(o.x - 3, o.y + s * 0.2, 6, s * 0.4);
+      } else {
+        var c = o.done ? (o.ok ? '#3DF5B0' : 'rgba(255,107,74,0.5)') : o.c;
+        flag(ctx, o.x - o.w / 2, o.y, c, 1); flag(ctx, o.x + o.w / 2, o.y, c, -1);
+      }
+    });
+    var x = skier.x, y = sy();
+    ctx.save(); ctx.translate(x, y); ctx.rotate(-skier.ang * 0.8);
+    ctx.fillStyle = '#120630'; ctx.fillRect(-s * 0.4, -s * 0.2, 3, s * 1.4); ctx.fillRect(s * 0.4 - 3, -s * 0.2, 3, s * 1.4);
+    ctx.fillStyle = P.gold() ? '#FFD84D' : '#FF6B4A'; ctx.beginPath(); ctx.roundRect(-s * 0.35, -s * 0.5, s * 0.7, s * 0.8, s * 0.25); ctx.fill();
+    ctx.fillStyle = '#3B1E8C'; ctx.beginPath(); ctx.arc(0, -s * 0.65, s * 0.26, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    if (msg) { ctx.globalAlpha = Math.min(1, msg.life * 2); ctx.fillStyle = '#FF6B4A'; ctx.font = '800 20px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(msg.text, W / 2, H * 0.5); ctx.globalAlpha = 1; }
+  }
+  var pointers = {};
+  function upd() { var sum = 0; Object.keys(pointers).forEach(function (k) { sum += pointers[k]; }); steer = P.clamp(sum, -1, 1); }
+  function sideOf(e) { var r = canvas.getBoundingClientRect(); return e.clientX - r.left < r.width / 2 ? -1 : 1; }
+  canvas.addEventListener('pointerdown', function (e) { pointers[e.pointerId] = sideOf(e); upd(); });
+  canvas.addEventListener('pointermove', function (e) { if (pointers[e.pointerId] != null) { pointers[e.pointerId] = sideOf(e); upd(); } });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (tp) { canvas.addEventListener(tp, function (e) { delete pointers[e.pointerId]; upd(); }); });
+  var keys = {};
+  function kupd() { steer = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0); }
+  window.addEventListener('keydown', function (e) { if (/Arrow(Left|Right)|Key[AD]/.test(e.code)) { keys[e.code] = 1; e.preventDefault(); kupd(); } });
+  window.addEventListener('keyup', function (e) { if (keys[e.code]) { keys[e.code] = 0; kupd(); } });
+  P.syncPerks();
+})();
+</script>
+</body>
+</html>

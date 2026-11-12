@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Десятка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:var(--shoulder)}
+.play{gap:12px}
+.sum{margin:0;font-family:var(--font-display);font-weight:800;font-size:20px;color:var(--lilac);min-height:28px}
+.sum.ok{color:var(--mint)}.sum.over{color:var(--coral)}
+.board{--cw:40px;position:relative;display:grid;grid-template-columns:repeat(8,var(--cw));grid-auto-rows:var(--cw);gap:4px;touch-action:none;user-select:none;-webkit-user-select:none}
+.d{display:grid;place-items:center;border-radius:10px;background:var(--road);font-family:var(--font-display);font-weight:600;font-size:calc(var(--cw) * .48);color:var(--paper)}
+.d.e{background:transparent;color:transparent}
+.d.in{background:#5A3FD0}
+.d.gone{animation:gone .3s ease-out}
+@keyframes gone{from{background:var(--mint);transform:scale(1.1)}to{background:transparent}}
+.sel{position:absolute;border:3px solid var(--sun);border-radius:12px;pointer-events:none;display:none}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="play">
+    <div class="timebar" id="timebar"><i></i></div>
+    <p class="sum" id="sum">Выдели цифры с суммой 10</p>
+    <div class="board" id="board"><div class="sel" id="sel"></div></div>
+  </div>
+</div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var C = 8, R = 10, U = ['цифра', 'цифры', 'цифр'];
+  var stage = document.getElementById('stage'), boardEl = document.getElementById('board'), selEl = document.getElementById('sel'), sumEl = document.getElementById('sum');
+  var vals, els = [], drag = null, score = 0, clears = 0;
+
+  var shell = P.shell({
+    id: 'ten', title: 'Десятка', tagline: 'Выделяй прямоугольники с суммой 10.',
+    rulesHtml: '<p>Проведи пальцем, чтобы выделить прямоугольник из цифр. Если их сумма ровно 10, они исчезнут. Пустые клетки внутри не мешают. Чем больше цифр за раз, тем лучше. На всё 60 секунд.</p>',
+    overEyebrow: 'Время вышло', countdown: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, document.getElementById('timebar'));
+  for (var i = 0; i < C * R; i++) { var d = document.createElement('div'); d.className = 'd'; boardEl.appendChild(d); els.push(d); }
+  function render() { vals.forEach(function (v, i) { els[i].textContent = v || ''; els[i].className = 'd' + (v ? '' : ' e'); }); }
+  function reset() { vals = []; for (var i = 0; i < C * R; i++) vals.push(1 + P.rand(9)); score = 0; clears = 0; render(); shell.setScore('0'); timer.reset(); sumEl.textContent = 'Выдели цифры с суммой 10'; sumEl.className = 'sum'; }
+  function finish() { drag = null; selEl.style.display = 'none'; shell.end({ score: score, delay: 300, stats: 'выделений: ' + clears, phrase: 'В «Десятке» у меня ' + score + ' ' + P.plural(score, U) + ' за минуту.' }); }
+  function cellAt(e) {
+    var r = boardEl.getBoundingClientRect(), cw = (r.width + 4) / C, ch = (r.height + 4) / R;
+    return { c: P.clamp(Math.floor((e.clientX - r.left) / cw), 0, C - 1), r: P.clamp(Math.floor((e.clientY - r.top) / ch), 0, R - 1) };
+  }
+  function box() { return { c0: Math.min(drag.a.c, drag.b.c), c1: Math.max(drag.a.c, drag.b.c), r0: Math.min(drag.a.r, drag.b.r), r1: Math.max(drag.a.r, drag.b.r) }; }
+  function each(b, fn) { for (var r = b.r0; r <= b.r1; r++) for (var c = b.c0; c <= b.c1; c++) fn(r * C + c); }
+  function show() {
+    var b = box(), sum = 0, n = 0;
+    els.forEach(function (e) { e.classList.remove('in'); });
+    each(b, function (i) { sum += vals[i]; if (vals[i]) { n++; els[i].classList.add('in'); } });
+    var a = els[b.r0 * C + b.c0], z = els[b.r1 * C + b.c1];
+    selEl.style.display = 'block';
+    selEl.style.left = (a.offsetLeft - 3) + 'px'; selEl.style.top = (a.offsetTop - 3) + 'px';
+    selEl.style.width = (z.offsetLeft + z.offsetWidth - a.offsetLeft + 6) + 'px'; selEl.style.height = (z.offsetTop + z.offsetHeight - a.offsetTop + 6) + 'px';
+    sumEl.textContent = 'Сумма: ' + sum; sumEl.className = 'sum' + (sum === 10 ? ' ok' : sum > 10 ? ' over' : '');
+    return { sum: sum, n: n };
+  }
+  boardEl.addEventListener('pointerdown', function (e) {
+    if (!shell.running) return;
+    e.preventDefault(); boardEl.setPointerCapture(e.pointerId);
+    var c = cellAt(e); drag = { a: c, b: c }; show();
+  });
+  boardEl.addEventListener('pointermove', function (e) { if (!drag) return; var c = cellAt(e); if (c.r !== drag.b.r || c.c !== drag.b.c) { drag.b = c; show(); } });
+  boardEl.addEventListener('pointerup', function () {
+    if (!drag) return;
+    var res = show(), b = box();
+    drag = null; selEl.style.display = 'none';
+    els.forEach(function (e) { e.classList.remove('in'); });
+    if (res.sum === 10 && shell.running) {
+      each(b, function (i) { if (vals[i]) { vals[i] = 0; els[i].textContent = ''; els[i].className = 'd e gone'; } });
+      score += res.n; clears++; shell.setScore(String(score)); P.haptic(res.n >= 4 ? 'win' : 'coin');
+      sumEl.textContent = '+' + res.n; sumEl.className = 'sum ok';
+    } else { if (res.sum !== 0) P.haptic('crash'); }
+  });
+  boardEl.addEventListener('pointercancel', function () { drag = null; selEl.style.display = 'none'; });
+  function layout() { var r = stage.getBoundingClientRect(); var cw = Math.floor(Math.min((r.width - 32 - 28) / C, (r.height - 200 - 36) / R, 52)); boardEl.style.setProperty('--cw', cw + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  layout();
+  vals = []; for (var k = 0; k < C * R; k++) vals.push(1 + P.rand(9)); render();
+  timer.show();
+})();
+</script>
+</body>
+</html>

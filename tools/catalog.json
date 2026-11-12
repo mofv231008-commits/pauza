@@ -507,6 +507,148 @@
    "unit": "points",
    "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<g fill=\"#3B1E8C\"><rect x=\"20\" y=\"8\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"42\" y=\"8\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"64\" y=\"8\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"86\" y=\"8\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"108\" y=\"8\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"20\" y=\"30\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"42\" y=\"30\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"64\" y=\"30\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"86\" y=\"30\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"108\" y=\"30\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"20\" y=\"52\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"42\" y=\"52\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"64\" y=\"52\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"86\" y=\"52\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"108\" y=\"52\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"20\" y=\"74\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"42\" y=\"74\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"64\" y=\"74\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"86\" y=\"74\" width=\"20\" height=\"20\" rx=\"4\"/><rect x=\"108\" y=\"74\" width=\"20\" height=\"20\" rx=\"4\"/></g>\n<g fill=\"#3DF5B0\"><circle cx=\"30\" cy=\"40\" r=\"7\"/><circle cx=\"52\" cy=\"40\" r=\"7\"/><circle cx=\"74\" cy=\"40\" r=\"7\"/><circle cx=\"96\" cy=\"40\" r=\"7\"/></g><circle cx=\"118\" cy=\"84\" r=\"7\" fill=\"#3DF5B0\"/><circle cx=\"52\" cy=\"84\" r=\"7\" fill=\"#FF6B4A\"/><circle cx=\"96\" cy=\"18\" r=\"7\" fill=\"#FFD84D\"/><circle cx=\"74\" cy=\"62\" r=\"7\" fill=\"#FF8AD8\"/>\n</svg>",
    "new": true
+  },
+  {
+   "id": "frog",
+   "title": "Переход",
+   "into": "Переход",
+   "about": "Через дороги и реки",
+   "section": "arcade",
+   "icon": "\\u{1F438}",
+   "unit": [
+    "ряд",
+    "ряда",
+    "рядов"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#2E177A\"/><rect y=\"12\" width=\"160\" height=\"34\" fill=\"#140734\"/><rect y=\"28\" width=\"160\" height=\"2\" fill=\"#F4F1FF\" opacity=\".25\"/><rect y=\"62\" width=\"160\" height=\"22\" fill=\"#1F3E9E\"/>\n<rect x=\"18\" y=\"16\" width=\"30\" height=\"11\" rx=\"4\" fill=\"#FF6B4A\"/><rect x=\"96\" y=\"32\" width=\"44\" height=\"11\" rx=\"4\" fill=\"#FFD84D\"/><rect x=\"40\" y=\"66\" width=\"56\" height=\"13\" rx=\"6\" fill=\"#FF9A6B\"/>\n<rect x=\"72\" y=\"86\" width=\"14\" height=\"13\" rx=\"5\" fill=\"#3DF5B0\"/><circle cx=\"75\" cy=\"88\" r=\"2.5\" fill=\"#F4F1FF\"/><circle cx=\"83\" cy=\"88\" r=\"2.5\" fill=\"#F4F1FF\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "ski",
+   "title": "Слалом",
+   "into": "Слалом",
+   "about": "Между флажками, мимо ёлок",
+   "section": "arcade",
+   "icon": "\\u{26F7}",
+   "unit": "points",
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#E9E4FF\"/><path d=\"M70 20 Q78 50 92 70\" stroke=\"#3B1E8C\" stroke-opacity=\".2\" stroke-width=\"3\" fill=\"none\"/>\n<g fill=\"#3B1E8C\"><rect x=\"49\" y=\"44\" width=\"2\" height=\"20\"/><rect x=\"109\" y=\"44\" width=\"2\" height=\"20\"/></g><path d=\"M51 44 l10 4 -10 4z\" fill=\"#6FD3FF\"/><path d=\"M109 44 l-10 4 10 4z\" fill=\"#6FD3FF\"/>\n<path d=\"M30 70 l10 -22 10 22z\" fill=\"#2FD99B\"/><path d=\"M128 30 l9 -20 9 20z\" fill=\"#2FD99B\"/>\n<rect x=\"72\" y=\"14\" width=\"10\" height=\"12\" rx=\"3\" fill=\"#FF6B4A\"/><circle cx=\"77\" cy=\"11\" r=\"4\" fill=\"#3B1E8C\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "fall",
+   "title": "Вниз",
+   "into": "игру «Вниз»",
+   "about": "Падай в просветы между платформами",
+   "section": "arcade",
+   "icon": "\\u{2B07}",
+   "unit": [
+    "этаж",
+    "этажа",
+    "этажей"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#140734\"/><g fill=\"#FF6B4A\"><path d=\"M0 4 l6 8 6 -8 6 8 6 -8 6 8 6 -8 6 8 6 -8 6 8 6 -8 6 8 6 -8 6 8 6 -8 6 8 6 -8 6 8 6 -8 6 8 6 -8 6 8 6 -8 6 8 6 -8 6 8 6 -8 6 8V0H0z\"/></g>\n<g fill=\"#3DF5B0\"><rect x=\"0\" y=\"40\" width=\"60\" height=\"7\" rx=\"3.5\"/><rect x=\"92\" y=\"40\" width=\"68\" height=\"7\" rx=\"3.5\"/><rect x=\"0\" y=\"72\" width=\"100\" height=\"7\" rx=\"3.5\"/><rect x=\"132\" y=\"72\" width=\"28\" height=\"7\" rx=\"3.5\"/></g>\n<circle cx=\"76\" cy=\"58\" r=\"7\" fill=\"#F4F1FF\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "zigzag",
+   "title": "Зигзаг",
+   "into": "Зигзаг",
+   "about": "Поворачивай на углах дорожки",
+   "section": "skill",
+   "icon": "\\u{3030}",
+   "unit": [
+    "поворот",
+    "поворота",
+    "поворотов"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/><path d=\"M60 104 L92 70 L60 40 L98 4\" stroke=\"#140734\" stroke-width=\"22\" fill=\"none\" stroke-linejoin=\"round\" transform=\"translate(0 4)\"/>\n<path d=\"M60 104 L92 70 L60 40 L98 4\" stroke=\"#6FD3FF\" stroke-width=\"20\" fill=\"none\" stroke-linejoin=\"round\"/>\n<path d=\"M76 52 l5 7 -5 7 -5 -7z\" fill=\"#FF8AD8\"/><circle cx=\"84\" cy=\"78\" r=\"6\" fill=\"#FF6B4A\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "maze",
+   "title": "Лабиринт",
+   "into": "Лабиринт",
+   "about": "Выведи шарик к выходу",
+   "section": "puzzle",
+   "icon": "\\u{1F300}",
+   "unit": [
+    "лабиринт",
+    "лабиринта",
+    "лабиринтов"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#140734\"/><rect x=\"34\" y=\"6\" width=\"92\" height=\"88\" fill=\"#22105A\"/>\n<path d=\"M34 6 H126 V94 H34 Z M52 6 V40 M52 58 V94 M70 24 V76 M88 6 V58 M106 24 V94 M34 40 H52 M70 58 H88 M106 40 H126 M88 76 H106\" stroke=\"#B9A8F0\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"/>\n<rect x=\"110\" y=\"78\" width=\"14\" height=\"14\" fill=\"#3DF5B0\"/><circle cx=\"43\" cy=\"15\" r=\"5\" fill=\"#FF6B4A\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "golf",
+   "title": "Гольф",
+   "into": "Гольф",
+   "about": "Пять лунок, меньше ударов",
+   "section": "arcade",
+   "icon": "\\u{26F3}",
+   "unit": [
+    "удар",
+    "удара",
+    "ударов"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#140734\"/><rect x=\"20\" y=\"6\" width=\"120\" height=\"88\" rx=\"10\" fill=\"#1FB97F\"/>\n<rect x=\"44\" y=\"44\" width=\"56\" height=\"6\" rx=\"3\" fill=\"#3B1E8C\"/><circle cx=\"104\" cy=\"22\" r=\"6\" fill=\"#120630\"/><rect x=\"103\" y=\"2\" width=\"2\" height=\"20\" fill=\"#F4F1FF\"/><path d=\"M105 2 l10 4 -10 4z\" fill=\"#FF6B4A\"/>\n<circle cx=\"64\" cy=\"78\" r=\"4.5\" fill=\"#F4F1FF\"/><path d=\"M64 78 L92 34\" stroke=\"#F4F1FF\" stroke-dasharray=\"4 4\" stroke-width=\"2\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "bubbles",
+   "title": "Пузыри",
+   "into": "Пузыри",
+   "about": "Стреляй и собирай по три",
+   "section": "arcade",
+   "icon": "\\u{1FAE7}",
+   "unit": "points",
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#140734\"/><rect x=\"26\" y=\"0\" width=\"108\" height=\"100\" fill=\"#22105A\"/>\n<g><circle cx=\"38\" cy=\"10\" r=\"6\" fill=\"#FF6B4A\"/><circle cx=\"50\" cy=\"10\" r=\"6\" fill=\"#FF6B4A\"/><circle cx=\"62\" cy=\"10\" r=\"6\" fill=\"#3DF5B0\"/><circle cx=\"74\" cy=\"10\" r=\"6\" fill=\"#FFD84D\"/><circle cx=\"86\" cy=\"10\" r=\"6\" fill=\"#6FD3FF\"/><circle cx=\"98\" cy=\"10\" r=\"6\" fill=\"#6FD3FF\"/><circle cx=\"110\" cy=\"10\" r=\"6\" fill=\"#FF8AD8\"/><circle cx=\"122\" cy=\"10\" r=\"6\" fill=\"#3DF5B0\"/>\n<circle cx=\"44\" cy=\"20.4\" r=\"6\" fill=\"#FFD84D\"/><circle cx=\"56\" cy=\"20.4\" r=\"6\" fill=\"#3DF5B0\"/><circle cx=\"68\" cy=\"20.4\" r=\"6\" fill=\"#3DF5B0\"/><circle cx=\"80\" cy=\"20.4\" r=\"6\" fill=\"#FF6B4A\"/><circle cx=\"92\" cy=\"20.4\" r=\"6\" fill=\"#FF8AD8\"/><circle cx=\"104\" cy=\"20.4\" r=\"6\" fill=\"#FFD84D\"/><circle cx=\"116\" cy=\"20.4\" r=\"6\" fill=\"#6FD3FF\"/>\n<circle cx=\"62\" cy=\"30.8\" r=\"6\" fill=\"#FF8AD8\"/><circle cx=\"74\" cy=\"30.8\" r=\"6\" fill=\"#6FD3FF\"/><circle cx=\"86\" cy=\"30.8\" r=\"6\" fill=\"#FFD84D\"/></g>\n<path d=\"M80 86 L64 42\" stroke=\"#F4F1FF\" stroke-opacity=\".5\" stroke-dasharray=\"3 5\" stroke-width=\"2\"/><circle cx=\"80\" cy=\"88\" r=\"6\" fill=\"#3DF5B0\"/>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "ten",
+   "title": "Десятка",
+   "into": "Десятку",
+   "about": "Выделяй цифры с суммой 10",
+   "section": "puzzle",
+   "icon": "\\u{1F51F}",
+   "unit": [
+    "цифра",
+    "цифры",
+    "цифр"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<g fill=\"#3B1E8C\"><rect x=\"30\" y=\"10\" width=\"22\" height=\"22\" rx=\"5\"/><rect x=\"56\" y=\"10\" width=\"22\" height=\"22\" rx=\"5\"/><rect x=\"82\" y=\"10\" width=\"22\" height=\"22\" rx=\"5\"/><rect x=\"108\" y=\"10\" width=\"22\" height=\"22\" rx=\"5\"/><rect x=\"30\" y=\"38\" width=\"22\" height=\"22\" rx=\"5\"/><rect x=\"56\" y=\"38\" width=\"22\" height=\"22\" rx=\"5\"/><rect x=\"82\" y=\"38\" width=\"22\" height=\"22\" rx=\"5\"/><rect x=\"108\" y=\"38\" width=\"22\" height=\"22\" rx=\"5\"/><rect x=\"30\" y=\"66\" width=\"22\" height=\"22\" rx=\"5\"/><rect x=\"56\" y=\"66\" width=\"22\" height=\"22\" rx=\"5\"/><rect x=\"82\" y=\"66\" width=\"22\" height=\"22\" rx=\"5\"/><rect x=\"108\" y=\"66\" width=\"22\" height=\"22\" rx=\"5\"/></g>\n<rect x=\"53\" y=\"35\" width=\"54\" height=\"28\" rx=\"7\" fill=\"none\" stroke=\"#FFD84D\" stroke-width=\"2.5\"/>\n<g font-size=\"12\" text-anchor=\"middle\" fill=\"#F4F1FF\"><text x=\"41\" y=\"25\">5</text><text x=\"67\" y=\"25\">8</text><text x=\"93\" y=\"25\">2</text><text x=\"119\" y=\"25\">6</text><text x=\"41\" y=\"53\">9</text><text x=\"67\" y=\"53\">3</text><text x=\"93\" y=\"53\">7</text><text x=\"119\" y=\"53\">1</text><text x=\"41\" y=\"81\">4</text><text x=\"67\" y=\"81\">6</text><text x=\"93\" y=\"81\">2</text><text x=\"119\" y=\"81\">8</text></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "flood",
+   "title": "Заливка",
+   "into": "Заливку",
+   "about": "Залей поле одним цветом",
+   "section": "puzzle",
+   "icon": "\\u{1FAA3}",
+   "unit": [
+    "поле",
+    "поля",
+    "полей"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#22105A\"/>\n<g transform=\"translate(34 4)\"><rect width=\"92\" height=\"92\" rx=\"8\" fill=\"#6FD3FF\"/><rect x=\"46\" width=\"46\" height=\"23\" fill=\"#FF8AD8\"/><rect x=\"69\" y=\"23\" width=\"23\" height=\"23\" fill=\"#FFD84D\"/><rect y=\"46\" width=\"23\" height=\"46\" fill=\"#3DF5B0\"/><rect x=\"23\" y=\"69\" width=\"46\" height=\"23\" fill=\"#FF6B4A\"/><rect x=\"69\" y=\"46\" width=\"23\" height=\"46\" fill=\"#B9A8F0\"/><rect x=\"46\" y=\"46\" width=\"23\" height=\"23\" fill=\"#FF8AD8\"/></g>\n</svg>",
+   "new": true
+  },
+  {
+   "id": "lights",
+   "title": "Свет",
+   "into": "Свет",
+   "about": "Погаси все лампы",
+   "section": "puzzle",
+   "icon": "\\u{1F4A1}",
+   "unit": [
+    "уровень",
+    "уровня",
+    "уровней"
+   ],
+   "art": "<svg viewBox=\"0 0 160 100\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\">\n<rect width=\"160\" height=\"100\" fill=\"#140734\"/>\n<g fill=\"#22105A\"><rect x=\"34\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"54\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"110\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"34\" y=\"24\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"90\" y=\"24\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"110\" y=\"24\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"54\" y=\"44\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"74\" y=\"44\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"110\" y=\"44\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"34\" y=\"64\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"54\" y=\"64\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"74\" y=\"64\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"90\" y=\"64\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"34\" y=\"84\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"74\" y=\"84\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"110\" y=\"84\" width=\"16\" height=\"16\" rx=\"4\"/></g>\n<g fill=\"#FFD84D\"><rect x=\"74\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"90\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"54\" y=\"24\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"74\" y=\"24\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"34\" y=\"44\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"90\" y=\"44\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"110\" y=\"64\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"54\" y=\"84\" width=\"16\" height=\"16\" rx=\"4\"/><rect x=\"90\" y=\"84\" width=\"16\" height=\"16\" rx=\"4\"/></g>\n</svg>",
+   "new": true
   }
  ]
 }

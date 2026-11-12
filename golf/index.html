@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Гольф</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Мини-гольф. Потяни от мяча назад и отпусти"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var HOLES = 5, MAXS = 8, U = ['удар', 'удара', 'ударов'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var F, ball, hole, blocks, hn, strokes, total, aim, sunk, msg, cards = [];
+
+  var shell = P.shell({
+    id: 'golf', title: 'Гольф', tagline: 'Пять лунок за как можно меньше ударов.',
+    rulesHtml: '<p>Потяни пальцем от мяча в обратную сторону, как рогатку, и отпусти. Чем дальше тянешь, тем сильнее удар. Мяч отскакивает от стенок. Загони его в лунку. Пять лунок, побеждает меньшее число ударов.</p>',
+    startLabel: 'К первой лунке', overEyebrow: 'Пять лунок пройдено', overTone: 'good', countdown: false, lowerIsBetter: true,
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { layout(); });
+  function layout() { var W = view.W, H = view.H; F = { x: 14, y: 78, w: W - 28, h: H - 92 }; F.br = Math.max(7, Math.min(W, 460) * 0.022); F.hr = F.br * 1.8; if (!hole) newHole(); }
+  function rectHit(x, y, r, b) { return x + r > b.x && x - r < b.x + b.w && y + r > b.y && y - r < b.y + b.h; }
+  function newHole() {
+    if (!F) return;
+    var tries = 0;
+    do {
+      blocks = [];
+      var n = 1 + Math.min(3, Math.floor((hn || 0) / 1.3)) + P.rand(2);
+      for (var i = 0; i < n; i++) {
+        var horiz = Math.random() < 0.65, bw = horiz ? F.w * (0.3 + Math.random() * 0.35) : F.w * 0.06, bh = horiz ? F.h * 0.035 : F.h * (0.14 + Math.random() * 0.12);
+        blocks.push({ x: F.x + Math.random() * (F.w - bw), y: F.y + F.h * (0.22 + Math.random() * 0.5), w: bw, h: bh, moving: (hn || 0) >= 3 && i === 0 && horiz, dir: 1, base: 0 });
+      }
+      hole = { x: F.x + F.w * (0.2 + Math.random() * 0.6), y: F.y + F.h * 0.1 };
+      var bx = F.x + F.w * (0.2 + Math.random() * 0.6), by = F.y + F.h * 0.9;
+      tries++;
+    } while (tries < 20 && blocks.some(function (b) { return rectHit(hole.x, hole.y, F.hr * 2, b) || rectHit(bx, by, F.br * 3, b); }));
+    blocks.forEach(function (b) { b.base = b.x; });
+    ball = { x: bx, y: by, vx: 0, vy: 0, moving: false };
+    strokes = 0; sunk = 0;
+  }
+  function reset() { hn = 0; total = 0; cards = []; hole = null; if (F) newHole(); shell.setScore('0'); side(); }
+  function side() { shell.setSide('лунка ' + Math.min(HOLES, hn + 1) + '/' + HOLES); }
+  function nextHole() {
+    cards.push(strokes); total += strokes; hn++;
+    shell.setScore(String(total));
+    if (hn >= HOLES) {
+      shell.end({ score: total, delay: 200, haptic: 'win', stats: 'по лункам: ' + cards.join(' · '),
+        phrase: 'В «Гольфе» я прохожу пять лунок за ' + total + ' ' + P.plural(total, U) + '.' });
+      return;
+    }
+    newHole(); side();
+  }
+  P.loop(function (dt) {
+    if (!F || !ball) return;
+    if (msg) { msg.life -= dt; if (msg.life <= 0) msg = null; }
+    if (shell.running) {
+      blocks.forEach(function (b) { if (b.moving) { b.x += b.dir * F.w * 0.18 * dt; if (b.x < F.x || b.x + b.w > F.x + F.w) { b.dir = -b.dir; b.x = P.clamp(b.x, F.x, F.x + F.w - b.w); } } });
+      if (sunk > 0) { sunk -= dt; if (sunk <= 0) nextHole(); }
+      else if (ball.moving) {
+        var steps = 4, r = F.br;
+        for (var s = 0; s < steps; s++) {
+          ball.x += ball.vx * dt / steps; ball.y += ball.vy * dt / steps;
+          if (ball.x < F.x + r) { ball.x = F.x + r; ball.vx = Math.abs(ball.vx) * 0.8; }
+          if (ball.x > F.x + F.w - r) { ball.x = F.x + F.w - r; ball.vx = -Math.abs(ball.vx) * 0.8; }
+          if (ball.y < F.y + r) { ball.y = F.y + r; ball.vy = Math.abs(ball.vy) * 0.8; }
+          if (ball.y > F.y + F.h - r) { ball.y = F.y + F.h - r; ball.vy = -Math.abs(ball.vy) * 0.8; }
+          blocks.forEach(function (b) {
+            if (!rectHit(ball.x, ball.y, r, b)) return;
+            var ol = ball.x + r - b.x, or = b.x + b.w - (ball.x - r), ot = ball.y + r - b.y, ob = b.y + b.h - (ball.y - r);
+            var m = Math.min(ol, or, ot, ob);
+            if (m === ol) { ball.x = b.x - r; ball.vx = -Math.abs(ball.vx) * 0.8; }
+            else if (m === or) { ball.x = b.x + b.w + r; ball.vx = Math.abs(ball.vx) * 0.8; }
+            else if (m === ot) { ball.y = b.y - r; ball.vy = -Math.abs(ball.vy) * 0.8; }
+            else { ball.y = b.y + b.h + r; ball.vy = Math.abs(ball.vy) * 0.8; }
+          });
+          var dh = Math.hypot(ball.x - hole.x, ball.y - hole.y), sp = Math.hypot(ball.vx, ball.vy);
+          if (dh < F.hr * 0.9 && sp < view.H * 0.9) { ball.moving = false; ball.x = hole.x; ball.y = hole.y; sunk = 0.8; P.haptic('win'); msg = { text: strokes === 1 ? 'С одного удара!' : 'В лунке!', life: 0.8 }; break; }
+          if (dh < F.hr) { var pull = view.H * 1.2 * dt / steps; ball.vx += (hole.x - ball.x) / dh * pull; ball.vy += (hole.y - ball.y) / dh * pull; }
+        }
+        var f = Math.pow(0.42, dt); ball.vx *= f; ball.vy *= f;
+        if (ball.moving && Math.hypot(ball.vx, ball.vy) < 12) {
+          ball.moving = false; ball.vx = ball.vy = 0;
+          if (strokes >= MAXS) { msg = { text: 'Лимит ударов', life: 1 }; strokes = MAXS; sunk = 0.9; }
+        }
+      }
+    }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!F || !ball) return;
+    ctx.fillStyle = '#1FB97F'; ctx.beginPath(); ctx.roundRect(F.x, F.y, F.w, F.h, 16); ctx.fill();
+    ctx.fillStyle = 'rgba(18,6,48,0.06)'; for (var y = F.y; y < F.y + F.h; y += 40) ctx.fillRect(F.x, y, F.w, 20);
+    ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(hole.x, hole.y, F.hr, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#F4F1FF'; ctx.fillRect(hole.x - 1.5, hole.y - F.hr * 4, 3, F.hr * 4);
+    ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.moveTo(hole.x + 1.5, hole.y - F.hr * 4); ctx.lineTo(hole.x + F.hr * 2.2, hole.y - F.hr * 3.4); ctx.lineTo(hole.x + 1.5, hole.y - F.hr * 2.8); ctx.fill();
+    blocks.forEach(function (b) { ctx.fillStyle = '#3B1E8C'; ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 5); ctx.fill(); });
+    if (aim) {
+      var dx = aim.sx - aim.x, dy = aim.sy - aim.y, len = Math.min(Math.hypot(dx, dy), F.h * 0.4), a = Math.atan2(dy, dx);
+      ctx.strokeStyle = 'rgba(244,241,255,0.8)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(ball.x, ball.y); ctx.lineTo(ball.x + Math.cos(a) * len * 1.4, ball.y + Math.sin(a) * len * 1.4); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = len > F.h * 0.3 ? '#FF6B4A' : len > F.h * 0.15 ? '#FFD84D' : '#3DF5B0';
+      ctx.fillRect(F.x + 10, F.y + F.h - 14, (F.w - 20) * len / (F.h * 0.4), 6);
+    }
+    if (sunk <= 0) { ctx.fillStyle = P.gold() ? '#FFD84D' : '#F4F1FF'; ctx.beginPath(); ctx.arc(ball.x, ball.y, F.br, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = 'rgba(244,241,255,0.8)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('Удары на лунке: ' + strokes, F.x + 12, F.y + F.h - 22);
+    if (msg) { ctx.globalAlpha = Math.min(1, msg.life * 2); ctx.fillStyle = '#FFD84D'; ctx.font = '800 22px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(msg.text, W / 2, H / 2); ctx.globalAlpha = 1; }
+  }
+  function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  canvas.addEventListener('pointerdown', function (e) { if (!shell.running || ball.moving || sunk > 0) return; var p = pos(e); aim = { sx: p.x, sy: p.y, x: p.x, y: p.y }; });
+  canvas.addEventListener('pointermove', function (e) { if (!aim) return; var p = pos(e); aim.x = p.x; aim.y = p.y; });
+  canvas.addEventListener('pointerup', function () {
+    if (!aim) return;
+    var dx = aim.sx - aim.x, dy = aim.sy - aim.y, len = Math.min(Math.hypot(dx, dy), F.h * 0.4);
+    aim = null;
+    if (len < 12 || !shell.running) return;
+    var a = Math.atan2(dy, dx), power = len / (F.h * 0.4) * view.H * 2.6;
+    ball.vx = Math.cos(a) * power; ball.vy = Math.sin(a) * power; ball.moving = true; strokes++;
+    P.haptic('tap');
+  });
+  canvas.addEventListener('pointercancel', function () { aim = null; });
+})();
+</script>
+</body>
+</html>
