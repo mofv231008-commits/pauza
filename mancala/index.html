@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Калах</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:radial-gradient(circle at 50% 45%,#3B1E8C,#140734)}
+.ka{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding:80px 8px 16px}
+.ka-board{display:grid;grid-template-columns:minmax(0,.9fr) repeat(6,minmax(0,1fr)) minmax(0,.9fr);box-sizing:border-box;grid-template-rows:1fr 1fr;gap:6px;width:min(100%,430px);padding:12px 10px;border-radius:999px;background:#9C5A3C;box-shadow:inset 0 -6px 0 #7A4430,0 10px 30px rgba(0,0,0,.4)}
+.ka-pit{aspect-ratio:1;min-width:0;width:100%;border:0;border-radius:50%;background:#7A4430;position:relative;padding:0;cursor:default;color:#F4F1FF;font-family:var(--font-display);font-weight:800;font-size:13px}
+.ka-pit.mine{cursor:pointer}
+.ka-pit.mine.ok{box-shadow:0 0 0 3px var(--mint)}
+.ka-pit.hot{background:#B06A48}
+.ka-store{min-width:0;grid-row:1 / span 2;border-radius:999px;background:#7A4430;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:18px;color:#F4F1FF;position:relative;min-height:120px}
+.ka-pit span,.ka-store span{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:1px;padding:5px;pointer-events:none}
+.ka-pit span i,.ka-store span i{width:6px;height:6px;border-radius:50%;background:#3DF5B0;opacity:.85}
+.ka-pit b,.ka-store b{position:absolute;right:-2px;top:-6px;background:#120630;border-radius:8px;padding:1px 5px;font-size:11px}
+.ka-store b{right:auto;left:50%;transform:translateX(-50%);top:-10px}
+.ka-msg{color:var(--lilac);font-size:15px;min-height:22px;text-align:center}
+.ka-lbl{display:flex;justify-content:space-between;width:min(100%,430px);font-size:12px;color:var(--lilac);padding:0 10px}
+.stage[data-state="paused"] .ka,.stage[data-state="start"] .ka{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="ka">
+  <div class="ka-lbl"><span>амбар бота</span><span>лунки бота</span><span>твой амбар</span></div>
+  <div class="ka-board" id="board"></div>
+  <div class="ka-msg" id="msg"></div>
+</div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var $ = function (id) { return document.getElementById(id); };
+  var b, turn, busy, over, gen = 0, hot = -1;
+  var shell = P.shell({
+    id: 'mancala', title: 'Калах', tagline: 'Шесть лунок, сорок восемь камней.',
+    rulesHtml: '<p>Твои лунки — нижний ряд, твой амбар — справа. Возьми все камни из лунки и раскладывай по одному против часовой стрелки. Последний камень в своём амбаре — ходишь ещё раз. Последний в свою пустую лунку — забираешь его и камни напротив. Кто больше соберёт — победил.</p>',
+    startLabel: 'Начать', countdown: false, overEyebrow: 'Партия окончена',
+    unit: function (n) { return P.plural(n, ['камень', 'камня', 'камней']); }, onReset: reset
+  });
+  function wait(fn, ms) { var g = gen; setTimeout(function tick() { if (g !== gen) return; if (!shell.running) { setTimeout(tick, 300); return; } fn(); }, ms); }
+  function sow(s, i, who) {
+    var n = s[i], k = i; s[i] = 0;
+    while (n > 0) { k = (k + 1) % 14; if ((who === 0 && k === 13) || (who === 1 && k === 6)) continue; s[k]++; n--; }
+    var again = (who === 0 && k === 6) || (who === 1 && k === 13);
+    if (!again && s[k] === 1 && (who === 0 ? k < 6 : k > 6 && k < 13) && s[12 - k] > 0) { var st = who === 0 ? 6 : 13; s[st] += s[12 - k] + 1; s[12 - k] = 0; s[k] = 0; }
+    return again;
+  }
+  function done(s) { var a = 0, c = 0; for (var i = 0; i < 6; i++) { a += s[i]; c += s[7 + i]; } return a === 0 || c === 0; }
+  function sweep(s) { for (var i = 0; i < 6; i++) { s[6] += s[i]; s[i] = 0; s[13] += s[7 + i]; s[7 + i] = 0; } }
+  function moves(s, who) { var r = []; for (var i = 0; i < 6; i++) { var k = who === 0 ? i : 7 + i; if (s[k]) r.push(k); } return r; }
+  function search(s, who, depth, a, bb) {
+    if (depth === 0 || done(s)) { var t = s.slice(); if (done(t)) sweep(t); return t[13] - t[6]; }
+    var ms = moves(s, who), best = who === 1 ? -1e9 : 1e9;
+    for (var m = 0; m < ms.length; m++) {
+      var t2 = s.slice(), again = sow(t2, ms[m], who), v = search(t2, again ? who : 1 - who, depth - 1, a, bb);
+      if (who === 1) { best = Math.max(best, v); a = Math.max(a, v); } else { best = Math.min(best, v); bb = Math.min(bb, v); }
+      if (bb <= a) break;
+    }
+    return best;
+  }
+  function botPick() { var ms = moves(b, 1), best = ms[0], bv = -1e9; ms.forEach(function (m) { var t = b.slice(), again = sow(t, m, 1), v = search(t, again ? 1 : 0, 6, -1e9, 1e9) + Math.random() * 0.3; if (v > bv) { bv = v; best = m; } }); return best; }
+  function reset() { gen++; b = [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0]; turn = 0; busy = false; over = false; hot = -1; render(); say('Твой ход: выбери лунку внизу'); shell.setScore('0'); }
+  function say(t) { $('msg').textContent = t; }
+  function cell(i) {
+    var el = document.createElement(i === 6 || i === 13 ? 'div' : 'button');
+    el.className = i === 6 || i === 13 ? 'ka-store' : 'ka-pit' + (i < 6 ? ' mine' : '');
+    if (i < 6 && turn === 0 && !busy && !over && b[i]) el.className += ' ok';
+    if (i === hot) el.className += ' hot';
+    var dots = '<span>'; for (var k = 0; k < Math.min(b[i], 18); k++) dots += '<i style="background:' + (k % 3 === 1 ? '#FFD84D' : k % 3 === 2 ? '#FF8AD8' : '#3DF5B0') + '"></i>'; dots += '</span>';
+    el.innerHTML = dots + '<b>' + b[i] + '</b>';
+    if (i < 6) { el.type = 'button'; el.addEventListener('click', function () { play(i); }); }
+    return el;
+  }
+  function render() {
+    var bd = $('board'); bd.textContent = '';
+    var st = cell(13); st.style.gridColumn = '1'; bd.appendChild(st);
+    for (var j = 0; j < 6; j++) { var e = cell(12 - j); e.style.gridColumn = String(2 + j); e.style.gridRow = '1'; bd.appendChild(e); }
+    var ms = cell(6); ms.style.gridColumn = '8'; ms.style.gridRow = '1 / span 2'; bd.appendChild(ms);
+    for (j = 0; j < 6; j++) { var e2 = cell(j); e2.style.gridColumn = String(2 + j); e2.style.gridRow = '2'; bd.appendChild(e2); }
+    shell.setScore(String(b[6])); shell.setSide('бот ' + b[13]);
+  }
+  function animate(i, who, cb) {
+    busy = true; var n = b[i], k = i; b[i] = 0; hot = i; render();
+    var g = gen;
+    (function stepSeed() {
+      if (g !== gen) return;
+      if (!shell.running) { setTimeout(stepSeed, 300); return; }
+      if (n <= 0) {
+        var again = (who === 0 && k === 6) || (who === 1 && k === 13);
+        if (!again && b[k] === 1 && (who === 0 ? k < 6 : k > 6 && k < 13) && b[12 - k] > 0) { var st = who === 0 ? 6 : 13; b[st] += b[12 - k] + 1; b[12 - k] = 0; b[k] = 0; P.haptic('coin'); say(who === 0 ? 'Захват!' : 'Бот захватил камни'); }
+        hot = -1; busy = false; render(); cb(again); return;
+      }
+      k = (k + 1) % 14; if ((who === 0 && k === 13) || (who === 1 && k === 6)) k = (k + 1) % 14;
+      b[k]++; n--; hot = k; render(); setTimeout(stepSeed, 140);
+    })();
+  }
+  function play(i) {
+    if (!shell.running || over || busy || turn !== 0 || !b[i]) return;
+    P.haptic('tap');
+    animate(i, 0, function (again) { next(again ? 0 : 1, again ? 'Ещё ход!' : null); });
+  }
+  function next(who, note) {
+    if (done(b)) { sweep(b); render(); finish(); return; }
+    turn = who; render();
+    if (who === 1) { say(note || 'Бот ходит…'); wait(function () { animate(botPick(), 1, function (again) { next(again ? 1 : 0, again ? 'Бот ходит ещё раз…' : null); }); }, 700); }
+    else say(note || 'Твой ход');
+  }
+  function finish() {
+    over = true; render();
+    var me = b[6], bt = b[13], win = me > bt, draw = me === bt;
+    P.haptic(win ? 'win' : 'crash');
+    shell.end({ score: me, delay: 500, eyebrow: draw ? 'Ничья' : win ? 'Ты победил!' : 'Бот победил', tone: win ? 'good' : '', stats: 'у бота: ' + bt, phrase: win ? 'Обыграл бота в «Калах» ' + me + ':' + bt + '. Сыграешь?' : 'Бот обыграл меня в «Калах» ' + bt + ':' + me + '. Отомстишь?' });
+  }
+  reset();
+})();
+</script>
+</body>
+</html>

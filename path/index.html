@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Путь</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<canvas id="game" aria-label="Путь. Запомни дорожку и повтори"></canvas>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['уровень', 'уровня', 'уровней'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var N = 5, path = [], step = 0, showI = -1, showT = 0, phase = 'show', level = 0, lives = 3, flash = null, S = 1;
+  var shell = P.shell({
+    id: 'path', title: 'Путь', tagline: 'Клетки загораются по очереди. Повтори.',
+    rulesHtml: '<p>Смотри: клетки загораются одна за другой и складываются в дорожку. Потом нажми их в том же порядке. С каждым уровнем дорожка длиннее, а поле больше. Три ошибки — конец.</p>',
+    startLabel: 'Смотреть', countdown: false, overEyebrow: 'Путь потерян',
+    unit: function (n) { return P.plural(n, U); }, onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { S = P.clamp(view.W / 390, 0.8, 1.3); });
+  function makePath(len) {
+    for (var tries = 0; tries < 200; tries++) {
+      var p = [[P.rand(N), P.rand(N)]], seen = {}; seen[p[0]] = 1;
+      while (p.length < len) {
+        var l = p[p.length - 1], opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(function (d) { return [l[0] + d[0], l[1] + d[1]]; }).filter(function (q) { return q[0] >= 0 && q[1] >= 0 && q[0] < N && q[1] < N && !seen[q]; });
+        if (!opts.length) break; var q = P.pick(opts); seen[q] = 1; p.push(q);
+      }
+      if (p.length === len) return p;
+    }
+    return p;
+  }
+  function reset() { level = 0; lives = 3; shell.setScore('0'); newLevel(); }
+  function newLevel() { N = level < 5 ? 5 : level < 10 ? 6 : 7; path = makePath(Math.min(N * N - 2, 3 + level)); replay(); }
+  function replay() { phase = 'show'; showI = -1; showT = 0.6; step = 0; side(); }
+  function side() { var s = ''; for (var i = 0; i < 3; i++) s += i < lives ? '♥' : '♡'; shell.setSide(s + ' · длина ' + path.length, lives === 1); }
+  P.loop(function (dt) {
+    if (shell.running && phase === 'show') {
+      showT -= dt;
+      if (showT <= 0) { showI++; showT = Math.max(0.28, 0.5 - level * 0.015); if (showI >= path.length) { phase = 'input'; showI = -1; } }
+    }
+    if (flash) { flash.t -= dt; if (flash.t <= 0) flash = null; }
+    draw();
+  });
+  function geo() { var size = Math.min(view.W - 40, view.H - 220), cs = size / N; return { cs: cs, x: (view.W - size) / 2, y: 110 + (view.H - 170 - size) / 2, size: size }; }
+  function draw() {
+    var c = view.ctx, W = view.W, H = view.H, G = geo();
+    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
+      var col = '#3B1E8C', px = G.x + x * G.cs, py = G.y + y * G.cs;
+      if (phase === 'show' && showI >= 0) { for (var k = 0; k <= showI && k < path.length; k++) if (path[k][0] === x && path[k][1] === y) col = k === showI ? '#3DF5B0' : 'rgba(61,245,176,.35)'; }
+      if (phase === 'input') for (var j = 0; j < step; j++) if (path[j][0] === x && path[j][1] === y) col = '#3DF5B0';
+      if (flash && flash.x === x && flash.y === y) col = flash.ok ? '#3DF5B0' : '#FF6B4A';
+      c.fillStyle = col; c.beginPath(); if (c.roundRect) c.roundRect(px + 4, py + 4, G.cs - 8, G.cs - 8, 10); else c.rect(px + 4, py + 4, G.cs - 8, G.cs - 8); c.fill();
+    }
+    c.fillStyle = '#B9A8F0'; c.font = '500 ' + Math.round(15 * S) + 'px Onest, sans-serif'; c.textAlign = 'center';
+    c.fillText(phase === 'show' ? 'Запоминай…' : 'Повтори дорожку: ' + step + ' из ' + path.length, W / 2, G.y - 18);
+  }
+  P.gestures(canvas, { tap: function (x, y) {
+    if (!shell.running || phase !== 'input') return;
+    var G = geo(), gx = Math.floor((x - G.x) / G.cs), gy = Math.floor((y - G.y) / G.cs);
+    if (gx < 0 || gy < 0 || gx >= N || gy >= N) return;
+    var want = path[step];
+    if (want[0] === gx && want[1] === gy) {
+      step++; flash = { x: gx, y: gy, ok: true, t: 0.15 }; P.haptic('tap');
+      if (step === path.length) { level++; shell.setScore(String(level)); P.haptic('win'); phase = 'wait'; setTimeout(function () { if (shell.running || phase === 'wait') newLevel(); }, 600); }
+    } else {
+      lives--; flash = { x: gx, y: gy, ok: false, t: 0.4 }; P.haptic('crash'); side();
+      if (lives <= 0) { phase = 'over'; shell.end({ score: level, delay: 600, stats: 'самая длинная дорожка: ' + (path.length - 1), phrase: 'В «Пути» я прошёл ' + level + ' ' + P.plural(level, U) + '. Запомнишь больше?' }); }
+      else { phase = 'wait'; setTimeout(replay, 700); }
+    }
+  } });
+  path = makePath(4);
+})();
+</script>
+</body>
+</html>

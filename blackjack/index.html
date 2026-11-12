@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Двадцать одно</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:radial-gradient(circle at 50% 45%,#22744F,#14432F)}
+.bj{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-around;align-items:center;padding:80px 12px 20px;gap:10px}
+.bj-row{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+.bj-lbl{font-family:var(--font-display);font-weight:600;font-size:13px;color:#CFE9DC;letter-spacing:.06em}
+.bj-lbl b{color:#fff;font-size:18px;margin-left:6px}
+.bj-cards{display:flex;justify-content:center;min-height:92px}
+.bj-cards .card{margin-left:-18px;animation:deal .25s ease}
+.bj-cards .card:first-child{margin-left:0}
+@keyframes deal{from{transform:translateY(-30px);opacity:0}}
+.card{width:62px;height:90px;border-radius:9px;background:#F4F1FF;box-shadow:0 3px 8px rgba(0,0,0,.35);position:relative;flex:none;color:#120630;user-select:none}
+.card.red{color:#E0314F}
+.card b{position:absolute;left:6px;top:5px;font-size:18px;font-weight:700;line-height:1}
+.card i{position:absolute;left:7px;top:24px;font-style:normal;font-size:14px}
+.card u{position:absolute;right:7px;bottom:5px;text-decoration:none;font-size:30px;line-height:1}
+.card.back{background:linear-gradient(135deg,#5B3FD0,#3B1E8C);border:3px solid #F4F1FF}
+.bj-msg{font-family:var(--font-display);font-weight:800;font-size:22px;min-height:30px;text-align:center}
+.bj-btns{display:flex;gap:10px;width:min(100%,380px)}
+.bj-btns button{flex:1;min-height:56px;border:0;border-radius:16px;font-family:var(--font-display);font-weight:600;font-size:16px;cursor:pointer}
+.bj-btns .hit{background:var(--mint);color:var(--ink)}.bj-btns .stand{background:var(--sun);color:var(--ink)}.bj-btns .nxt{background:var(--paper);color:var(--ink)}
+.bj-btns button[hidden]{display:none}
+.stage[data-state="paused"] .bj,.stage[data-state="start"] .bj{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="bj">
+  <div class="bj-row"><div class="bj-lbl">КРУПЬЕ<b id="dt"></b></div><div class="bj-cards" id="dealer"></div></div>
+  <div class="bj-msg" id="msg"></div>
+  <div class="bj-row"><div class="bj-cards" id="mine"></div><div class="bj-lbl">ТЫ<b id="mt"></b></div></div>
+  <div class="bj-btns"><button class="hit" id="hit" type="button">Ещё</button><button class="stand" id="stand" type="button">Хватит</button><button class="nxt" id="nxt" type="button" hidden>Следующая раздача</button></div>
+</div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['победа', 'победы', 'побед'], HANDS = 10, SU = ['♠', '♣', '♥', '♦'], RN = ['', 'Т', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'В', 'Д', 'К'];
+  var $ = function (id) { return document.getElementById(id); };
+  var deck, me, dl, hand = 0, wins = 0, pushes = 0, busy = false, open = false, gen = 0;
+  var shell = P.shell({
+    id: 'blackjack', title: 'Двадцать одно', tagline: 'Десять раздач против крупье.',
+    rulesHtml: '<p>Набери сумму ближе к 21, чем у крупье, но не больше. Картинки — 10, туз — 1 или 11. «Ещё» — взять карту, «Хватит» — остановиться. Крупье добирает, пока у него меньше 17. Десять раздач — считаем победы.</p>',
+    startLabel: 'Раздать', countdown: false, overEyebrow: 'Десять раздач',
+    unit: function (n) { return P.plural(n, U); }, onReset: reset
+  });
+  function val(c) { return c.r === 1 ? 11 : Math.min(10, c.r); }
+  function total(h) { var t = 0, a = 0; h.forEach(function (c) { t += val(c); if (c.r === 1) a++; }); while (t > 21 && a) { t -= 10; a--; } return t; }
+  function newDeck() { deck = []; for (var d = 0; d < 2; d++) SU.forEach(function (s) { for (var r = 1; r <= 13; r++) deck.push({ s: s, r: r }); }); P.shuffle(deck); }
+  function cardEl(c, hidden) { var el = document.createElement('div'); if (hidden) { el.className = 'card back'; return el; } el.className = 'card' + (c.s === '♥' || c.s === '♦' ? ' red' : ''); el.innerHTML = '<b>' + RN[c.r] + '</b><i>' + c.s + '</i><u>' + c.s + '</u>'; return el; }
+  function render() {
+    var d = $('dealer'), m = $('mine'); d.textContent = ''; m.textContent = '';
+    dl.forEach(function (c, i) { d.appendChild(cardEl(c, i === 1 && !open)); });
+    me.forEach(function (c) { m.appendChild(cardEl(c)); });
+    $('dt').textContent = open ? total(dl) : val(dl[0]); $('mt').textContent = total(me);
+    shell.setSide('раздача ' + Math.min(hand, HANDS) + '/' + HANDS);
+  }
+  function wait(fn, ms) { var g = gen; setTimeout(function tick() { if (g !== gen) return; if (!shell.running) { setTimeout(tick, 300); return; } fn(); }, ms); }
+  function reset() { gen++; newDeck(); hand = 0; wins = 0; pushes = 0; shell.setScore('0'); deal(); }
+  function deal() {
+    if (deck.length < 20) newDeck();
+    hand++; me = [deck.pop(), deck.pop()]; dl = [deck.pop(), deck.pop()]; open = false; busy = false;
+    $('msg').textContent = ''; $('hit').hidden = $('stand').hidden = false; $('nxt').hidden = true; render();
+    if (total(me) === 21) { wait(stand, 500); }
+  }
+  function hit() { if (!shell.running || busy || open) return; me.push(deck.pop()); P.haptic('tap'); render(); if (total(me) > 21) result(); else if (total(me) === 21) stand(); }
+  function stand() {
+    if (!shell.running || busy || open) return;
+    busy = true; open = true; render();
+    (function more() { if (total(dl) < 17) { wait(function () { dl.push(deck.pop()); render(); more(); }, 550); } else wait(result, 400); })();
+  }
+  function result() {
+    open = true; render();
+    var m = total(me), d = total(dl), bj = m === 21 && me.length === 2, out;
+    if (m > 21) out = ['Перебор', '#FF6B4A', 0];
+    else if (d > 21) out = ['Крупье перебрал — победа!', '#3DF5B0', 1];
+    else if (m > d) out = [bj ? 'Очко! Победа!' : 'Победа!', '#3DF5B0', 1];
+    else if (m === d) out = ['Ничья', '#FFD84D', 0.5];
+    else out = ['Крупье сильнее', '#FF6B4A', 0];
+    if (out[2] === 1) { wins++; P.haptic('win'); } else if (out[2] === 0.5) pushes++; else P.haptic('crash');
+    shell.setScore(String(wins));
+    $('msg').textContent = out[0]; $('msg').style.color = out[1];
+    $('hit').hidden = $('stand').hidden = true; busy = false;
+    if (hand >= HANDS) { wait(function () { shell.end({ score: wins, delay: 200, stats: 'ничьих: ' + pushes + ' · поражений: ' + (HANDS - wins - pushes), phrase: 'В «Двадцать одно» я выиграл ' + wins + ' раздач из 10. Обыграешь крупье лучше?' }); }, 900); }
+    else $('nxt').hidden = false;
+  }
+  $('hit').addEventListener('click', hit); $('stand').addEventListener('click', stand);
+  $('nxt').addEventListener('click', function () { if (shell.running) deal(); });
+  window.addEventListener('keydown', function (e) { if (e.code === 'ArrowUp' || e.code === 'KeyH') hit(); if (e.code === 'ArrowDown' || e.code === 'KeyS') stand(); if (e.code === 'Enter' && !$('nxt').hidden) deal(); });
+  newDeck(); me = []; dl = [{ s: '♠', r: 1 }, { s: '♥', r: 13 }];
+})();
+</script>
+</body>
+</html>

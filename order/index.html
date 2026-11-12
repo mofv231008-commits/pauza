@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Порядок</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:var(--shoulder)}
+.od{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:84px 14px 20px}
+.od-msg{color:var(--lilac);font-size:16px;text-align:center;min-height:24px}
+.od-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:400px}
+.od-it{width:64px;height:64px;border-radius:18px;border:0;background:var(--road);font-size:34px;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;touch-action:manipulation}
+.od-it em{position:absolute;right:-4px;top:-6px;font-style:normal;font-family:var(--font-display);font-size:12px;background:var(--mint);color:var(--ink);border-radius:8px;padding:1px 6px}
+.od-it.ok{background:#1FA67A}.od-it.bad{background:var(--coral)}
+.od-it.shown{animation:pop .25s}
+@keyframes pop{from{transform:scale(.5);opacity:0}}
+.od-bar{width:min(320px,90%);height:6px;border-radius:3px;background:rgba(185,168,240,.25);overflow:hidden}.od-bar i{display:block;height:100%;background:var(--sun);transform-origin:left}
+.stage[data-state="paused"] .od,.stage[data-state="start"] .od{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="od"><div class="od-msg" id="msg"></div><div class="od-bar" id="bar"><i></i></div><div class="od-row" id="row"></div></div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['уровень', 'уровня', 'уровней'];
+  var POOL = ['🍎', '🍌', '🍇', '🍓', '🍒', '🥝', '🍍', '🥕', '🌽', '🍄', '🐱', '🐶', '🦊', '🐸', '🐼', '🐧', '🦉', '🐢', '⚽', '🎸', '🎈', '🎁', '📚', '✏️', '⏰', '🔑', '🚲', '🚀', '⛵', '🌙', '⭐', '🔥', '❄️', '🌈', '☂️', '👑', '🎩', '👟', '🧦', '🍕', '🍩', '🧀', '🥨', '🍪'];
+  var $ = function (id) { return document.getElementById(id); };
+  var items = [], level = 0, lives = 3, step = 0, phase = 'show', showLeft = 0, showTotal = 1, gen = 0;
+  var shell = P.shell({
+    id: 'order', title: 'Порядок', tagline: 'Запомни ряд — потом его перемешают.',
+    rulesHtml: '<p>Сначала предметы стоят в ряд. Запомни порядок. Потом их перемешают — нажми в том же порядке, слева направо. С каждым уровнем предметов больше. Три ошибки — конец.</p>',
+    startLabel: 'Запоминать', countdown: false, overEyebrow: 'Порядок нарушен',
+    unit: function (n) { return P.plural(n, U); }, onReset: reset
+  });
+  function reset() { gen++; level = 0; lives = 3; shell.setScore('0'); newLevel(); }
+  function side() { var s = ''; for (var i = 0; i < 3; i++) s += i < lives ? '♥' : '♡'; shell.setSide(s, lives === 1); }
+  function newLevel() {
+    var n = Math.min(12, 3 + level); items = P.shuffle(POOL.slice()).slice(0, n);
+    phase = 'show'; step = 0; showTotal = showLeft = 1.2 + n * 0.55; side(); render();
+    $('msg').textContent = 'Запомни порядок';
+  }
+  function render() {
+    var row = $('row'); row.textContent = '';
+    var list = phase === 'show' ? items.map(function (e, i) { return { e: e, i: i }; }) : shuffled;
+    list.forEach(function (o) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'od-it' + (phase === 'show' ? ' shown' : ''); b.textContent = o.e;
+      if (phase === 'show') { var n = document.createElement('em'); n.textContent = o.i + 1; b.appendChild(n); }
+      if (phase === 'input' && o.i < step) b.className += ' ok';
+      b.addEventListener('click', function () { tap(o, b); });
+      row.appendChild(b);
+    });
+  }
+  var shuffled = [];
+  function tap(o, b) {
+    if (!shell.running || phase !== 'input' || o.i < step) return;
+    if (o.i === step) {
+      step++; b.className = 'od-it ok'; P.haptic('tap');
+      if (step === items.length) { level++; shell.setScore(String(level)); P.haptic('win'); $('msg').textContent = 'Верно!'; phase = 'wait'; var g = gen; setTimeout(function () { if (g === gen) newLevel(); }, 700); }
+      else $('msg').textContent = 'Дальше: ' + (step + 1) + '-й';
+    } else {
+      lives--; b.className = 'od-it bad'; P.haptic('crash'); side();
+      if (lives <= 0) { phase = 'over'; shell.end({ score: level, delay: 600, stats: 'предметов в последнем ряду: ' + items.length, phrase: 'В «Порядке» я прошёл ' + level + ' ' + P.plural(level, U) + '. Запомнишь больше?' }); }
+      else { $('msg').textContent = 'Не тот! Нужен ' + (step + 1) + '-й'; }
+    }
+  }
+  P.loop(function (dt) {
+    if (shell.running && phase === 'show') {
+      showLeft -= dt; $('bar').firstChild.style.transform = 'scaleX(' + Math.max(0, showLeft / showTotal) + ')';
+      if (showLeft <= 0) { phase = 'input'; shuffled = P.shuffle(items.map(function (e, i) { return { e: e, i: i }; })); $('msg').textContent = 'Нажимай по порядку: 1-й'; render(); }
+    }
+  });
+})();
+</script>
+</body>
+</html>

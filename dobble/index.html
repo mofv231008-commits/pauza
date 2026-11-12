@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Дубль</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:var(--shoulder)}
+.db{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:84px 12px 16px}
+.db .timebar{position:absolute;left:16px;right:16px;top:72px}
+.db-card{position:relative;width:min(84vw,46vh,330px);aspect-ratio:1;border-radius:50%;background:#F4F1FF;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.db-card button{position:absolute;border:0;background:transparent;padding:0;line-height:1;cursor:pointer;touch-action:manipulation;transform:translate(-50%,-50%)}
+.db-card button.ok{filter:drop-shadow(0 0 6px #1FA67A)}.db-card button.bad{opacity:.3}
+.db-msg{color:var(--lilac);font-size:14px;min-height:20px}
+.stage[data-state="paused"] .db-card,.stage[data-state="countdown"] .db-card{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="db"><div class="timebar" id="timebar"><i></i></div><div class="db-card" id="c0"></div><div class="db-msg" id="msg">Найди картинку, которая есть на обеих карточках</div><div class="db-card" id="c1"></div></div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['пара', 'пары', 'пар'], n = 7;
+  var SYM = ['🍎', '🍌', '🍇', '🍓', '🍒', '🍍', '🥕', '🌽', '🍄', '🍕', '🍩', '🧀', '🍪', '🍦', '🐱', '🐶', '🦊', '🐸', '🐼', '🐧', '🦉', '🐢', '🐙', '🦋', '🐝', '🐞', '🦄', '🐳', '⚽', '🏀', '🎸', '🎈', '🎁', '📚', '✏️', '⏰', '🔑', '🚲', '🚀', '⛵', '🌙', '⭐', '🔥', '❄️', '🌈', '☂️', '👑', '🎩', '👟', '💎', '🔔', '💡', '📷', '🎲', '🧲', '🍀', '🌵'];
+  var cards = [];
+  (function build() {
+    var I = function (k) { return n * n + k; }, G = function (x, y) { return x * n + y; };
+    for (var m = 0; m < n; m++) for (var b = 0; b < n; b++) { var c = [I(m)]; for (var x = 0; x < n; x++) c.push(G(x, (m * x + b) % n)); cards.push(c); }
+    for (var cx = 0; cx < n; cx++) { var v = [I(n)]; for (var y = 0; y < n; y++) v.push(G(cx, y)); cards.push(v); }
+    var inf = []; for (var k = 0; k <= n; k++) inf.push(I(k)); cards.push(inf);
+  })();
+  var $ = function (id) { return document.getElementById(id); };
+  var pair, common, score = 0, wrong = 0, busy = false;
+  var shell = P.shell({
+    id: 'dobble', title: 'Дубль', tagline: 'На двух карточках ровно одна общая картинка.',
+    rulesHtml: '<p>На двух карточках по восемь картинок. Совпадает ровно одна. Найди её и нажми — на любой из карточек. Ошибка отнимает 3 секунды. На всё минута.</p>',
+    countdown: true, overEyebrow: 'Время вышло',
+    unit: function (q) { return P.plural(q, U); }, onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, $('timebar'));
+  var SPOTS = [[0.5, 0.5, 1.15], [0.5, 0.18, 0.95], [0.78, 0.3, 0.85], [0.82, 0.62, 1.0], [0.6, 0.83, 0.9], [0.28, 0.8, 1.0], [0.18, 0.5, 0.85], [0.26, 0.22, 0.9]];
+  function fill(el, card) {
+    el.textContent = ''; var w = el.clientWidth || 300, spots = P.shuffle(SPOTS.slice()), syms = P.shuffle(card.slice());
+    syms.forEach(function (s, i) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = SYM[s];
+      var sp = spots[i], size = w * 0.15 * sp[2] * (0.85 + Math.random() * 0.3);
+      b.style.left = sp[0] * 100 + '%'; b.style.top = sp[1] * 100 + '%'; b.style.fontSize = size + 'px';
+      b.style.transform = 'translate(-50%,-50%) rotate(' + Math.round(Math.random() * 360) + 'deg)';
+      b.addEventListener('click', function () { pick(s, b); });
+      el.appendChild(b);
+    });
+  }
+  function deal() {
+    var a = P.rand(cards.length), b; do { b = P.rand(cards.length); } while (b === a);
+    pair = [cards[a], cards[b]]; common = pair[0].filter(function (s) { return pair[1].indexOf(s) >= 0; })[0];
+    fill($('c0'), pair[0]); fill($('c1'), pair[1]); busy = false;
+  }
+  function pick(s, b) {
+    if (!shell.running || busy) return;
+    if (s === common) {
+      busy = true; score++; shell.setScore(String(score)); P.haptic('coin');
+      Array.prototype.forEach.call(document.querySelectorAll('.db-card button'), function (x) { if (x.textContent === SYM[common]) x.className = 'ok'; });
+      setTimeout(function () { if (shell.running) deal(); }, 320);
+    } else { wrong++; b.className = 'bad'; P.haptic('crash'); timer.add(-3); }
+  }
+  function reset() { score = 0; wrong = 0; timer.reset(); shell.setScore('0'); deal(); }
+  function finish() { busy = true; shell.end({ score: score, delay: 300, stats: 'ошибок: ' + wrong, phrase: 'В «Дубле» я нашёл ' + score + ' ' + P.plural(score, U) + ' за минуту. Глаз острее?' }); }
+  deal(); timer.show();
+})();
+</script>
+</body>
+</html>

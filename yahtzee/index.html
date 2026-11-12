@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Покер на костях</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:var(--shoulder)}
+.yz{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;padding:78px 12px 12px}
+.yz-dice{display:flex;justify-content:center;gap:8px}
+.die{width:54px;height:54px;border-radius:12px;background:#F4F1FF;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:7px;border:0;cursor:pointer;transition:transform .15s}
+.die i{border-radius:50%;margin:2px}.die i.p{background:#120630}
+.die.held{background:var(--sun);transform:translateY(-6px)}
+.die.roll{animation:rl .35s}
+@keyframes rl{30%{transform:rotate(20deg) scale(.9)}70%{transform:rotate(-12deg)}}
+.yz-roll{min-height:50px;border:0;border-radius:14px;background:var(--mint);color:var(--ink);font-family:var(--font-display);font-weight:600;font-size:15px;cursor:pointer}
+.yz-roll:disabled{opacity:.4}
+.yz-hint{text-align:center;font-size:12.5px;color:var(--lilac);margin:-4px 0}
+.yz-list{flex:1;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:6px;align-content:start}
+.yz-list button{display:flex;justify-content:space-between;align-items:center;min-height:40px;border:1px solid var(--line);border-radius:12px;background:var(--road);color:var(--paper);font-family:var(--font-body);font-size:13px;padding:0 10px;cursor:pointer}
+.yz-list button b{font-family:var(--font-display);font-size:14px;color:var(--mint)}
+.yz-list button.done{background:transparent;opacity:.7;cursor:default}.yz-list button.done b{color:var(--paper)}
+.yz-list button.zero b{color:var(--lilac)}
+.yz-list .sub{grid-column:1 / -1;font-size:12px;color:var(--lilac);display:flex;justify-content:space-between;padding:2px 4px}
+.stage[data-state="paused"] .yz,.stage[data-state="start"] .yz{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="yz">
+  <div class="yz-dice" id="dice"></div>
+  <div class="yz-hint" id="hint"></div>
+  <button class="yz-roll" id="roll" type="button">Бросить</button>
+  <div class="yz-list" id="list"></div>
+</div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var PIPS = [[], [4], [0, 8], [0, 4, 8], [0, 2, 6, 8], [0, 2, 4, 6, 8], [0, 2, 3, 5, 6, 8]];
+  var CATS = [
+    ['1', 'Единицы'], ['2', 'Двойки'], ['3', 'Тройки'], ['4', 'Четвёрки'], ['5', 'Пятёрки'], ['6', 'Шестёрки'],
+    ['k3', 'Три одинаковых'], ['k4', 'Четыре одинаковых'], ['fh', 'Фулл-хаус'], ['ss', 'Малый стрит'], ['ls', 'Большой стрит'], ['y', 'Покер'], ['ch', 'Шанс']
+  ];
+  var $ = function (id) { return document.getElementById(id); };
+  var dice = [1, 2, 3, 4, 5], held = [false, false, false, false, false], rolls = 0, sc = {}, turn = 1;
+  var shell = P.shell({
+    id: 'yahtzee', title: 'Покер на костях', tagline: '13 ходов, чтобы собрать лучшие комбинации.',
+    rulesHtml: '<p>За ход можно бросить кубики до трёх раз. Нажми на кубик, чтобы оставить его. После броска выбери строку в таблице — туда запишутся очки. Каждую строку можно занять один раз. Верхние строки вместе от 63 — бонус 35.</p>',
+    startLabel: 'Бросать', countdown: false, overEyebrow: 'Игра окончена',
+    unit: function (n) { return P.plural(n, ['очко', 'очка', 'очков']); }, onReset: reset
+  });
+  function counts(d) { var c = [0, 0, 0, 0, 0, 0, 0]; d.forEach(function (v) { c[v]++; }); return c; }
+  function sum(d) { return d.reduce(function (a, b) { return a + b; }, 0); }
+  function value(id, d) {
+    var c = counts(d), mx = Math.max.apply(null, c), s = sum(d), u = {}; d.forEach(function (v) { u[v] = 1; });
+    var run = function (n) { for (var a = 1; a + n - 1 <= 6; a++) { var ok = true; for (var k = 0; k < n; k++) if (!u[a + k]) ok = false; if (ok) return true; } return false; };
+    if (/^[1-6]$/.test(id)) return c[+id] * +id;
+    if (id === 'k3') return mx >= 3 ? s : 0;
+    if (id === 'k4') return mx >= 4 ? s : 0;
+    if (id === 'fh') return c.indexOf(3) > 0 && c.indexOf(2) > 0 ? 25 : 0;
+    if (id === 'ss') return run(4) ? 30 : 0;
+    if (id === 'ls') return run(5) ? 40 : 0;
+    if (id === 'y') return mx === 5 ? 50 : 0;
+    return s;
+  }
+  function upper() { var u = 0; for (var i = 1; i <= 6; i++) if (sc[i] != null) u += sc[i]; return u; }
+  function total() { var t = 0; for (var k in sc) t += sc[k]; return t + (upper() >= 63 ? 35 : 0); }
+  function reset() { sc = {}; turn = 1; rolls = 0; held = [false, false, false, false, false]; dice = [1, 2, 3, 4, 5]; render(); shell.setScore('0'); }
+  function dieEl(v, i, anim) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'die' + (held[i] ? ' held' : '') + (anim && !held[i] ? ' roll' : '');
+    for (var k = 0; k < 9; k++) { var p = document.createElement('i'); if (PIPS[v].indexOf(k) >= 0) p.className = 'p'; b.appendChild(p); }
+    b.addEventListener('click', function () { if (!shell.running || rolls === 0 || rolls >= 3) return; held[i] = !held[i]; P.haptic('tap'); render(); });
+    return b;
+  }
+  function render(anim) {
+    var dz = $('dice'); dz.textContent = ''; dice.forEach(function (v, i) { dz.appendChild(dieEl(v, i, anim)); });
+    $('roll').textContent = rolls === 0 ? 'Бросить кубики' : rolls < 3 ? 'Перебросить (ещё ' + (3 - rolls) + ')' : 'Выбери строку';
+    $('roll').disabled = rolls >= 3;
+    $('hint').textContent = rolls === 0 ? 'Ход ' + turn + ' из 13' : rolls < 3 ? 'Нажми на кубики, которые оставить, или выбери строку' : 'Бросков больше нет — запиши результат';
+    var L = $('list'); L.textContent = '';
+    CATS.forEach(function (c, idx) {
+      if (idx === 6) { var s = document.createElement('div'); s.className = 'sub'; s.innerHTML = '<span>Верх: ' + upper() + ' / 63</span><span>' + (upper() >= 63 ? 'бонус +35 ✓' : 'бонус 35') + '</span>'; L.appendChild(s); }
+      var b = document.createElement('button'); b.type = 'button';
+      var done = sc[c[0]] != null, v = done ? sc[c[0]] : rolls ? value(c[0], dice) : '';
+      b.className = done ? 'done' : v === 0 ? 'zero' : '';
+      b.innerHTML = '<span>' + c[1] + '</span><b>' + v + '</b>';
+      b.addEventListener('click', function () { take(c[0]); });
+      L.appendChild(b);
+    });
+    shell.setSide('ход ' + Math.min(turn, 13) + '/13');
+  }
+  function roll() {
+    if (!shell.running || rolls >= 3) return;
+    dice = dice.map(function (v, i) { return held[i] ? v : 1 + P.rand(6); }); rolls++; P.haptic('tap'); render(true);
+  }
+  function take(id) {
+    if (!shell.running || !rolls || sc[id] != null) return;
+    sc[id] = value(id, dice); P.haptic(sc[id] >= 25 ? 'win' : 'coin');
+    turn++; rolls = 0; held = [false, false, false, false, false]; shell.setScore(String(total())); render();
+    if (turn > 13) { var t = total(); shell.end({ score: t, delay: 500, stats: 'верх ' + upper() + (upper() >= 63 ? ' + бонус 35' : ''), phrase: 'В «Покер на костях» я набрал ' + t + ' очков. Обгонишь?' }); }
+  }
+  $('roll').addEventListener('click', roll);
+  window.addEventListener('keydown', function (e) { if (e.code === 'Enter' || e.code === 'KeyR') { e.preventDefault(); roll(); } var m = /^Digit([1-5])$/.exec(e.code); if (m && rolls && rolls < 3) { held[m[1] - 1] = !held[m[1] - 1]; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

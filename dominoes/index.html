@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Домино</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:radial-gradient(circle at 50% 40%,#3B1E8C,#1A0C44)}
+.dm{position:absolute;inset:0;display:flex;flex-direction:column;padding:78px 10px 12px;gap:10px}
+.dm-bot{display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
+.dm-chain{flex:1;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:3px;overflow:hidden;min-height:0}
+.dm-ends{display:flex;justify-content:space-between;gap:10px}
+.dm-ends button{flex:1;min-height:44px;border:1px solid var(--line);border-radius:14px;background:transparent;color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer}
+.dm-ends button.on{background:var(--mint);color:var(--ink);border-color:var(--mint)}
+.dm-msg{text-align:center;font-size:14px;color:var(--lilac);min-height:20px}
+.dm-me{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.dm-act{display:flex;justify-content:center;min-height:44px}
+.dm-act button{min-height:44px;padding:0 18px;border:0;border-radius:14px;background:var(--sun);color:var(--ink);font-family:var(--font-display);font-weight:600;cursor:pointer}
+.dm-act button[hidden]{display:none}
+.tile{display:inline-flex;background:#F4F1FF;border-radius:7px;box-shadow:0 2px 6px rgba(0,0,0,.35);flex:none}
+.tile .h{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:3px}
+.tile .h+.h{border-left:1px solid #B9A8F0}
+.tile .h i{border-radius:50%;margin:1px}
+.tile .h i.p{background:#120630}
+.tile.big .h{width:30px;height:30px}
+.tile.sm .h{width:17px;height:17px;padding:2px}
+.tile.back{background:linear-gradient(135deg,#5B3FD0,#3B1E8C);width:20px;height:36px}
+.dm-me .tile{cursor:pointer;transition:transform .12s}
+.dm-me .tile.ok{box-shadow:0 0 0 3px var(--mint);transform:translateY(-4px)}
+.dm-me .tile.no{opacity:.55}
+.dm-me .tile.sel{background:#FFD84D}
+.stage[data-state="paused"] .dm,.stage[data-state="start"] .dm{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="dm">
+  <div class="dm-bot" id="bot"></div>
+  <div class="dm-chain" id="chain"></div>
+  <div class="dm-ends"><button type="button" id="endL">◀ сюда</button><button type="button" id="endR">сюда ▶</button></div>
+  <div class="dm-msg" id="msg"></div>
+  <div class="dm-me" id="me"></div>
+  <div class="dm-act"><button type="button" id="act" hidden></button></div>
+</div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var PIPS = [[], [4], [0, 8], [0, 4, 8], [0, 2, 6, 8], [0, 2, 4, 6, 8], [0, 2, 3, 5, 6, 8]];
+  var $ = function (id) { return document.getElementById(id); };
+  var yard, me, bot, chain, L, R, turn, sel, passes, over, gen = 0;
+  var shell = P.shell({
+    id: 'dominoes', title: 'Домино', tagline: 'Классика двора: ты против бота.',
+    rulesHtml: '<p>Приставляй костяшку к любому концу цепочки, где совпадают очки. Если подходит к обоим концам — выбери, куда. Нечем ходить — бери из базара. Кто первым выложит всё, получает очки по костяшкам соперника.</p>',
+    startLabel: 'Раздать', countdown: false, overEyebrow: 'Партия',
+    unit: function (n) { return P.plural(n, ['очко', 'очка', 'очков']); }, onReset: reset
+  });
+  function wait(fn, ms) { var g = gen; setTimeout(function tick() { if (over || g !== gen) return; if (!shell.running) { setTimeout(tick, 300); return; } fn(); }, ms || 700); }
+  function tileEl(t, cls, flip) {
+    var el = document.createElement('div'); el.className = 'tile ' + (cls || 'big');
+    var a = flip ? t[1] : t[0], b = flip ? t[0] : t[1];
+    [a, b].forEach(function (v) { var h = document.createElement('div'); h.className = 'h'; for (var i = 0; i < 9; i++) { var p = document.createElement('i'); if (PIPS[v].indexOf(i) >= 0) p.className = 'p'; h.appendChild(p); } el.appendChild(h); });
+    return el;
+  }
+  function pips(h) { return h.reduce(function (s, t) { return s + t[0] + t[1]; }, 0); }
+  function fitsL(t) { return !chain.length || t[0] === L || t[1] === L; }
+  function fitsR(t) { return !chain.length || t[0] === R || t[1] === R; }
+  function reset() {
+    gen++; yard = []; for (var a = 0; a <= 6; a++) for (var b = a; b <= 6; b++) yard.push([a, b]); P.shuffle(yard);
+    me = yard.splice(0, 7); bot = yard.splice(0, 7); chain = []; L = R = null; sel = null; passes = 0; over = false; shell.setScore('0');
+    var dm = Math.max.apply(null, me.map(function (t) { return t[0] === t[1] ? t[0] : -1; })), db = Math.max.apply(null, bot.map(function (t) { return t[0] === t[1] ? t[0] : -1; }));
+    turn = db > dm ? 'bot' : 'me'; render();
+    if (turn === 'bot') { say('Первым ходит бот'); wait(botMove); } else say('Твой ход');
+  }
+  function say(t) { $('msg').textContent = t; }
+  function place(t, side) {
+    if (!chain.length) { chain.push({ t: t, flip: false }); L = t[0]; R = t[1]; return; }
+    if (side === 'L') { var flipL = t[0] === L; chain.unshift({ t: t, flip: flipL }); L = flipL ? t[1] : t[0]; }
+    else { var flipR = t[1] === R; chain.push({ t: t, flip: flipR }); R = flipR ? t[0] : t[1]; }
+  }
+  function render() {
+    var bh = $('bot'); bh.textContent = ''; bot.forEach(function () { var e = document.createElement('div'); e.className = 'tile back'; bh.appendChild(e); });
+    var ch = $('chain'); ch.textContent = ''; chain.forEach(function (c) { ch.appendChild(tileEl(c.t, 'sm', c.flip)); });
+    var mh = $('me'); mh.textContent = '';
+    var can = me.filter(function (t) { return fitsL(t) || fitsR(t); });
+    me.forEach(function (t) {
+      var ok = turn === 'me' && (fitsL(t) || fitsR(t)), el = tileEl(t, 'big');
+      el.classList.add(ok ? 'ok' : 'no'); if (sel === t) el.classList.add('sel');
+      el.addEventListener('click', function () { tap(t); }); mh.appendChild(el);
+    });
+    $('endL').classList.toggle('on', !!(sel && fitsL(sel) && chain.length)); $('endR').classList.toggle('on', !!(sel && fitsR(sel) && chain.length));
+    $('endL').textContent = '◀ ' + (L === null ? '' : L); $('endR').textContent = (R === null ? '' : R) + ' ▶';
+    var act = $('act'); act.hidden = !(turn === 'me' && !can.length && !over);
+    act.textContent = yard.length ? 'Взять из базара (' + yard.length + ')' : 'Пропустить ход';
+    shell.setSide('у бота ' + bot.length + ' · базар ' + yard.length);
+  }
+  function tap(t) {
+    if (!shell.running || over || turn !== 'me') return;
+    var l = fitsL(t), r = fitsR(t);
+    if (!l && !r) { P.haptic('crash'); return; }
+    if (l && r && chain.length && L !== R) { sel = t; say('Куда поставить? Нажми ◀ или ▶'); render(); return; }
+    play(t, l ? 'L' : 'R');
+  }
+  function play(t, side) { me.splice(me.indexOf(t), 1); place(t, side); sel = null; passes = 0; P.haptic('tap'); after('me'); }
+  $('endL').addEventListener('click', function () { if (sel && fitsL(sel) && shell.running) play(sel, 'L'); });
+  $('endR').addEventListener('click', function () { if (sel && fitsR(sel) && shell.running) play(sel, 'R'); });
+  $('act').addEventListener('click', function () {
+    if (!shell.running || over || turn !== 'me') return;
+    if (yard.length) { me.push(yard.pop()); P.haptic('tap'); render(); return; }
+    passes++; say('Ты пропускаешь'); after('me');
+  });
+  function after(who) {
+    if (!me.length || !bot.length || passes >= 2) { finish(); return; }
+    turn = who === 'me' ? 'bot' : 'me'; render();
+    if (turn === 'bot') { say('Бот думает…'); wait(botMove); } else say('Твой ход');
+  }
+  function botMove() {
+    while (true) {
+      var opts = bot.filter(function (t) { return fitsL(t) || fitsR(t); }).sort(function (a, b) { return (b[0] + b[1]) - (a[0] + a[1]); });
+      if (opts.length) { var t = opts[0]; bot.splice(bot.indexOf(t), 1); place(t, fitsR(t) ? 'R' : 'L'); passes = 0; break; }
+      if (yard.length) { bot.push(yard.pop()); continue; }
+      passes++; say('Бот пропускает'); break;
+    }
+    after('bot');
+  }
+  function finish() {
+    over = true; render(); $('act').hidden = true;
+    var pm = pips(me), pb = pips(bot), win = !me.length || (passes >= 2 && pm < pb), draw = passes >= 2 && pm === pb && me.length && bot.length;
+    var sc = draw ? 0 : win ? pb + 10 : 0;
+    P.haptic(win ? 'win' : 'crash');
+    shell.end({ score: sc, delay: 500, eyebrow: draw ? 'Ничья' : win ? (me.length ? 'Рыба! Ты победил' : 'Ты победил!') : (bot.length ? 'Рыба. Бот победил' : 'Бот победил'), tone: win ? 'good' : '',
+      stats: 'очков у тебя: ' + pm + ' · у бота: ' + pb, phrase: win ? 'Обыграл бота в «Домино» на ' + sc + ' очков. Сыграем?' : 'Бот обыграл меня в «Домино». Отыграешься?' });
+  }
+})();
+</script>
+</body>
+</html>

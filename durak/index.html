@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Дурак</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:radial-gradient(circle at 50% 45%,#22744F,#14432F)}
+.dk{position:absolute;inset:0;display:flex;flex-direction:column;padding:76px 10px 12px;gap:8px}
+.dk-bot{display:flex;justify-content:center;align-items:center;height:70px;gap:0}
+.dk-mid{flex:1;display:flex;align-items:center;gap:10px;min-height:0}
+.dk-deck{position:relative;width:64px;height:110px;flex:none}
+.dk-deck .card{position:absolute;left:0;top:0}
+.dk-deck .trump{transform:rotate(90deg) translate(20px,-16px)}
+.dk-deck .cnt{position:absolute;left:0;right:0;bottom:-20px;text-align:center;font-size:12px;color:#CFE9DC}
+.dk-table{flex:1;display:flex;flex-wrap:wrap;gap:12px 6px;justify-content:center;align-content:center}
+.dk-pair{position:relative;width:58px;height:96px}
+.dk-pair .card:nth-child(2){position:absolute;left:12px;top:22px;transform:rotate(8deg)}
+.dk-msg{text-align:center;font-size:14px;color:#E6FFF3;min-height:20px}
+.dk-act{display:flex;justify-content:center;min-height:50px}
+.dk-act button{min-width:150px;min-height:46px;border:0;border-radius:14px;font-family:var(--font-display);font-weight:600;font-size:15px;background:var(--sun);color:var(--ink);cursor:pointer}
+.dk-act button[hidden]{display:none}
+.dk-me{display:flex;justify-content:center;align-items:flex-end;height:104px;padding:0 4px}
+.card{width:58px;height:84px;border-radius:9px;background:#F4F1FF;box-shadow:0 3px 8px rgba(0,0,0,.35);position:relative;flex:none;color:#120630;font-family:var(--font-body);user-select:none}
+.card.red{color:#E0314F}
+.card b{position:absolute;left:6px;top:4px;font-size:17px;font-weight:700;line-height:1}
+.card i{position:absolute;left:6px;top:22px;font-style:normal;font-size:14px}
+.card u{position:absolute;right:6px;bottom:4px;text-decoration:none;font-size:28px;line-height:1}
+.card.back{background:linear-gradient(135deg,#5B3FD0,#3B1E8C);border:3px solid #F4F1FF}
+.card.back::after{content:'';position:absolute;inset:6px;border-radius:5px;border:2px solid rgba(185,168,240,.6)}
+.dk-me .card{cursor:pointer;transition:transform .12s}
+.dk-me .card.ok{transform:translateY(-12px);box-shadow:0 0 0 3px var(--mint),0 6px 14px rgba(0,0,0,.4)}
+.dk-me .card.no{filter:brightness(.8)}
+.dk-bot .card{width:40px;height:58px}
+.stage[data-state="paused"] .dk,.stage[data-state="start"] .dk{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="dk" id="dk">
+  <div class="dk-bot" id="bot"></div>
+  <div class="dk-mid"><div class="dk-deck" id="deck"></div><div class="dk-table" id="table"></div></div>
+  <div class="dk-msg" id="msg"></div>
+  <div class="dk-act"><button type="button" id="act" hidden></button></div>
+  <div class="dk-me" id="me"></div>
+</div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var SU = ['♠', '♣', '♥', '♦'], RN = { 6: '6', 7: '7', 8: '8', 9: '9', 10: '10', 11: 'В', 12: 'Д', 13: 'К', 14: 'Т' };
+  var $ = function (id) { return document.getElementById(id); };
+  var deck, trump, trumpCard, me, bot, table, att, phase, defStart, over, wins = 0, gen = 0;
+  var shell = P.shell({
+    id: 'durak', title: 'Дурак', tagline: 'Подкидной, один на один с ботом.',
+    rulesHtml: '<p>Обычный подкидной дурак на 36 карт. Атакуешь — нажимай карту, подкидывай того же достоинства, «Бито», когда всё отбито. Защищаешься — нажимай карту, которой бьёшь, или «Беру». Кто первым избавится от карт, когда колода кончилась, — победил.</p>',
+    startLabel: 'Раздать', countdown: false, overEyebrow: 'Партия окончена',
+    unit: function (n) { return P.plural(n, ['очко', 'очка', 'очков']); }, onReset: reset
+  });
+  function beats(d, a) { return (d.s === a.s && d.r > a.r) || (d.s === trump && a.s !== trump); }
+  function ranks() { var r = {}; table.forEach(function (p) { r[p.a.r] = 1; if (p.d) r[p.d.r] = 1; }); return r; }
+  function sortHand(h) { h.sort(function (a, b) { return (a.s === trump) - (b.s === trump) || a.r - b.r || a.s.localeCompare(b.s); }); }
+  function wait(fn, ms) { var g = gen; setTimeout(function tick() { if (over || g !== gen) return; if (!shell.running) { setTimeout(tick, 300); return; } fn(); }, ms || 650); }
+  function reset() {
+    deck = []; SU.forEach(function (s) { for (var r = 6; r <= 14; r++) deck.push({ s: s, r: r }); }); P.shuffle(deck);
+    gen++; trumpCard = deck[0]; trump = trumpCard.s; me = []; bot = []; table = []; over = false;
+    for (var i = 0; i < 6; i++) { me.push(deck.pop()); bot.push(deck.pop()); }
+    sortHand(me);
+    var lm = me.filter(function (c) { return c.s === trump; }).map(function (c) { return c.r; }), lb = bot.filter(function (c) { return c.s === trump; }).map(function (c) { return c.r; });
+    var mm = lm.length ? Math.min.apply(null, lm) : 99, mb = lb.length ? Math.min.apply(null, lb) : 99;
+    att = mb < mm ? 'bot' : 'me'; shell.setScore('0'); startRound();
+  }
+  function startRound() {
+    table = []; defStart = att === 'me' ? bot.length : me.length;
+    if (att === 'me') { phase = 'meAttack'; say('Твой ход — атакуй'); render(); }
+    else { phase = 'botAttack'; say('Бот атакует…'); render(); wait(botAttack); }
+  }
+  function say(t) { $('msg').textContent = t; }
+  function limit() { return Math.min(6, defStart); }
+  function canAttackWith(c) { return table.length < limit() && (!table.length || !!ranks()[c.r]); }
+  function unbeaten() { return table.filter(function (p) { return !p.d; })[0]; }
+  function render() {
+    var bh = $('bot'); bh.textContent = ''; var ov = Math.min(0, -(bot.length * 40 - 320) / Math.max(1, bot.length - 1));
+    bot.forEach(function (_, i) { var c = card(null); c.style.marginLeft = i ? Math.max(-30, ov) + 'px' : '0'; bh.appendChild(c); });
+    var dk = $('deck'); dk.textContent = '';
+    if (deck.length) { var tc = card(trumpCard); tc.className += ' trump'; dk.appendChild(tc); if (deck.length > 1) dk.appendChild(card(null)); }
+    else { var t2 = document.createElement('div'); t2.className = 'card'; t2.style.opacity = '.25'; t2.innerHTML = '<u>' + trump + '</u>'; if (trump === '♥' || trump === '♦') t2.className += ' red'; dk.appendChild(t2); }
+    var cn = document.createElement('div'); cn.className = 'cnt'; cn.textContent = deck.length ? 'колода ' + deck.length : 'козырь ' + trump; dk.appendChild(cn);
+    var tb = $('table'); tb.textContent = '';
+    table.forEach(function (p) { var d = document.createElement('div'); d.className = 'dk-pair'; d.appendChild(card(p.a)); if (p.d) d.appendChild(card(p.d)); tb.appendChild(d); });
+    var mh = $('me'); mh.textContent = ''; var w = mh.clientWidth || 360, ov2 = me.length > 1 ? Math.min(4, (w - 58 * me.length) / (me.length - 1)) : 0;
+    me.forEach(function (c, i) {
+      var el = card(c); el.style.marginLeft = i ? ov2 + 'px' : '0';
+      var ok = playable(c); el.classList.add(ok ? 'ok' : 'no');
+      el.addEventListener('click', function () { tapCard(c); });
+      mh.appendChild(el);
+    });
+    var act = $('act'); act.hidden = true;
+    if (phase === 'meAttack' && table.length && !unbeaten()) { act.hidden = false; act.textContent = 'Бито'; }
+    if (phase === 'meDefend' && unbeaten()) { act.hidden = false; act.textContent = 'Беру'; }
+    if (phase === 'botTakes') { act.hidden = false; act.textContent = 'Пусть берёт'; }
+    shell.setSide('🂠 ' + bot.length + ' · козырь ' + trump);
+  }
+  function card(c) {
+    var el = document.createElement('div');
+    if (!c) { el.className = 'card back'; return el; }
+    el.className = 'card' + (c.s === '♥' || c.s === '♦' ? ' red' : '');
+    el.innerHTML = '<b>' + RN[c.r] + '</b><i>' + c.s + '</i><u>' + c.s + '</u>';
+    return el;
+  }
+  function playable(c) {
+    if (phase === 'meAttack') return canAttackWith(c) && bot.length > table.filter(function (p) { return !p.d; }).length;
+    if (phase === 'botTakes') return table.length < limit() && !!ranks()[c.r];
+    if (phase === 'meDefend') { var u = unbeaten(); return !!u && beats(c, u.a); }
+    return false;
+  }
+  function tapCard(c) {
+    if (!shell.running || over || !playable(c)) { if (shell.running && !over) P.haptic('crash'); return; }
+    if (phase === 'meAttack') { me.splice(me.indexOf(c), 1); table.push({ a: c, d: null }); P.haptic('tap'); phase = 'botDefend'; say('Бот думает…'); render(); wait(botDefend); }
+    else if (phase === 'botTakes') { me.splice(me.indexOf(c), 1); table.push({ a: c, d: null }); P.haptic('tap'); render(); if (table.length >= limit() || !me.length) wait(botTakeAll, 400); }
+    else if (phase === 'meDefend') { var u = unbeaten(); me.splice(me.indexOf(c), 1); u.d = c; P.haptic('tap'); phase = 'botThrow'; say('Бот смотрит, что подкинуть…'); render(); wait(botThrow); }
+  }
+  $('act').addEventListener('click', function () {
+    if (!shell.running || over) return;
+    if (phase === 'meAttack' && table.length && !unbeaten()) { discard(); att = 'bot'; refill('me'); }
+    else if (phase === 'meDefend') { phase = 'meTakes'; say('Берёшь. Бот подкидывает…'); render(); wait(botThrowOnTake, 450); }
+    else if (phase === 'botTakes') botTakeAll();
+  });
+  function botCards(want) { return bot.filter(want).sort(function (a, b) { return (a.s === trump) - (b.s === trump) || a.r - b.r; }); }
+  function botAttack() {
+    var c = botCards(function () { return true; })[0];
+    bot.splice(bot.indexOf(c), 1); table.push({ a: c, d: null }); phase = 'meDefend'; say('Отбивайся или бери'); render(); check();
+  }
+  function botDefend() {
+    var u = unbeaten(), opts = botCards(function (c) { return beats(c, u.a); });
+    var pick = opts[0];
+    if (pick && pick.s === trump && pick.r >= 12 && u.a.r < 10 && deck.length > 10 && u.a.s !== trump) pick = null;
+    if (!pick) { phase = 'botTakes'; say('Бот берёт. Можешь подкинуть'); render(); if (!me.some(canAttackWith)) wait(botTakeAll, 700); return; }
+    bot.splice(bot.indexOf(pick), 1); u.d = pick; phase = 'meAttack';
+    say(me.some(canAttackWith) && table.length < limit() ? 'Отбито. Подкидывай или «Бито»' : 'Отбито. Жми «Бито»'); render();
+    if (!bot.length) { discard(); att = 'bot'; refill('me'); }
+  }
+  function botTakeAll() { if (phase !== 'botTakes') return; table.forEach(function (p) { bot.push(p.a); if (p.d) bot.push(p.d); }); table = []; att = 'me'; refill('me'); }
+  function botThrow() {
+    var r = ranks(), canMore = table.length < limit() && me.length > 0;
+    var c = canMore ? botCards(function (q) { return r[q.r] && (q.s !== trump || deck.length < 4) && (q.r < 12 || deck.length < 6); })[0] : null;
+    if (c) { bot.splice(bot.indexOf(c), 1); table.push({ a: c, d: null }); phase = 'meDefend'; say('Подкинул! Отбивайся или бери'); render(); return; }
+    say('Бито'); discard(); att = 'me'; refill('bot');
+  }
+  function botThrowOnTake() {
+    var r = ranks();
+    while (table.length < limit()) {
+      var extra = botCards(function (q) { return r[q.r] && q.s !== trump && q.r < 12; })[0];
+      if (!extra || me.length + table.length >= 30) break;
+      bot.splice(bot.indexOf(extra), 1); table.push({ a: extra, d: null });
+    }
+    render();
+    wait(function () { table.forEach(function (p) { me.push(p.a); if (p.d) me.push(p.d); }); table = []; sortHand(me); att = 'bot'; refill('bot'); }, 700);
+  }
+  function discard() { table = []; }
+  function refill(first) {
+    var order = first === 'me' ? [me, bot] : [bot, me];
+    order.forEach(function (h) { while (h.length < 6 && deck.length) h.push(deck.pop()); });
+    sortHand(me);
+    if (check()) return;
+    startRound();
+  }
+  function check() {
+    if (deck.length) return false;
+    if (!me.length || !bot.length) {
+      over = true; render();
+      var win = !me.length && bot.length, draw = !me.length && !bot.length, sc = draw ? 50 : win ? 100 + bot.length * 10 : 0;
+      P.haptic(win ? 'win' : 'crash');
+      shell.end({ score: sc, delay: 600, eyebrow: draw ? 'Ничья' : win ? 'Ты победил!' : 'Ты дурак…', tone: win ? 'good' : '', stats: win ? 'у бота осталось карт: ' + bot.length : draw ? 'карты кончились у обоих' : 'у тебя осталось карт: ' + me.length, phrase: win ? 'Обыграл бота в «Дурака», у него осталось ' + bot.length + ' карт! Сыграешь?' : 'Остался в «Дураке» дураком. Отомстишь за меня?' });
+      return true;
+    }
+    return false;
+  }
+  window.addEventListener('resize', function () { if (me) render(); });
+})();
+</script>
+</body>
+</html>

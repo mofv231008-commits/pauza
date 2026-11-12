@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Непрочитанные</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:#140734}
+.ur{position:absolute;inset:0;display:flex;flex-direction:column;padding:80px 0 8px}
+.ur .timebar{margin:0 14px 8px}
+.ur-list{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.ur-row{display:flex;align-items:center;gap:12px;padding:0 14px;flex:1;max-height:72px;min-height:48px;border:0;border-bottom:1px solid rgba(185,168,240,.12);background:transparent;color:var(--paper);text-align:left;cursor:pointer;font:inherit;touch-action:manipulation;position:relative}
+.ur-row:active{background:rgba(185,168,240,.08)}
+.ur-ava{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:22px;flex:none}
+.ur-body{flex:1;min-width:0}
+.ur-name{font-weight:600;font-size:15px;display:flex;gap:6px;align-items:center}
+.ur-name em{font-style:normal;font-size:10px;font-weight:700;color:#120630;background:var(--coral);border-radius:6px;padding:1px 5px}
+.ur-prev{font-size:13px;color:var(--lilac);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ur-badge{min-width:24px;height:24px;border-radius:12px;padding:0 7px;background:var(--mint);color:var(--ink);font-family:var(--font-display);font-weight:800;font-size:12px;display:grid;place-items:center;flex:none}
+.ur-badge.hot{background:var(--sun)}.ur-badge.fire{background:var(--coral);color:#fff}
+.ur-badge[hidden]{display:none}
+.ur-row.spam{background:rgba(255,107,74,.08)}
+.ur-row.read{animation:rd .3s}
+@keyframes rd{from{background:rgba(61,245,176,.25)}}
+.stage[data-state="paused"] .ur-list,.stage[data-state="countdown"] .ur-list{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="ur"><div class="timebar" id="timebar"><i></i></div><div class="ur-list" id="list"></div></div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['сообщение', 'сообщения', 'сообщений'];
+  var CH = [
+    { n: 'Мама', a: '👩', bg: '#FF8AD8', m: ['Ты поел?', 'Позвони!', 'Ты где?', 'Шапку надел?', '❤️❤️❤️'] },
+    { n: 'Одногруппники', a: '🎓', bg: '#6FD3FF', m: ['Кто сделал дз?', 'Скиньте ответы', 'Пары не будет!!', 'Голосовое 3:42', 'Стикер'] },
+    { n: 'Катя', a: '🌸', bg: '#FF9A6B', m: ['ау', 'ну ты где', 'ответь уже', 'щас, 5 сек', 'идём?'] },
+    { n: 'Работа', a: '💼', bg: '#3DF5B0', m: ['Срочно!', 'Где отчёт?', 'Созвон в 10', 'Глянь табличку', 'Ок, спасибо'] },
+    { n: 'Бабушка', a: '👵', bg: '#FFD84D', m: ['Доброе утро! 🌷', 'С праздником!', 'Приезжай на пирожки', 'Как дела?', '🌷🌷🌷'] },
+    { n: 'Друзья', a: '🍕', bg: '#B9A8F0', m: ['Го гулять', 'Мемы', 'Кто в кино?', 'ахахах', 'Стикер'] },
+    { n: 'Начальник', a: '🧔', bg: '#5B3FD0', m: ['Зайди ко мне', 'Есть минутка?', 'Ты где?', 'Жду', '👍'] }
+  ];
+  var SPAM = [{ n: 'Казино «Удача»', a: '🎰', m: 'Вы выиграли 1 000 000! Заберите приз' }, { n: 'Служба безопасности', a: '🏦', m: 'Ваша карта заблокирована, назовите код' }, { n: 'Новый номер мамы', a: '📱', m: 'Мама, это я, скинь денег на новый номер' }, { n: 'Крипта x100', a: '💸', m: 'Удвой деньги за час!' }];
+  var $ = function (id) { return document.getElementById(id); };
+  var rows = [], score = 0, t = 0, spam = null, spamT = 0, maxed = 0, mistakes = 0;
+  var shell = P.shell({
+    id: 'unread', title: 'Непрочитанные', tagline: 'Все пишут одновременно. Ты один.',
+    rulesHtml: '<p>Нажимай на чат — прочитаешь все его сообщения и получишь за них очки. Счётчики растут всё быстрее. Чат дошёл до 99+ — минус 5 секунд. Подозрительные чаты с пометкой «спам» не открывай — минус 5 секунд. Минута.</p>',
+    countdown: true, overEyebrow: 'Телефон сел',
+    unit: function (n) { return P.plural(n, U); }, onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish, $('timebar'));
+  function build() {
+    var L = $('list'); L.textContent = ''; rows = [];
+    CH.forEach(function (c, i) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'ur-row';
+      b.innerHTML = '<span class="ur-ava" style="background:' + c.bg + '">' + c.a + '</span><span class="ur-body"><span class="ur-name"></span><span class="ur-prev"></span></span><span class="ur-badge" hidden></span>';
+      var r = { c: c, el: b, n: 0, rate: 0.35 + Math.random() * 0.4, acc: Math.random(), prev: '' };
+      b.addEventListener('click', function () { tap(r); });
+      L.appendChild(b); rows.push(r); upd(r);
+    });
+  }
+  function upd(r) {
+    var nm = r.el.querySelector('.ur-name'), pv = r.el.querySelector('.ur-prev'), bd = r.el.querySelector('.ur-badge');
+    nm.innerHTML = ''; nm.appendChild(document.createTextNode(r.spam ? r.spam.n : r.c.n)); if (r.spam) { var e = document.createElement('em'); e.textContent = 'спам'; nm.appendChild(e); }
+    pv.textContent = r.spam ? r.spam.m : r.prev || 'Нет новых сообщений';
+    r.el.querySelector('.ur-ava').textContent = r.spam ? r.spam.a : r.c.a;
+    r.el.classList.toggle('spam', !!r.spam);
+    bd.hidden = !r.n && !r.spam; bd.textContent = r.spam ? '1' : r.n >= 99 ? '99+' : r.n;
+    bd.className = 'ur-badge' + (r.n >= 60 ? ' fire' : r.n >= 25 ? ' hot' : '');
+  }
+  function tap(r) {
+    if (!shell.running) return;
+    if (r.spam) { mistakes++; timer.add(-5); P.haptic('crash'); r.spam = null; upd(r); return; }
+    if (!r.n) return;
+    score += r.n; shell.setScore(String(score)); r.n = 0; r.prev = ''; r.el.classList.remove('read'); void r.el.offsetWidth; r.el.classList.add('read'); P.haptic('coin'); upd(r);
+  }
+  function reset() { t = 0; score = 0; maxed = 0; mistakes = 0; spamT = 4; build(); timer.reset(); shell.setScore('0'); }
+  function finish() { shell.end({ score: score, delay: 300, stats: 'чатов до 99+: ' + maxed + ' · открыто спама: ' + mistakes, phrase: 'В «Непрочитанных» я разгрёб ' + score + ' ' + P.plural(score, U) + ' за минуту. Твой рекорд?' }); }
+  P.loop(function (dt) {
+    if (!shell.running) return;
+    t += dt; var speed = 1 + t / 22;
+    rows.forEach(function (r) {
+      if (r.spam) { r.spamLeft -= dt; if (r.spamLeft <= 0) { r.spam = null; upd(r); } return; }
+      r.acc += dt * r.rate * speed;
+      if (r.acc >= 1) {
+        var add = Math.floor(r.acc); r.acc -= add; if (Math.random() < 0.15 * speed) add += 2 + P.rand(4);
+        r.n += add; r.prev = P.pick(r.c.m);
+        if (r.n >= 99) { r.n = 0; r.prev = 'Ты всё пропустил…'; maxed++; timer.add(-5); P.haptic('crash'); }
+        upd(r);
+      }
+    });
+    spamT -= dt;
+    if (spamT <= 0) { var free = rows.filter(function (r) { return !r.spam; }), r2 = P.pick(free); r2.spam = P.pick(SPAM); r2.spamLeft = 2.6; r2.n = r2.n; upd(r2); spamT = Math.max(1.6, 4.5 - t / 20); }
+  });
+  build(); timer.show();
+})();
+</script>
+</body>
+</html>
