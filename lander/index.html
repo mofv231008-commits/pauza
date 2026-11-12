@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Посадка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#0E0526}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Посадка. Держи левую или правую половину экрана, чтобы включить двигатели"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['посадка', 'посадки', 'посадок'], TOP = 70;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var ground = [], pad = null, ship = null, stars = [], fuel = 100, level = 0, landings = 0, phase = 'fly', phaseT = 0, msg = '', ptrs = {}, keys = {}, parts = [];
+
+  var shell = P.shell({
+    id: 'lander', title: 'Посадка', tagline: 'Мягко сесть на площадку и не разбиться.',
+    rulesHtml: '<p>Модуль падает на планету. Держи левую половину экрана — он летит влево и чуть вверх, правую — вправо. Обе сразу — прямо вверх. Садись на зелёную площадку медленно: цифры скорости должны быть зелёными. Топливо кончается, за каждую посадку немного дозаправка.</p>',
+    startLabel: 'Начать спуск', countdown: true, overEyebrow: 'Модуль разбит',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: стрелки влево, вправо и вверх, P — пауза',
+    pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () {
+    stars = []; for (var i = 0; i < 70; i++) stars.push({ x: Math.random() * view.W, y: TOP + Math.random() * (view.H - TOP), r: Math.random() * 1.2 + 0.3 });
+    newLevel();
+  });
+  function PH() { return view.H - TOP; }
+  function S() { return Math.min(view.W, PH()) * 0.06; }
+  function G() { return PH() * (0.1 + Math.min(0.06, level * 0.008)); }
+  function newLevel() {
+    var W = view.W, H = view.H, s = S();
+    var padW = Math.max(s * 2.8, W * Math.max(0.12, 0.3 - level * 0.025));
+    var x0 = W * 0.06 + Math.random() * (W * 0.88 - padW), x1 = x0 + padW, py = TOP + PH() * (0.62 + Math.random() * 0.22);
+    var rough = Math.min(0.32, 0.14 + level * 0.025), n = 16, pts = [];
+    for (var i = 0; i <= n; i++) {
+      var x = W * i / n;
+      if (x > x0 - 2 && x < x1 + 2) continue;
+      pts.push({ x: x, y: P.clamp(py + (Math.random() - 0.35) * PH() * rough * 2, TOP + PH() * 0.45, H - 8) });
+    }
+    pts.push({ x: x0, y: py }, { x: x1, y: py });
+    pts.sort(function (a, b) { return a.x - b.x; });
+    ground = pts; pad = { x0: x0, x1: x1, y: py };
+    var sx = W * (0.15 + Math.random() * 0.7);
+    ship = { x: sx, y: TOP + s * 2, vx: (Math.random() - 0.5) * PH() * (0.06 + level * 0.01), vy: 0 };
+    phase = 'fly'; parts = [];
+  }
+  function reset() { level = 0; landings = 0; fuel = 100; newLevel(); shell.setScore('0'); }
+  function groundY(x) {
+    for (var i = 0; i < ground.length - 1; i++) { var a = ground[i], b = ground[i + 1]; if (x >= a.x && x <= b.x) return a.y + (b.y - a.y) * (x - a.x) / Math.max(1e-6, b.x - a.x); }
+    return view.H;
+  }
+  function engines() {
+    var l = keys.l || keys.u, r = keys.r || keys.u, half = view.W / 2;
+    Object.keys(ptrs).forEach(function (id) { if (ptrs[id] < half) l = true; else r = true; });
+    if (fuel <= 0) { l = false; r = false; }
+    return { l: l, r: r };
+  }
+  function fall() { return ship.vy / (PH() * 0.05); }
+  function drift() { return Math.abs(ship.vx) / (PH() * 0.03); }
+  function fmt(v) { return v.toFixed(1).replace('.', ','); }
+  P.loop(function (dt) {
+    if (!ship) return;
+    if (shell.running) {
+      if (phase === 'fly') {
+        var e = engines(), g = G();
+        var ax = (e.l ? -0.6 * g : 0) + (e.r ? 0.6 * g : 0), ay = g - (e.l ? 1.15 * g : 0) - (e.r ? 1.15 * g : 0);
+        fuel = Math.max(0, fuel - ((e.l ? 9 : 0) + (e.r ? 9 : 0)) * dt);
+        ship.vx += ax * dt; ship.vy += ay * dt; ship.x += ship.vx * dt; ship.y += ship.vy * dt;
+        var s = S();
+        if (ship.x < s) { ship.x = s; ship.vx = 0; }
+        if (ship.x > view.W - s) { ship.x = view.W - s; ship.vx = 0; }
+        if (ship.y < TOP + s) { ship.y = TOP + s; ship.vy = Math.max(0, ship.vy); }
+        if (e.l || e.r) for (var k = 0; k < 2; k++) parts.push({ x: ship.x + (e.l && !e.r ? s * 0.6 : e.r && !e.l ? -s * 0.6 : (Math.random() - 0.5) * s), y: ship.y + s * 0.8, vx: (Math.random() - 0.5) * 30 + (e.l && !e.r ? 40 : e.r && !e.l ? -40 : 0), vy: 60 + Math.random() * 60, life: 0.35 });
+        var lx = ship.x - s * 0.62, rx = ship.x + s * 0.62, foot = ship.y + s * 0.8;
+        if (foot >= groundY(lx) || foot >= groundY(rx) || foot >= groundY(ship.x)) {
+          var onPad = lx >= pad.x0 && rx <= pad.x1, ok = onPad && fall() <= 2 && drift() <= 2;
+          if (ok) {
+            ship.y = pad.y - s * 0.8; landings++; level++; fuel = Math.min(100, fuel + 30);
+            shell.setScore(String(landings)); P.haptic('win');
+            msg = fall() < 0.8 ? 'Как пёрышко!' : 'Посадка!'; phase = 'landed'; phaseT = 1.2;
+          } else {
+            phase = 'crashed'; P.haptic('crash');
+            for (var j = 0; j < 30; j++) { var a = Math.random() * Math.PI * 2, sp = 40 + Math.random() * 160; parts.push({ x: ship.x, y: ship.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, life: 0.9, col: '#FF6B4A' }); }
+            var why = !onPad ? 'мимо площадки' : fall() > 2 ? 'слишком быстрое падение' : 'сильный снос вбок';
+            shell.end({ score: landings, delay: 900, stats: why + ' · топливо ' + Math.round(fuel) + '%', phrase: 'В «Посадке» я сажаю модуль ' + landings + ' ' + P.plural(landings, ['раз', 'раза', 'раз']) + ' подряд. Сможешь мягче?' });
+          }
+        }
+      } else if (phase === 'landed') { phaseT -= dt; if (phaseT <= 0) newLevel(); }
+    }
+    parts.forEach(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 120 * dt; p.life -= dt; });
+    parts = parts.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, s = S();
+    ctx.fillStyle = '#0E0526'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#F4F1FF';
+    stars.forEach(function (st) { ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill(); });
+    ctx.globalAlpha = 1;
+    if (!ship) return;
+    ctx.beginPath(); ctx.moveTo(0, H);
+    ground.forEach(function (p) { ctx.lineTo(p.x, p.y); });
+    ctx.lineTo(W, H); ctx.closePath(); ctx.fillStyle = '#3B1E8C'; ctx.fill();
+    ctx.beginPath(); ground.forEach(function (p, i) { ctx[i ? 'lineTo' : 'moveTo'](p.x, p.y); }); ctx.strokeStyle = '#B9A8F0'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#3DF5B0'; ctx.fillRect(pad.x0, pad.y - 2, pad.x1 - pad.x0, 5);
+    var blink = Math.floor(performance.now() / 400) % 2;
+    ctx.fillStyle = blink ? '#FFD84D' : '#FF6B4A'; ctx.beginPath(); ctx.arc(pad.x0 + 3, pad.y - 6, 3, 0, Math.PI * 2); ctx.arc(pad.x1 - 3, pad.y - 6, 3, 0, Math.PI * 2); ctx.fill();
+    parts.forEach(function (p) { ctx.globalAlpha = Math.min(1, p.life * 3); ctx.fillStyle = p.col || (Math.random() < 0.5 ? '#FFD84D' : '#FF9A6B'); ctx.fillRect(p.x - 2, p.y - 2, 4, 4); });
+    ctx.globalAlpha = 1;
+    if (phase !== 'crashed') {
+      var x = ship.x, y = ship.y;
+      ctx.strokeStyle = '#B9A8F0'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(x - s * 0.35, y + s * 0.3); ctx.lineTo(x - s * 0.62, y + s * 0.8); ctx.moveTo(x + s * 0.35, y + s * 0.3); ctx.lineTo(x + s * 0.62, y + s * 0.8); ctx.stroke();
+      ctx.fillStyle = P.gold() ? '#FFD84D' : '#F4F1FF'; ctx.beginPath(); ctx.roundRect(x - s * 0.55, y - s * 0.5, s * 1.1, s * 0.9, s * 0.25); ctx.fill();
+      ctx.fillStyle = '#6FD3FF'; ctx.beginPath(); ctx.arc(x, y - s * 0.08, s * 0.22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FF6B4A'; ctx.fillRect(x - s * 0.3, y + s * 0.38, s * 0.6, s * 0.14);
+    }
+    ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    var f = fall(), d = drift();
+    ctx.fillStyle = f <= 2 ? '#3DF5B0' : '#FF6B4A'; ctx.fillText('Падение ' + fmt(Math.max(0, f)), 14, TOP + 18);
+    ctx.fillStyle = d <= 2 ? '#3DF5B0' : '#FF6B4A'; ctx.fillText('Снос ' + fmt(d), 14, TOP + 36);
+    ctx.fillStyle = 'rgba(244,241,255,.15)'; ctx.fillRect(W - 114, TOP + 8, 100, 8);
+    ctx.fillStyle = fuel > 25 ? '#FFD84D' : '#FF6B4A'; ctx.fillRect(W - 114, TOP + 8, fuel, 8);
+    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.textAlign = 'right'; ctx.fillText('топливо', W - 14, TOP + 32);
+    if (phase === 'landed') { ctx.fillStyle = '#FFD84D'; ctx.font = '800 22px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(msg, W / 2, TOP + PH() * 0.3); }
+  }
+  function px(e) { return e.clientX - canvas.getBoundingClientRect().left; }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); ptrs[e.pointerId] = px(e); });
+  canvas.addEventListener('pointermove', function (e) { if (e.pointerId in ptrs) ptrs[e.pointerId] = px(e); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { canvas.addEventListener(ev, function (e) { delete ptrs[e.pointerId]; }); });
+  var KEYS = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', ArrowUp: 'u', KeyW: 'u', Space: 'u' };
+  window.addEventListener('keydown', function (e) { var k = KEYS[e.code]; if (k) { e.preventDefault(); keys[k] = true; } });
+  window.addEventListener('keyup', function (e) { var k = KEYS[e.code]; if (k) keys[k] = false; });
+  window.addEventListener('blur', function () { keys = {}; ptrs = {}; });
+})();
+</script>
+</body>
+</html>

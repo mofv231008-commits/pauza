@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Гексагон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Гексагон. Держи левую или правую половину экрана, чтобы вращаться"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var TOP = 70, SEG = Math.PI / 3;
+  var COLORS = ['#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8', '#FF6B4A'];
+  var PATTERNS = [[1, 1, 1, 1, 1, 0], [1, 0, 1, 0, 1, 0], [1, 1, 0, 1, 1, 0], [1, 1, 1, 0, 0, 0], [1, 1, 1, 1, 0, 0], [0, 1, 0, 0, 1, 0]];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var walls = [], rot = 0, rotV = 0.6, pa = -Math.PI / 2, t = 0, spawnT = 0, flipT = 4, ptrs = {}, keys = {}, dead = false, pulse = 0;
+
+  function fmtT(v) { return (v / 10).toFixed(1).replace('.', ',') + ' с'; }
+  var shell = P.shell({
+    id: 'hexagon', title: 'Гексагон', tagline: 'Стены сжимаются к центру. Найди проход.',
+    rulesHtml: '<p>Ты — треугольник у центра шестиугольника. Со всех сторон к тебе ползут стены с проходами. Держи левую половину экрана — крутишься против часовой, правую — по часовой. Проскальзывай в проходы и держись как можно дольше.</p>',
+    startLabel: 'Начать', countdown: true, overEyebrow: 'Стена догнала',
+    formatScore: fmtT,
+    kbdHint: 'На компьютере: стрелки влево и вправо',
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () {});
+  function C() { return { x: view.W / 2, y: TOP + (view.H - TOP) / 2 }; }
+  function B() { return Math.min(view.W, view.H - TOP); }
+  function pr() { return B() * 0.13; }
+  function speed() { return B() * (0.3 + Math.min(0.3, t * 0.007)); }
+  function spawn() {
+    var p = P.pick(PATTERNS).slice(), shift = P.rand(6), sec = [];
+    for (var i = 0; i < 6; i++) sec.push(p[(i + shift) % 6]);
+    walls.push({ d: Math.hypot(view.W, view.H) * 0.6, th: B() * 0.045, sec: sec });
+  }
+  function reset() { walls = []; rot = 0; rotV = 0.6; pa = -Math.PI / 2; t = 0; spawnT = 0.4; flipT = 4; dead = false; shell.setScore(fmtT(0)); }
+  function dir() {
+    var l = keys.l, r = keys.r, half = view.W / 2;
+    Object.keys(ptrs).forEach(function (id) { if (ptrs[id] < half) l = true; else r = true; });
+    return (r ? 1 : 0) - (l ? 1 : 0);
+  }
+  function sector(a) { var x = ((a - rot) % (Math.PI * 2) + Math.PI * 4) % (Math.PI * 2); return Math.floor(x / SEG) % 6; }
+  P.loop(function (dt) {
+    pulse += dt;
+    if (shell.running && !dead) {
+      t += dt;
+      rot += rotV * dt;
+      flipT -= dt; if (flipT <= 0) { rotV = -Math.sign(rotV) * (0.5 + Math.random() * Math.min(1.2, 0.3 + t * 0.02)); flipT = 3 + Math.random() * 4; }
+      pa += dir() * 8.5 * dt;
+      var v = speed();
+      walls.forEach(function (w) { w.d -= v * dt; });
+      walls = walls.filter(function (w) { return w.d + w.th > B() * 0.06; });
+      spawnT -= dt;
+      if (spawnT <= 0) { spawn(); spawnT = Math.max(0.8, 1.2 - t * 0.008) * B() * 0.3 / v * 1.1; }
+      var r = pr(), s = sector(pa), e = B() * 0.01;
+      var loc = ((pa - rot) % (Math.PI * 2) + Math.PI * 4) % (Math.PI * 2) - s * SEG - SEG / 2, f = Math.cos(SEG / 2) / Math.cos(loc);
+      walls.forEach(function (w) {
+        if (!dead && w.sec[s] && w.d * f <= r + e && (w.d + w.th) * f >= r - e) {
+          dead = true; P.haptic('crash');
+          var sc = Math.floor(t * 10);
+          shell.end({ score: sc, delay: 700, phrase: 'В «Гексагоне» я держусь ' + fmtT(sc) + '. А ты сколько?' });
+        }
+      });
+      shell.setScore(fmtT(Math.floor(t * 10)));
+    }
+    draw();
+  });
+  function hexPath(ctx, c, r, a0) { ctx.beginPath(); for (var i = 0; i < 6; i++) { var a = a0 + i * SEG; ctx[i ? 'lineTo' : 'moveTo'](c.x + Math.cos(a) * r, c.y + Math.sin(a) * r); } ctx.closePath(); }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, c = C(), R = Math.hypot(W, H);
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    for (var i = 0; i < 6; i++) {
+      ctx.fillStyle = i % 2 ? '#1B0A48' : '#22105A';
+      ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.arc(c.x, c.y, R, rot + i * SEG, rot + (i + 1) * SEG); ctx.closePath(); ctx.fill();
+    }
+    var col = COLORS[Math.floor(t / 10) % COLORS.length];
+    ctx.fillStyle = col;
+    walls.forEach(function (w) {
+      for (var k = 0; k < 6; k++) {
+        if (!w.sec[k]) continue;
+        var a0 = rot + k * SEG, a1 = a0 + SEG, r0 = w.d, r1 = w.d + w.th;
+        ctx.beginPath();
+        ctx.moveTo(c.x + Math.cos(a0) * r0, c.y + Math.sin(a0) * r0); ctx.lineTo(c.x + Math.cos(a1) * r0, c.y + Math.sin(a1) * r0);
+        ctx.lineTo(c.x + Math.cos(a1) * r1, c.y + Math.sin(a1) * r1); ctx.lineTo(c.x + Math.cos(a0) * r1, c.y + Math.sin(a0) * r1);
+        ctx.closePath(); ctx.fill();
+      }
+    });
+    var core = B() * (0.075 + Math.sin(pulse * 8) * 0.004);
+    hexPath(ctx, c, core, rot); ctx.fillStyle = '#140734'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.stroke();
+    var r = pr(), x = c.x + Math.cos(pa) * r, y = c.y + Math.sin(pa) * r, ts = B() * 0.022;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(pa);
+    ctx.fillStyle = P.gold() ? '#FFD84D' : '#F4F1FF';
+    ctx.beginPath(); ctx.moveTo(ts * 1.2, 0); ctx.lineTo(-ts * 0.7, ts * 0.8); ctx.lineTo(-ts * 0.7, -ts * 0.8); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  function px(e) { return e.clientX - canvas.getBoundingClientRect().left; }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); ptrs[e.pointerId] = px(e); });
+  canvas.addEventListener('pointermove', function (e) { if (e.pointerId in ptrs) ptrs[e.pointerId] = px(e); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { canvas.addEventListener(ev, function (e) { delete ptrs[e.pointerId]; }); });
+  var KEYS = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r' };
+  window.addEventListener('keydown', function (e) { var k = KEYS[e.code]; if (k) { e.preventDefault(); keys[k] = true; } });
+  window.addEventListener('keyup', function (e) { var k = KEYS[e.code]; if (k) keys[k] = false; });
+  window.addEventListener('blur', function () { keys = {}; ptrs = {}; });
+})();
+</script>
+</body>
+</html>

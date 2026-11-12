@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Вертолёт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Вертолёт. Держи палец, чтобы подниматься"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['метр', 'метра', 'метров'], TOP = 70;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var cols = [], blocks = [], smoke = [], segW = 10, off = 0, dist = 0, t = 0, center = 0, target = 0, retarget = 0, sinceBlock = 0, heli = null, hold = false, rotor = 0, crashed = 0;
+
+  var shell = P.shell({
+    id: 'copter', title: 'Вертолёт', tagline: 'Держи — вверх, отпусти — вниз. Не задень пещеру.',
+    rulesHtml: '<p>Вертолёт летит по пещере сам. Пока держишь палец на экране, он набирает высоту, отпустишь — снижается. Пещера сужается и петляет, а посреди неё растут колонны. Лети как можно дальше.</p>',
+    startLabel: 'Завести мотор', countdown: true, overEyebrow: 'Вертолёт задел стену',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: держи пробел или стрелку вверх, P — пауза',
+    pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { segW = Math.max(8, view.W / 36); build(); });
+  function PH() { return view.H - TOP; }
+  function gap() { return PH() * Math.max(0.36, 0.7 - dist / PH() * 0.008); }
+  function nextCol() {
+    retarget--;
+    if (retarget <= 0) { retarget = 8 + P.rand(10); target = TOP + PH() * (0.3 + Math.random() * 0.4); }
+    center += (target - center) * 0.12;
+    var g = gap(), top = P.clamp(center - g / 2, TOP + 6, view.H - g - 6);
+    return { top: top, bot: top + g };
+  }
+  function build() {
+    if (!view.W) return;
+    if (!heli) heli = { y: TOP + PH() / 2, vy: 0 };
+    if (cols.length) return;
+    center = target = TOP + PH() / 2; retarget = 10;
+    var n = Math.ceil(view.W / segW) + 2;
+    for (var i = 0; i < n; i++) cols.push(nextCol());
+  }
+  function reset() { cols = []; blocks = []; smoke = []; off = 0; dist = 0; t = 0; sinceBlock = 0; crashed = 0; heli = null; hold = false; build(); shell.setScore('0'); }
+  function meters() { return Math.floor(dist / (PH() * 0.05)); }
+  function hx() { return view.W * 0.26; }
+  function size() { var w = Math.min(view.W, PH()) * 0.085; return { w: w, h: w * 0.5 }; }
+  function crash() {
+    crashed = 1; P.haptic('crash');
+    var m = meters();
+    shell.end({ score: m, delay: 800, phrase: 'В «Вертолёте» я пролетаю ' + m + ' ' + P.plural(m, U) + ' по пещере. Попробуешь дальше?' });
+  }
+  P.loop(function (dt) {
+    if (!heli) return;
+    rotor += dt * 30;
+    if (shell.running && !crashed) {
+      t += dt;
+      var speed = PH() * (0.42 + Math.min(0.38, t * 0.006));
+      off += speed * dt; dist += speed * dt;
+      while (off >= segW) { off -= segW; cols.shift(); cols.push(nextCol()); }
+      sinceBlock += speed * dt;
+      if (sinceBlock > Math.max(view.W * 0.75, PH() * 0.9) && t > 1.5) {
+        sinceBlock = 0;
+        var c = cols[cols.length - 1], bh = (c.bot - c.top) * 0.3;
+        blocks.push({ x: view.W + segW, y: c.top + (c.bot - c.top - bh) * (0.15 + Math.random() * 0.7), w: segW * 1.4, h: bh });
+      }
+      blocks.forEach(function (b) { b.x -= speed * dt; });
+      blocks = blocks.filter(function (b) { return b.x + b.w > -10; });
+      var g = PH() * 1.5;
+      heli.vy += (hold ? -g : g) * dt; heli.vy = P.clamp(heli.vy, -PH() * 0.75, PH() * 0.75);
+      heli.y += heli.vy * dt;
+      if (Math.random() < 0.6) smoke.push({ x: hx() - size().w * 0.6, y: heli.y, life: 0.6 });
+      var s = size(), x0 = hx() - s.w / 2, x1 = hx() + s.w / 2, y0 = heli.y - s.h / 2, y1 = heli.y + s.h / 2;
+      var i0 = Math.floor((x0 + off) / segW), i1 = Math.floor((x1 + off) / segW);
+      for (var i = Math.max(0, i0); i <= Math.min(cols.length - 1, i1); i++) if (y0 < cols[i].top || y1 > cols[i].bot) { crash(); break; }
+      if (!crashed) blocks.forEach(function (b) { if (!crashed && x1 > b.x && x0 < b.x + b.w && y1 > b.y && y0 < b.y + b.h) crash(); });
+      shell.setScore(String(meters()));
+    }
+    smoke.forEach(function (p) { p.life -= dt; p.x -= PH() * 0.4 * dt; });
+    smoke = smoke.filter(function (p) { return p.life > 0; });
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    function wall(key, edge) {
+      ctx.beginPath(); ctx.moveTo(-off - segW, edge);
+      cols.forEach(function (c, i) { ctx.lineTo(i * segW - off + segW / 2, c[key]); });
+      ctx.lineTo(W + segW, cols.length ? cols[cols.length - 1][key] : edge); ctx.lineTo(W + segW, edge); ctx.closePath();
+      ctx.fillStyle = '#3B1E8C'; ctx.fill();
+      ctx.beginPath(); cols.forEach(function (c, i) { ctx[i ? 'lineTo' : 'moveTo'](i * segW - off + segW / 2, c[key]); });
+      ctx.strokeStyle = '#B9A8F0'; ctx.lineWidth = 2.5; ctx.stroke();
+    }
+    if (cols.length) { wall('top', 0); wall('bot', H); }
+    ctx.fillStyle = '#FF6B4A';
+    blocks.forEach(function (b) { ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 4); ctx.fill(); });
+    smoke.forEach(function (p) { ctx.globalAlpha = p.life * 0.5; ctx.fillStyle = '#B9A8F0'; ctx.beginPath(); ctx.arc(p.x, p.y, 3 + (0.6 - p.life) * 10, 0, Math.PI * 2); ctx.fill(); });
+    ctx.globalAlpha = 1;
+    if (!heli) return;
+    var s = size(), x = hx(), y = heli.y, tilt = P.clamp(heli.vy / (PH() * 3), -0.2, 0.2);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
+    ctx.fillStyle = '#3DF5B0';
+    ctx.fillRect(-s.w * 0.95, -s.h * 0.12, s.w * 0.6, s.h * 0.2);
+    ctx.fillRect(-s.w * 0.98, -s.h * 0.42, s.w * 0.1, s.h * 0.5);
+    ctx.beginPath(); ctx.ellipse(s.w * 0.08, 0, s.w * 0.42, s.h * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#6FD3FF'; ctx.beginPath(); ctx.ellipse(s.w * 0.26, -s.h * 0.08, s.w * 0.16, s.h * 0.26, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#F4F1FF'; ctx.fillRect(-s.w * 0.02, -s.h * 0.72, s.w * 0.06, s.h * 0.24);
+    var rw = s.w * 0.75 * Math.abs(Math.cos(rotor));
+    ctx.fillRect(s.w * 0.01 - rw, -s.h * 0.76, rw * 2, s.h * 0.08);
+    ctx.fillRect(-s.w * 0.2, s.h * 0.5, s.w * 0.55, s.h * 0.08);
+    ctx.restore();
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); hold = true; });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { canvas.addEventListener(ev, function () { hold = false; }); });
+  window.addEventListener('keydown', function (e) { if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); hold = true; } });
+  window.addEventListener('keyup', function (e) { if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') hold = false; });
+  window.addEventListener('blur', function () { hold = false; });
+})();
+</script>
+</body>
+</html>

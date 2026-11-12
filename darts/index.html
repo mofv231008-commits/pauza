@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Дартс</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Дартс. Нажми, когда прицел над нужным сектором"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'], TOP = 70, ROUNDS = 3, PER = 3;
+  var ORDER = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var c = { x: 0, y: 0 }, R = 100, t = 0, ph = [0, 0], darts = [], log = [], round = 0, thrown = 0, total = 0, fly = null, msg = null, best = 0;
+
+  var shell = P.shell({
+    id: 'darts', title: 'Дартс', tagline: 'Девять дротиков. Поймай момент.',
+    rulesHtml: '<p>Прицел сам гуляет по мишени. Нажми в любом месте экрана — дротик полетит туда, где сейчас прицел. Узкое внешнее кольцо удваивает очки сектора, внутреннее — утраивает. Центр — 50, кольцо вокруг — 25. Три раунда по три дротика, прицел с каждым раундом шустрее.</p>',
+    startLabel: 'К мишени', countdown: false, overEyebrow: 'Девять дротиков брошено', overTone: 'good',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: пробел — бросок, P — пауза',
+    pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () {
+    R = Math.min(view.W * 0.4, (view.H - TOP - 110) * 0.42);
+    c = { x: view.W / 2, y: TOP + 20 + R * 1.14 };
+  });
+  function reset() { round = 0; thrown = 0; total = 0; darts = []; log = []; fly = null; msg = null; best = 0; t = 0; newPhase(); shell.setScore('0'); side(); }
+  function newPhase() { ph = [Math.random() * 6, Math.random() * 6]; }
+  function side() { shell.setSide('раунд ' + Math.min(ROUNDS, round + 1) + '/' + ROUNDS); }
+  function aimPos() {
+    var k = 1 + round * 0.35, a = 0.82 * R;
+    return { x: c.x + a * Math.sin(t * 1.25 * k + ph[0]) * Math.cos(t * 0.37 + ph[1]), y: c.y + a * Math.sin(t * 1.7 * k + ph[1]) };
+  }
+  function scoreAt(x, y) {
+    var dx = x - c.x, dy = y - c.y, r = Math.hypot(dx, dy) / R * 170;
+    if (r <= 6.35) return { pts: 50, label: 'Яблочко' };
+    if (r <= 15.9) return { pts: 25, label: '25' };
+    if (r > 170) return { pts: 0, label: 'Мимо' };
+    var deg = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 9 + 360) % 360, n = ORDER[Math.floor(deg / 18)];
+    if (r > 99 && r <= 107) return { pts: n * 3, label: 'Утроение ' + n };
+    if (r > 162) return { pts: n * 2, label: 'Удвоение ' + n };
+    return { pts: n, label: String(n) };
+  }
+  function throwDart() {
+    if (!shell.running || fly || thrown >= ROUNDS * PER) return;
+    var p = aimPos(), j = R * 0.012;
+    fly = { x: p.x + (Math.random() - 0.5) * j, y: p.y + (Math.random() - 0.5) * j, t: 0 };
+    P.haptic('tap');
+  }
+  function land() {
+    var s = scoreAt(fly.x, fly.y);
+    darts.push({ x: fly.x, y: fly.y }); fly = null; thrown++;
+    total += s.pts; best = Math.max(best, s.pts); log.push(s.pts); shell.setScore(String(total));
+    msg = { text: s.label + (s.pts ? ' · +' + s.pts : ''), life: 1.1 };
+    P.haptic(s.pts >= 40 ? 'win' : s.pts ? 'coin' : 'crash');
+    if (thrown % PER === 0) {
+      if (thrown >= ROUNDS * PER) {
+        shell.end({ score: total, delay: 900, stats: 'лучший бросок: ' + best + ' · по дротикам: ' + log.join(' · '), phrase: 'В «Дартсе» я набираю ' + total + ' ' + P.plural(total, U) + ' за девять дротиков. Попадёшь лучше?' });
+        return;
+      }
+      setTimeout(function () { if (shell.running) { round++; darts = []; newPhase(); side(); } }, 900);
+    }
+  }
+  P.loop(function (dt) {
+    if (shell.running) {
+      t += dt;
+      if (fly) { fly.t += dt; if (fly.t >= 0.22) land(); }
+    }
+    if (msg) { msg.life -= dt; if (msg.life <= 0) msg = null; }
+    draw();
+  });
+  function sector(ctx, r0, r1, a0, a1, col) { ctx.beginPath(); ctx.arc(c.x, c.y, r1, a0, a1); ctx.arc(c.x, c.y, r0, a1, a0, true); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, k = R / 170;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22105A'; ctx.beginPath(); ctx.arc(c.x, c.y, R * 1.16, 0, Math.PI * 2); ctx.fill();
+    for (var i = 0; i < 20; i++) {
+      var a0 = (-90 - 9 + i * 18) * Math.PI / 180, a1 = a0 + 18 * Math.PI / 180, even = i % 2 === 0;
+      sector(ctx, 15.9 * k, 170 * k, a0, a1, even ? '#120630' : '#F4E7C8');
+      sector(ctx, 99 * k, 107 * k, a0, a1, even ? '#FF6B4A' : '#1FB97F');
+      sector(ctx, 162 * k, 170 * k, a0, a1, even ? '#FF6B4A' : '#1FB97F');
+      var am = (a0 + a1) / 2;
+      ctx.fillStyle = '#F4F1FF'; ctx.font = '600 ' + Math.max(10, Math.round(R * 0.09)) + 'px Onest, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(ORDER[i]), c.x + Math.cos(am) * R * 1.08, c.y + Math.sin(am) * R * 1.08);
+    }
+    ctx.fillStyle = '#1FB97F'; ctx.beginPath(); ctx.arc(c.x, c.y, 15.9 * k, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.arc(c.x, c.y, 6.35 * k, 0, Math.PI * 2); ctx.fill();
+    darts.forEach(function (d) {
+      ctx.strokeStyle = '#B9A8F0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x + 10, d.y + 16); ctx.stroke();
+      ctx.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; ctx.beginPath(); ctx.moveTo(d.x + 8, d.y + 13); ctx.lineTo(d.x + 18, d.y + 18); ctx.lineTo(d.x + 12, d.y + 22); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(d.x, d.y, 2.2, 0, Math.PI * 2); ctx.fill();
+    });
+    if (fly) {
+      var q = fly.t / 0.22, sx = W / 2, sy = H + 30, x = sx + (fly.x - sx) * q, y = sy + (fly.y - sy) * q - Math.sin(q * Math.PI) * 40;
+      ctx.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; ctx.beginPath(); ctx.arc(x, y, 6 - q * 3, 0, Math.PI * 2); ctx.fill();
+    }
+    if (shell.running && !fly && thrown < ROUNDS * PER) {
+      var p = aimPos();
+      ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 11, 0, Math.PI * 2); ctx.moveTo(p.x - 18, p.y); ctx.lineTo(p.x - 5, p.y); ctx.moveTo(p.x + 5, p.y); ctx.lineTo(p.x + 18, p.y); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, p.y - 5); ctx.moveTo(p.x, p.y + 5); ctx.lineTo(p.x, p.y + 18); ctx.stroke();
+    }
+    var inRound = PER - (thrown - round * PER);
+    ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
+    for (var d = 0; d < PER; d++) { ctx.fillStyle = d < inRound ? '#3DF5B0' : 'rgba(185,168,240,.3)'; ctx.beginPath(); ctx.arc(W / 2 - 20 + d * 20, c.y + R * 1.16 + 26, 6, 0, Math.PI * 2); ctx.fill(); }
+    if (msg) { ctx.globalAlpha = Math.min(1, msg.life * 2); ctx.fillStyle = '#FFD84D'; ctx.font = '800 18px Unbounded, "Arial Black", sans-serif'; ctx.fillText(msg.text, W / 2, c.y + R * 1.16 + 62); ctx.globalAlpha = 1; }
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); throwDart(); });
+  window.addEventListener('keydown', function (e) { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) throwDart(); } });
+})();
+</script>
+</body>
+</html>

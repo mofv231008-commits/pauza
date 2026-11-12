@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Пинбол</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Пинбол. Левая и правая половины экрана — флипперы"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'], TOP = 70, BALLS = 3, SUB = 8;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var T = null, br = 8, segs = [], bumpers = [], lanes = [], flips = [], ball = null, lives = BALLS, score = 0, relT = 0, ptrs = {}, keys = {}, laneFlash = 0, floats = [];
+
+  var shell = P.shell({
+    id: 'pinball', title: 'Пинбол', tagline: 'Не дай шарику упасть между флипперами.',
+    rulesHtml: '<p>Левая половина экрана — левый флиппер, правая — правый. Отбивай шарик вверх, в круглые бамперы: каждый удар — 10 очков. Зажги три огонька наверху — ещё 50. У тебя три шарика.</p>',
+    startLabel: 'Запустить шарик', countdown: true, overEyebrow: 'Шарики кончились',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: стрелки влево и вправо, пробел — оба, P — пауза',
+    pauseKeys: ['KeyP', 'Escape'],
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, layout);
+  function layout() {
+    var W = view.W, H = view.H, h = H - TOP - 12, w = Math.min(W - 24, h * 0.62);
+    T = { x: (W - w) / 2, y: TOP + 4, w: w, h: h };
+    br = w * 0.028;
+    var cx = T.x + w / 2, yF = T.y + h * 0.86, x0 = T.x, x1 = T.x + w, top = T.y, c = w * 0.2;
+    var oldL = flips.length ? [flips[0].on, flips[1].on] : [false, false];
+    flips = [
+      { px: cx - w * 0.3, py: yF, s: 1, a: 0.5, len: w * 0.26, on: oldL[0], av: 0 },
+      { px: cx + w * 0.3, py: yF, s: -1, a: 0.5, len: w * 0.26, on: oldL[1], av: 0 }
+    ];
+    segs = [
+      [x0, top + c, x0, yF - w * 0.22, 0.5], [x0, top + c, x0 + c, top, 0.5], [x0 + c, top, x1 - c, top, 0.5], [x1 - c, top, x1, top + c, 0.5], [x1, top + c, x1, yF - w * 0.22, 0.5],
+      [x0, yF - w * 0.22, cx - w * 0.3, yF, 0.4], [x1, yF - w * 0.22, cx + w * 0.3, yF, 0.4],
+      [x0 + w * 0.12, yF - w * 0.46, x0 + w * 0.12, yF - w * 0.3, 0.9], [x0 + w * 0.12, yF - w * 0.3, x0 + w * 0.24, yF - w * 0.2, 1.2],
+      [x1 - w * 0.12, yF - w * 0.46, x1 - w * 0.12, yF - w * 0.3, 0.9], [x1 - w * 0.12, yF - w * 0.3, x1 - w * 0.24, yF - w * 0.2, 1.2]
+    ];
+    var old = bumpers;
+    bumpers = [[cx, top + h * 0.28], [cx - w * 0.23, top + h * 0.42], [cx + w * 0.23, top + h * 0.42], [cx, top + h * 0.53]].map(function (p, i) { return { x: p[0], y: p[1], r: w * (i === 3 ? 0.05 : 0.075), flash: 0 }; });
+    var lit = lanes.map(function (l) { return l.lit; });
+    lanes = [-0.16, 0, 0.16].map(function (k, i) { return { x: cx + w * k, y: top + h * 0.1, lit: !!lit[i] }; });
+    if (!ball && !relT) newBall();
+  }
+  function newBall() { if (!T) return; ball = { x: T.x + T.w * (0.35 + Math.random() * 0.3), y: T.y + T.h * 0.16, vx: (Math.random() - 0.5) * T.w, vy: 0 }; }
+  function reset() { lives = BALLS; score = 0; relT = 0; floats = []; lanes.forEach(function (l) { l.lit = false; }); newBall(); shell.setScore('0'); side(); }
+  function side() { var s = ''; for (var i = 0; i < BALLS; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:3px;background:' + (i < lives ? '#F4F1FF' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function add(n, x, y) { score += n; shell.setScore(String(score)); floats.push({ x: x, y: y, text: '+' + n, life: 0.7 }); }
+  function collideSeg(ax, ay, bx, by, rad, e, surf) {
+    var dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+    var u = P.clamp(((ball.x - ax) * dx + (ball.y - ay) * dy) / L2, 0, 1);
+    var qx = ax + dx * u, qy = ay + dy * u, nx = ball.x - qx, ny = ball.y - qy, d = Math.hypot(nx, ny), R = br + rad;
+    if (d >= R || d < 1e-6) return false;
+    nx /= d; ny /= d; ball.x = qx + nx * R; ball.y = qy + ny * R;
+    var sv = surf ? surf(u) : null, rvx = ball.vx - (sv ? sv.x : 0), rvy = ball.vy - (sv ? sv.y : 0), vn = rvx * nx + rvy * ny;
+    if (vn < 0) { ball.vx -= (1 + e) * vn * nx; ball.vy -= (1 + e) * vn * ny; }
+    return true;
+  }
+  function flipEnds(f) { return { x: f.px + f.s * Math.cos(f.a) * f.len, y: f.py + Math.sin(f.a) * f.len }; }
+  function pressed() {
+    var l = keys.l || keys.b, r = keys.r || keys.b, half = view.W / 2;
+    Object.keys(ptrs).forEach(function (id) { if (ptrs[id] < half) l = true; else r = true; });
+    return [l, r];
+  }
+  function step(h) {
+    var pr = pressed();
+    flips.forEach(function (f, i) {
+      var was = f.on; f.on = pr[i] && shell.running;
+      if (f.on && !was) P.haptic('tap');
+      var target = f.on ? -0.45 : 0.5, sp = f.on ? 17 : 11, prev = f.a;
+      f.a = f.a < target ? Math.min(target, f.a + sp * h) : Math.max(target, f.a - sp * h);
+      f.av = (f.a - prev) / h;
+    });
+    if (!ball) return;
+    var g = T.h * 1.15, maxV = T.w * 3.8;
+    ball.vy += g * h; ball.x += ball.vx * h; ball.y += ball.vy * h;
+    segs.forEach(function (s) {
+      if (collideSeg(s[0], s[1], s[2], s[3], 2, s[4]) && s[4] > 1) { var sp = Math.hypot(ball.vx, ball.vy); if (sp > T.w * 0.8) add(2, ball.x, ball.y); }
+    });
+    flips.forEach(function (f) {
+      var e = flipEnds(f);
+      collideSeg(f.px, f.py, e.x, e.y, T.w * 0.022, 0.3, function (u) { var l = u * f.len; return { x: l * f.av * (-f.s * Math.sin(f.a)), y: l * f.av * Math.cos(f.a) }; });
+    });
+    bumpers.forEach(function (b) {
+      var dx = ball.x - b.x, dy = ball.y - b.y, d = Math.hypot(dx, dy), R = br + b.r;
+      if (d < R && d > 1e-6) {
+        var nx = dx / d, ny = dy / d; ball.x = b.x + nx * R; ball.y = b.y + ny * R;
+        var vn = ball.vx * nx + ball.vy * ny; if (vn < 0) { ball.vx -= 2 * vn * nx; ball.vy -= 2 * vn * ny; }
+        var kick = T.w * 1.9, vn2 = ball.vx * nx + ball.vy * ny; if (vn2 < kick) { ball.vx += nx * (kick - vn2); ball.vy += ny * (kick - vn2); }
+        if (b.flash <= 0) { add(10, b.x, b.y - b.r); P.haptic('tap'); }
+        b.flash = 0.15;
+      }
+    });
+    lanes.forEach(function (l) {
+      if (!l.lit && Math.hypot(ball.x - l.x, ball.y - l.y) < br * 1.6) {
+        l.lit = true; add(5, l.x, l.y);
+        if (lanes.every(function (q) { return q.lit; })) { add(50, T.x + T.w / 2, l.y + 30); laneFlash = 0.8; P.haptic('coin'); }
+      }
+    });
+    var sp = Math.hypot(ball.vx, ball.vy); if (sp > maxV) { ball.vx *= maxV / sp; ball.vy *= maxV / sp; }
+    if (ball.y > T.y + T.h + br * 2) {
+      ball = null; lives--; side(); P.haptic('crash');
+      if (lives <= 0) shell.end({ score: score, delay: 500, phrase: 'В «Пинболе» я набираю ' + score + ' ' + P.plural(score, U) + ' на трёх шариках. Побьёшь?' });
+      else relT = 1;
+    }
+  }
+  P.loop(function (dt) {
+    if (!T) return;
+    if (shell.running) {
+      for (var i = 0; i < SUB; i++) step(dt / SUB);
+      if (relT > 0) { relT -= dt; if (relT <= 0) { relT = 0; newBall(); } }
+    }
+    bumpers.forEach(function (b) { b.flash -= dt; });
+    if (laneFlash > 0) { laneFlash -= dt; if (laneFlash <= 0) lanes.forEach(function (l) { l.lit = false; }); }
+    floats.forEach(function (f) { f.life -= dt; f.y -= 30 * dt; });
+    floats = floats.filter(function (f) { return f.life > 0; });
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!T) return;
+    var w = T.w, c = w * 0.2;
+    ctx.fillStyle = '#22105A'; ctx.beginPath();
+    ctx.moveTo(T.x, T.y + c); ctx.lineTo(T.x + c, T.y); ctx.lineTo(T.x + w - c, T.y); ctx.lineTo(T.x + w, T.y + c); ctx.lineTo(T.x + w, T.y + T.h); ctx.lineTo(T.x, T.y + T.h); ctx.closePath(); ctx.fill();
+    ctx.lineCap = 'round';
+    segs.forEach(function (s) { ctx.strokeStyle = s[4] > 1 ? '#FF8AD8' : '#B9A8F0'; ctx.lineWidth = s[4] > 1 ? 6 : 4; ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(s[2], s[3]); ctx.stroke(); });
+    lanes.forEach(function (l) {
+      var on = l.lit && (laneFlash <= 0 || Math.floor(laneFlash * 10) % 2);
+      ctx.fillStyle = on ? '#FFD84D' : '#3B1E8C'; ctx.beginPath(); ctx.arc(l.x, l.y, br * 0.9, 0, Math.PI * 2); ctx.fill();
+    });
+    bumpers.forEach(function (b, i) {
+      ctx.fillStyle = b.flash > 0 ? '#F4F1FF' : (i === 3 ? '#6FD3FF' : '#3DF5B0'); ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#22105A'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.55, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = b.flash > 0 ? '#F4F1FF' : '#FFD84D'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.3, 0, Math.PI * 2); ctx.fill();
+    });
+    flips.forEach(function (f) {
+      var e = flipEnds(f);
+      ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = w * 0.045; ctx.beginPath(); ctx.moveTo(f.px, f.py); ctx.lineTo(e.x, e.y); ctx.stroke();
+      ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(f.px, f.py, w * 0.012, 0, Math.PI * 2); ctx.fill();
+    });
+    if (ball) {
+      ctx.fillStyle = P.gold() ? '#FFD84D' : '#F4F1FF'; ctx.beginPath(); ctx.arc(ball.x, ball.y, br, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(18,6,48,.25)'; ctx.beginPath(); ctx.arc(ball.x + br * 0.25, ball.y + br * 0.25, br * 0.55, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.font = '800 14px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+    floats.forEach(function (f) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.fillStyle = '#FFD84D'; ctx.fillText(f.text, f.x, f.y); });
+    ctx.globalAlpha = 1;
+  }
+  function px(e) { return e.clientX - canvas.getBoundingClientRect().left; }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); ptrs[e.pointerId] = px(e); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { canvas.addEventListener(ev, function (e) { delete ptrs[e.pointerId]; }); });
+  var KEYS = { ArrowLeft: 'l', KeyA: 'l', KeyZ: 'l', ArrowRight: 'r', KeyD: 'r', Slash: 'r', KeyM: 'r', Space: 'b', ArrowUp: 'b' };
+  window.addEventListener('keydown', function (e) { var k = KEYS[e.code]; if (k) { e.preventDefault(); keys[k] = true; } });
+  window.addEventListener('keyup', function (e) { var k = KEYS[e.code]; if (k) keys[k] = false; });
+  window.addEventListener('blur', function () { keys = {}; ptrs = {}; });
+})();
+</script>
+</body>
+</html>
