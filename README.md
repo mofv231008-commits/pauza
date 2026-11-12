@@ -5,11 +5,11 @@
 ## Что где лежит
 
 - `index.html` — экран выбора игр, собирается командой `python3 tools/build_hub.py` из каталога `tools/catalog.json`. Ссылка `t.me/Pauzagame_bot/play?startapp=race` сразу открывает нужную игру.
-- 82 игр:
+- 92 игр:
 - Мемы: `typing/` Печатает…, `voices/` Голосовые, `cat/` Кот на клавиатуре, `wrongchat/` Не тот чат, `grandma/` Бабушка кормит
-- Аркады: `space/` Звездолёт, `race/` Гонка, `flight/` Полёт, `snake/` Змейка, `bounce/` Отскок, `tetris/` Блоки, `runner/` Бегун, `jumper/` Прыгун, `slice/` Нарезка, `hoops/` Броски, `pong/` Пинг-понг, `hockey/` Хоккей, `frog/` Переход, `ski/` Слалом, `fall/` Вниз, `golf/` Гольф, `bubbles/` Пузыри, `asteroids/` Астероиды, `copter/` Вертолёт, `lander/` Посадка, `hexagon/` Гексагон, `orbit/` Орбита, `pinball/` Пинбол
-- Ловкость и реакция: `tower/` Башня, `reaction/` Реакция, `moles/` Кроты, `tiles/` Плитки, `knives/` Ножи, `stick/` Мостик, `balloons/` Шарики, `catch/` Ловец, `aim/` Тир, `colors/` Цвета, `zigzag/` Зигзаг, `billiards/` Бильярд, `bowling/` Боулинг, `darts/` Дартс, `penalty/` Пенальти
-- Головоломки: `2048/` 2048 за минуту, `match3/` Три в ряд, `fifteen/` Пятнашки, `mines/` Сапёр, `sudoku/` Судоку, `sort/` Колбы, `lines/` Линии, `maze/` Лабиринт, `ten/` Десятка, `flood/` Заливка, `lights/` Свет, `nonogram/` Японский рисунок
+- Аркады: `space/` Звездолёт, `race/` Гонка, `flight/` Полёт, `snake/` Змейка, `bounce/` Отскок, `tetris/` Блоки, `runner/` Бегун, `jumper/` Прыгун, `slice/` Нарезка, `hoops/` Броски, `pong/` Пинг-понг, `hockey/` Хоккей, `frog/` Переход, `ski/` Слалом, `fall/` Вниз, `golf/` Гольф, `bubbles/` Пузыри, `asteroids/` Астероиды, `copter/` Вертолёт, `lander/` Посадка, `hexagon/` Гексагон, `orbit/` Орбита, `pinball/` Пинбол, `neon/` Неон, `glutton/` Обжора, `walls/` Стены
+- Ловкость и реакция: `tower/` Башня, `reaction/` Реакция, `moles/` Кроты, `tiles/` Плитки, `knives/` Ножи, `stick/` Мостик, `balloons/` Шарики, `catch/` Ловец, `aim/` Тир, `colors/` Цвета, `zigzag/` Зигзаг, `billiards/` Бильярд, `bowling/` Боулинг, `darts/` Дартс, `penalty/` Пенальти, `keepy/` Чеканка, `wire/` Провод, `archery/` Лук
+- Головоломки: `2048/` 2048 за минуту, `match3/` Три в ряд, `fifteen/` Пятнашки, `mines/` Сапёр, `sudoku/` Судоку, `sort/` Колбы, `lines/` Линии, `maze/` Лабиринт, `ten/` Десятка, `flood/` Заливка, `lights/` Свет, `nonogram/` Японский рисунок, `sokoban/` Ящики, `pipes/` Трубы, `jigsaw/` Пазл, `flow/` Соедини
 - Настольные: `gomoku/` Пять в ряд, `connect4/` Четыре в ряд, `reversi/` Реверси, `battleship/` Морской бой, `bulls/` Быки и коровы
 - Память и внимание: `pairs/` Пары, `simon/` Повтори, `shade/` Оттенок, `arrows/` Стрелки, `schulte/` Шульте, `diff/` Отличия, `digits/` Запомни число, `missing/` Чего не хватает, `stroop/` Цвет слова, `dots/` Сколько точек, `pattern/` Узор, `shells/` Напёрстки
 - Слова и знания: `word/` Слово, `math/` Счёт, `hangman/` Виселица, `game24/` 24, `anagram/` Анаграммы, `wordsearch/` Филворд, `capitals/` Столицы, `stress/` Ударения

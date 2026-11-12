@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Ящики</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>
+.stage{background:#140734}
+.tools{position:absolute;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:12px;z-index:1}
+.tools button{min-width:130px;min-height:48px;border:0;border-radius:16px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer;touch-action:manipulation}
+.stage[data-state="start"] .tools,.stage[data-state="over"] .tools{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Ящики. Смахивай, чтобы ходить и толкать ящики"></canvas>
+<div class="tools"><button type="button" id="undo">↶ Ход назад</button><button type="button" id="again">Заново</button></div></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['уровень', 'уровня', 'уровней'], TOP = 70, BOTTOM = 84;
+  var D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var lv = null, boxes = [], me = null, hist = [], solved = 0, moves = 0, totalMoves = 0, phase = 'play', phaseT = 0, cs = 30, ox = 0, oy = 0;
+
+  var shell = P.shell({
+    id: 'sokoban', title: 'Ящики', tagline: 'Сокобан: растолкай ящики по меткам.',
+    rulesHtml: '<p>Смахивай, чтобы ходить. Ящик можно только толкать, тянуть нельзя, и двигать по одному. Расставь все ящики на красные метки. Застрял — «Ход назад» или «Заново». Уровни собираются заново каждый раз, и каждый точно решается. Две минуты.</p>',
+    startLabel: 'Толкать', countdown: false, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: стрелки, Z — ход назад',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 120, finish);
+  var view = P.canvas(canvas, stage, fit);
+  function fit() { if (!lv) return; cs = Math.floor(Math.min((view.W - 20) / lv.c, (view.H - TOP - BOTTOM - 10) / lv.r)); ox = Math.floor((view.W - cs * lv.c) / 2); oy = TOP + Math.floor((view.H - TOP - BOTTOM - cs * lv.r) / 2); }
+  function connected(g, c, r) {
+    var start = null, n = 0;
+    for (var i = 0; i < c * r; i++) if (!g[i]) { n++; if (start === null) start = i; }
+    var seen = {}, st = [start], k = 0; seen[start] = 1;
+    while (st.length) { var q = st.pop(); k++; var x = q % c, y = (q - x) / c; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) { var nx = x + d[0], ny = y + d[1], j = ny * c + nx; if (nx >= 0 && ny >= 0 && nx < c && ny < r && !g[j] && !seen[j]) { seen[j] = 1; st.push(j); } }); }
+    return k === n;
+  }
+  function gen(c, r, k) {
+    for (var att = 0; att < 300; att++) {
+      var g = [], i;
+      for (i = 0; i < c * r; i++) { var x = i % c, y = (i - x) / c; g.push(x === 0 || y === 0 || x === c - 1 || y === r - 1 ? 1 : 0); }
+      var nw = Math.floor((c - 2) * (r - 2) * 0.16);
+      for (i = 0; i < nw * 3 && nw > 0; i++) {
+        var j = (1 + P.rand(r - 2)) * c + 1 + P.rand(c - 2);
+        if (g[j]) continue; g[j] = 1; if (!connected(g, c, r)) g[j] = 0; else nw--;
+      }
+      var fl = []; for (i = 0; i < c * r; i++) if (!g[i]) fl.push(i);
+      fl = P.shuffle(fl);
+      var goals = fl.slice(0, k), bx = goals.slice(), pl = fl[k], pulls = 0;
+      for (var s = 0; s < 700; s++) {
+        var d = P.pick([[1, 0], [-1, 0], [0, 1], [0, -1]]), px = pl % c, py = (pl - px) / c, n = (py + d[1]) * c + px + d[0];
+        if (g[n] || bx.indexOf(n) !== -1) continue;
+        var behind = (py - d[1]) * c + px - d[0], bi = bx.indexOf(behind);
+        if (bi !== -1 && Math.random() < 0.65) { bx[bi] = pl; pulls++; }
+        pl = n;
+      }
+      if (pulls >= 5 * k && bx.every(function (b) { return goals.indexOf(b) === -1; })) return { c: c, r: r, g: g, goals: goals, boxes: bx, me: pl };
+    }
+    return null;
+  }
+  function load() {
+    var k = solved < 2 ? 2 : solved < 5 ? 3 : 4, c = solved < 2 ? 7 : 8, r = solved < 2 ? 7 : solved < 5 ? 8 : 9;
+    lv = gen(c, r, k) || gen(7, 7, 2);
+    boxes = lv.boxes.slice(); me = lv.me; hist = []; moves = 0; phase = 'play'; fit();
+  }
+  function reset() { solved = 0; totalMoves = 0; load(); shell.setScore('0'); timer.reset(); }
+  function finish() { phase = 'over'; shell.end({ score: solved, delay: 300, stats: 'шагов: ' + (totalMoves + moves), phrase: 'В «Ящиках» я решаю ' + solved + ' ' + P.plural(solved, U) + ' сокобана за две минуты.' }); }
+  function step(dir) {
+    if (!shell.running || phase !== 'play' || !lv) return;
+    var c = lv.c, d = D[dir], x = me % c, y = (me - x) / c, n = (y + d[1]) * c + x + d[0];
+    if (lv.g[n]) return;
+    var bi = boxes.indexOf(n);
+    if (bi !== -1) {
+      var n2 = (y + d[1] * 2) * c + x + d[0] * 2;
+      if (lv.g[n2] || boxes.indexOf(n2) !== -1) return;
+      hist.push({ me: me, boxes: boxes.slice() });
+      boxes[bi] = n2; P.haptic('tap');
+    } else hist.push({ me: me, boxes: boxes.slice() });
+    me = n; moves++;
+    if (boxes.every(function (b) { return lv.goals.indexOf(b) !== -1; })) {
+      solved++; totalMoves += moves; shell.setScore(String(solved)); P.haptic('win'); phase = 'won'; phaseT = 1;
+    }
+  }
+  function undo() { if (phase !== 'play' || !hist.length || !shell.running) return; var h = hist.pop(); me = h.me; boxes = h.boxes; moves++; }
+  function restart() { if (phase !== 'play' || !shell.running) return; boxes = lv.boxes.slice(); me = lv.me; hist = []; moves++; }
+  P.loop(function (dt) {
+    if (phase === 'won' && shell.running) { phaseT -= dt; if (phaseT <= 0) load(); }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!lv) return;
+    var c = lv.c;
+    for (var i = 0; i < c * lv.r; i++) {
+      var x = i % c, y = (i - x) / c, X = ox + x * cs, Y = oy + y * cs;
+      if (lv.g[i]) { ctx.fillStyle = '#3B1E8C'; ctx.beginPath(); ctx.roundRect(X + 1, Y + 1, cs - 2, cs - 2, 5); ctx.fill(); }
+      else { ctx.fillStyle = '#22105A'; ctx.fillRect(X, Y, cs, cs); }
+    }
+    lv.goals.forEach(function (gi) { var x = gi % c, y = (gi - x) / c; ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(ox + (x + 0.5) * cs, oy + (y + 0.5) * cs, cs * 0.22, 0, Math.PI * 2); ctx.stroke(); });
+    boxes.forEach(function (b) {
+      var x = b % c, y = (b - x) / c, X = ox + x * cs, Y = oy + y * cs, on = lv.goals.indexOf(b) !== -1, m = cs * 0.1;
+      ctx.fillStyle = on ? '#3DF5B0' : '#E9C38A'; ctx.beginPath(); ctx.roundRect(X + m, Y + m, cs - m * 2, cs - m * 2, 4); ctx.fill();
+      ctx.strokeStyle = on ? '#1FB97F' : '#B8864E'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(X + m * 2, Y + m * 2); ctx.lineTo(X + cs - m * 2, Y + cs - m * 2); ctx.moveTo(X + cs - m * 2, Y + m * 2); ctx.lineTo(X + m * 2, Y + cs - m * 2); ctx.stroke();
+      ctx.strokeRect(X + m * 1.5, Y + m * 1.5, cs - m * 3, cs - m * 3);
+    });
+    var mx = me % c, my = (me - mx) / c, cx = ox + (mx + 0.5) * cs, cy = oy + (my + 0.5) * cs;
+    ctx.fillStyle = P.gold() ? '#FFD84D' : '#6FD3FF'; ctx.beginPath(); ctx.arc(cx, cy, cs * 0.36, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(cx - cs * 0.12, cy - cs * 0.06, cs * 0.06, 0, Math.PI * 2); ctx.arc(cx + cs * 0.12, cy - cs * 0.06, cs * 0.06, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Уровень ' + (solved + 1) + ' · шагов ' + moves, W / 2, oy - 10);
+    if (phase === 'won') { ctx.fillStyle = '#3DF5B0'; ctx.font = '800 24px Unbounded, "Arial Black", sans-serif'; ctx.fillText('Решено!', W / 2, oy + cs * lv.r / 2); }
+  }
+  var sw = null;
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); sw = { x: e.clientX, y: e.clientY }; });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!sw) return;
+    var dx = e.clientX - sw.x, dy = e.clientY - sw.y, th = Math.max(24, cs * 0.8);
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < th) return;
+    step(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+    sw = { x: e.clientX, y: e.clientY };
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { canvas.addEventListener(ev, function () { sw = null; }); });
+  P.arrows(step);
+  window.addEventListener('keydown', function (e) { if (e.code === 'KeyZ' || e.code === 'Backspace') { e.preventDefault(); undo(); } });
+  document.getElementById('undo').addEventListener('click', undo);
+  document.getElementById('again').addEventListener('click', restart);
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Провод</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Провод. Веди кольцо вдоль провода, не касаясь его"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['провод', 'провода', 'проводов'], TOP = 70;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var path = [], ring = null, tol = 20, level = 0, done = 0, buzzes = 0, last = null, flash = 0, msg = null, best = 0;
+
+  var shell = P.shell({
+    id: 'wire', title: 'Провод', tagline: 'Проведи кольцо по проводу и не зазвени.',
+    rulesHtml: '<p>Води пальцем в любом месте экрана — кольцо повторяет движение, палец его не закрывает. Проведи кольцо от зелёного начала до флажка так, чтобы провод не касался кольца. Задел — звонок, кольцо возвращается в начало и минус 3 секунды. На всё минута, провода становятся хитрее.</p>',
+    startLabel: 'Взять кольцо', countdown: false, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: стрелки двигают кольцо',
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 60, finish);
+  var view = P.canvas(canvas, stage, function () { newWire(); });
+  function area() { return { x: 30, y: TOP + 30, w: view.W - 60, h: view.H - TOP - 70 }; }
+  function newWire() {
+    var A = area(), n = 4 + Math.min(5, level), ctl = [];
+    for (var i = 0; i <= n; i++) {
+      var y = A.y + A.h - A.h * i / n, x = i === 0 ? A.x + A.w * 0.15 : i === n ? A.x + A.w * 0.85 : A.x + A.w * (0.05 + Math.random() * 0.9);
+      ctl.push({ x: x, y: y });
+    }
+    path = [];
+    for (var k = 0; k < ctl.length - 1; k++) {
+      var p0 = ctl[Math.max(0, k - 1)], p1 = ctl[k], p2 = ctl[k + 1], p3 = ctl[Math.min(ctl.length - 1, k + 2)];
+      for (var s = 0; s < 16; s++) {
+        var t = s / 16, t2 = t * t, t3 = t2 * t;
+        path.push({
+          x: 0.5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
+          y: 0.5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3)
+        });
+      }
+    }
+    path.push(ctl[ctl.length - 1]);
+    tol = Math.max(11, Math.min(view.W, view.H - TOP) * 0.06 - level * 1.6);
+    ring = { x: path[0].x, y: path[0].y };
+  }
+  function reset() { level = 0; done = 0; buzzes = 0; msg = null; flash = 0; newWire(); shell.setScore('0'); timer.reset(); }
+  function finish() { last = null; shell.end({ score: done, delay: 300, stats: 'звонков: ' + buzzes, phrase: 'В «Проводе» я прохожу ' + done + ' ' + P.plural(done, U) + ' за минуту и почти не звеню.' }); }
+  function nearest(x, y) {
+    var bd = Infinity, bi = 0;
+    for (var i = 0; i < path.length - 1; i++) {
+      var a = path[i], b = path[i + 1], dx = b.x - a.x, dy = b.y - a.y, L = dx * dx + dy * dy || 1;
+      var u = P.clamp(((x - a.x) * dx + (y - a.y) * dy) / L, 0, 1), d = Math.hypot(a.x + dx * u - x, a.y + dy * u - y);
+      if (d < bd) { bd = d; bi = i; }
+    }
+    return { d: bd, i: bi };
+  }
+  function move(dx, dy) {
+    if (!shell.running || !ring) return;
+    var steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) / (tol * 0.4)));
+    for (var s = 0; s < steps; s++) {
+      ring.x += dx / steps; ring.y += dy / steps;
+      var n = nearest(ring.x, ring.y);
+      if (n.d > tol) {
+        buzzes++; flash = 0.35; timer.add(-3); P.haptic('crash'); msg = { text: 'Дзынь! −3 с', life: 0.9 };
+        ring.x = path[0].x; ring.y = path[0].y; last = null; return;
+      }
+      var end = path[path.length - 1];
+      if (n.i >= path.length - 3 && Math.hypot(ring.x - end.x, ring.y - end.y) < tol) {
+        done++; level++; shell.setScore(String(done)); P.haptic('win'); msg = { text: 'Готово!', life: 0.8 };
+        newWire(); last = null; return;
+      }
+    }
+  }
+  P.loop(function (dt) {
+    if (flash > 0) flash -= dt;
+    if (msg) { msg.life -= dt; if (msg.life <= 0) msg = null; }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = flash > 0 ? '#3A0F2E' : '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!path.length) return;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); path.forEach(function (p, i) { ctx[i ? 'lineTo' : 'moveTo'](p.x, p.y); });
+    ctx.strokeStyle = 'rgba(185,168,240,.07)'; ctx.lineWidth = tol * 2; ctx.stroke();
+    ctx.strokeStyle = '#120630'; ctx.lineWidth = 7; ctx.stroke();
+    ctx.strokeStyle = '#E9C38A'; ctx.lineWidth = 4; ctx.stroke();
+    var s = path[0], e = path[path.length - 1];
+    ctx.fillStyle = '#3DF5B0'; ctx.beginPath(); ctx.arc(s.x, s.y, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#F4F1FF'; ctx.fillRect(e.x - 1.5, e.y - 30, 3, 30);
+    ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.moveTo(e.x + 1.5, e.y - 30); ctx.lineTo(e.x + 22, e.y - 23); ctx.lineTo(e.x + 1.5, e.y - 16); ctx.fill();
+    if (ring) {
+      ctx.strokeStyle = flash > 0 ? '#FF6B4A' : (P.gold() ? '#FFD84D' : '#3DF5B0'); ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(ring.x, ring.y, tol, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(ring.x, ring.y + tol); ctx.lineTo(ring.x, ring.y + tol + 36); ctx.stroke();
+    }
+    if (msg) { ctx.globalAlpha = Math.min(1, msg.life * 2); ctx.fillStyle = msg.text === 'Готово!' ? '#3DF5B0' : '#FF6B4A'; ctx.font = '800 22px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(msg.text, W / 2, TOP + 24); ctx.globalAlpha = 1; }
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); last = { x: e.clientX, y: e.clientY }; });
+  canvas.addEventListener('pointermove', function (e) { if (!last) return; var dx = e.clientX - last.x, dy = e.clientY - last.y; last = { x: e.clientX, y: e.clientY }; move(dx, dy); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { canvas.addEventListener(ev, function () { last = null; }); });
+  P.arrows(function (d) { var k = tol * 0.5; move(d === 'left' ? -k : d === 'right' ? k : 0, d === 'up' ? -k : d === 'down' ? k : 0); });
+})();
+</script>
+</body>
+</html>

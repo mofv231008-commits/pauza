@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Обжора</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Обжора. Смахивай, чтобы повернуть"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'], TOP = 70, LIVES = 3;
+  var MAP = ['###############', '#o.....#.....o#', '#.###..#..###.#', '#.............#', '#.##.#.#.#.##.#', '#....#.#.#....#', '##.#.......#.##', '##.#.##-##.#.##', '##...#GGG#...##', '##.#.#####.#.##', '##.#.......#.##', '#....##.##....#', '#.##...P...##.#', '#o.#.#####.#.o#', '#....#...#....#', '#.####.#.####.#', '#.............#', '###############'];
+  var NC = 15, NR = MAP.length, ABOVE = { x: 7, y: 6 }, START = { x: 7, y: 12 };
+  var D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }, OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  var GC = ['#FF6B4A', '#FF8AD8', '#6FD3FF'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var cs = 20, ox = 0, oy = 0, dots = [], left = 0, pac = null, ghosts = [], score = 0, lives = LIVES, level = 0, fright = 0, combo = 0, phase = 'play', phaseT = 0, mouth = 0, floats = [];
+
+  var shell = P.shell({
+    id: 'glutton', title: 'Обжора', tagline: 'Съешь все точки и не попадись привидениям.',
+    rulesHtml: '<p>Смахивай в сторону, куда повернуть. Ешь точки по пути. Большая точка на несколько секунд делает привидения синими и съедобными. Съел все точки — следующий уровень, привидения быстрее. Три жизни.</p>',
+    startLabel: 'Ам!', countdown: true, overEyebrow: 'Привидения поймали',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: стрелки',
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () {
+    cs = Math.floor(Math.min((view.W - 12) / NC, (view.H - TOP - 12) / NR));
+    ox = Math.floor((view.W - cs * NC) / 2); oy = TOP + Math.floor((view.H - TOP - cs * NR) / 2);
+    if (!dots.length) { fillDots(); place(); }
+  });
+  function cell(x, y) { return y >= 0 && y < NR && x >= 0 && x < NC ? MAP[y][x] : '#'; }
+  function open(x, y) { var c = cell(x, y); return c !== '#' && c !== '-' && c !== 'G'; }
+  function fillDots() { dots = []; left = 0; for (var y = 0; y < NR; y++) { var row = []; for (var x = 0; x < NC; x++) { var c = MAP[y][x], v = c === '.' ? 1 : c === 'o' ? 2 : 0; row.push(v); if (v) left++; } dots.push(row); } }
+  function place() {
+    pac = { x: START.x, y: START.y, dir: 'left', next: 'left', p: 0 };
+    ghosts = GC.map(function (col, i) { return { x: 6 + i, y: 8, dir: 'left', p: 0, state: 'house', t: i * 3 + (i ? 0 : 0.5), col: col, i: i }; });
+    fright = 0;
+  }
+  function reset() { score = 0; lives = LIVES; level = 0; combo = 0; floats = []; phase = 'play'; fillDots(); place(); shell.setScore('0'); side(); }
+  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:3px;background:' + (i < lives ? '#FFD84D' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function can(e, d) { return open(e.x + D[d][0], e.y + D[d][1]); }
+  function px(e) { var d = D[e.dir]; return { x: ox + (e.x + d[0] * e.p + 0.5) * cs, y: oy + (e.y + d[1] * e.p + 0.5) * cs }; }
+  function eat() {
+    var v = dots[pac.y][pac.x]; if (!v) return;
+    dots[pac.y][pac.x] = 0; left--;
+    if (v === 1) score += 10;
+    else { score += 50; fright = Math.max(2.5, 6.5 - level * 0.8); combo = 0; ghosts.forEach(function (g) { if (g.state === 'chase') { g.state = 'fright'; if (g.p > 0) { g.x += D[g.dir][0]; g.y += D[g.dir][1]; g.p = 1 - g.p; } g.dir = OPP[g.dir]; } }); P.haptic('coin'); }
+    shell.setScore(String(score));
+    if (left <= 0) { phase = 'clear'; phaseT = 1.4; level++; P.haptic('win'); }
+  }
+  function pacStep(dt) {
+    if (pac.next === OPP[pac.dir] && pac.p > 0) { pac.x += D[pac.dir][0]; pac.y += D[pac.dir][1]; pac.p = 1 - pac.p; pac.dir = pac.next; }
+    if (pac.p === 0) { if (can(pac, pac.next)) pac.dir = pac.next; if (!can(pac, pac.dir)) return; }
+    pac.p += (5.4 + Math.min(1, level * 0.15)) * dt; mouth += dt * 12;
+    while (pac.p >= 1) {
+      pac.x += D[pac.dir][0]; pac.y += D[pac.dir][1]; pac.p -= 1; eat();
+      if (can(pac, pac.next)) pac.dir = pac.next;
+      if (!can(pac, pac.dir)) { pac.p = 0; break; }
+    }
+  }
+  function target(g) {
+    if (g.state === 'eyes') return ABOVE;
+    if (g.i === 1) return { x: pac.x + D[pac.dir][0] * 4, y: pac.y + D[pac.dir][1] * 4 };
+    if (g.i === 2 && Math.hypot(g.x - pac.x, g.y - pac.y) < 5) return { x: 0, y: NR };
+    return { x: pac.x, y: pac.y };
+  }
+  function choose(g) {
+    var opts = Object.keys(D).filter(function (d) { return d !== OPP[g.dir] && can(g, d); });
+    if (!opts.length) { g.dir = OPP[g.dir]; return; }
+    if (g.state === 'fright' || (g.state === 'chase' && Math.random() < 0.12)) { g.dir = P.pick(opts); return; }
+    var t = target(g), best = Infinity;
+    opts.forEach(function (d) { var dd = Math.hypot(g.x + D[d][0] - t.x, g.y + D[d][1] - t.y); if (dd < best) { best = dd; g.dir = d; } });
+  }
+  function ghostStep(g, dt) {
+    if (g.state === 'house') { g.t -= dt; if (g.t <= 0) { g.x = ABOVE.x; g.y = ABOVE.y; g.p = 0; g.dir = P.pick(['left', 'right']); g.state = 'chase'; } return; }
+    var sp = g.state === 'eyes' ? 11 : g.state === 'fright' ? 3 : Math.min(5.6, 4.4 + level * 0.3);
+    g.p += sp * dt;
+    while (g.p >= 1) {
+      g.x += D[g.dir][0]; g.y += D[g.dir][1]; g.p -= 1;
+      if (g.state === 'eyes' && g.x === ABOVE.x && g.y === ABOVE.y) { g.state = 'house'; g.t = 1.5; g.x = 7; g.y = 8; g.p = 0; return; }
+      choose(g);
+    }
+    if (g.p > 0 && !can(g, g.dir)) { g.p = 0; choose(g); }
+  }
+  function hits() {
+    var a = px(pac);
+    ghosts.forEach(function (g) {
+      if (g.state === 'house' || g.state === 'eyes' || phase !== 'play') return;
+      var b = px(g);
+      if (Math.hypot(a.x - b.x, a.y - b.y) < cs * 0.65) {
+        if (g.state === 'fright') { combo++; var pts = 100 * Math.pow(2, combo); score += pts; shell.setScore(String(score)); g.state = 'eyes'; floats.push({ x: b.x, y: b.y, text: String(pts), life: 0.9 }); P.haptic('coin'); }
+        else {
+          lives--; side(); P.haptic('crash'); phase = 'dead'; phaseT = 1.3;
+          if (lives <= 0) shell.end({ score: score, delay: 1000, stats: 'уровень ' + (level + 1), phrase: 'В «Обжоре» я набираю ' + score + ' ' + P.plural(score, U) + ' и почти не попадаюсь привидениям.' });
+        }
+      }
+    });
+  }
+  P.loop(function (dt) {
+    if (!pac) return;
+    if (shell.running) {
+      if (phase === 'play') {
+        pacStep(dt);
+        if (fright > 0) { fright -= dt; if (fright <= 0) ghosts.forEach(function (g) { if (g.state === 'fright') g.state = 'chase'; }); }
+        ghosts.forEach(function (g) { ghostStep(g, dt); });
+        hits();
+      } else {
+        phaseT -= dt;
+        if (phaseT <= 0) { if (phase === 'clear') fillDots(); if (phase !== 'over') { place(); phase = 'play'; } }
+      }
+    }
+    floats.forEach(function (f) { f.life -= dt; f.y -= 20 * dt; });
+    floats = floats.filter(function (f) { return f.life > 0; });
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!pac) return;
+    for (var y = 0; y < NR; y++) for (var x = 0; x < NC; x++) {
+      var c = MAP[y][x], X = ox + x * cs, Y = oy + y * cs;
+      if (c === '#') { ctx.fillStyle = '#2E177A'; ctx.fillRect(X, Y, cs, cs); ctx.fillStyle = '#3B1E8C'; ctx.fillRect(X + 2, Y + 2, cs - 4, cs - 4); }
+      else if (c === '-') { ctx.fillStyle = '#FF8AD8'; ctx.fillRect(X, Y + cs * 0.42, cs, cs * 0.16); }
+      var v = dots[y] && dots[y][x];
+      if (v === 1) { ctx.fillStyle = '#E9E4FF'; ctx.beginPath(); ctx.arc(X + cs / 2, Y + cs / 2, cs * 0.09, 0, Math.PI * 2); ctx.fill(); }
+      if (v === 2 && Math.floor(performance.now() / 250) % 2) { ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(X + cs / 2, Y + cs / 2, cs * 0.24, 0, Math.PI * 2); ctx.fill(); }
+    }
+    ghosts.forEach(function (g) {
+      var p = px(g), r = cs * 0.42, blink = g.state === 'fright' && fright < 1.5 && Math.floor(fright * 6) % 2;
+      if (g.state !== 'eyes') {
+        ctx.fillStyle = g.state === 'fright' ? (blink ? '#F4F1FF' : '#4F6BFF') : g.col;
+        ctx.beginPath(); ctx.arc(p.x, p.y - r * 0.1, r, Math.PI, 0); ctx.lineTo(p.x + r, p.y + r * 0.85);
+        for (var k = 0; k < 4; k++) ctx.lineTo(p.x + r - (k + 0.5) * r / 2, p.y + r * (k % 2 ? 0.85 : 0.55));
+        ctx.lineTo(p.x - r, p.y + r * 0.85); ctx.closePath(); ctx.fill();
+      }
+      if (g.state !== 'fright') {
+        var d = D[g.dir];
+        [-1, 1].forEach(function (s) { ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(p.x + s * r * 0.38, p.y - r * 0.18, r * 0.28, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(p.x + s * r * 0.38 + d[0] * r * 0.12, p.y - r * 0.18 + d[1] * r * 0.12, r * 0.14, 0, Math.PI * 2); ctx.fill(); });
+      } else { ctx.fillStyle = '#F4F1FF'; ctx.fillRect(p.x - r * 0.45, p.y - r * 0.25, r * 0.2, r * 0.2); ctx.fillRect(p.x + r * 0.25, p.y - r * 0.25, r * 0.2, r * 0.2); }
+    });
+    var q = px(pac), m = phase === 'dead' ? Math.min(Math.PI * 0.95, (1.3 - phaseT) * 3) : (Math.abs(Math.sin(mouth)) * 0.7 + 0.05), ang = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[pac.dir];
+    ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.arc(q.x, q.y, cs * 0.45, ang + m / 2, ang + Math.PI * 2 - m / 2); ctx.closePath(); ctx.fill();
+    ctx.font = '800 13px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+    floats.forEach(function (f) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.fillStyle = '#6FD3FF'; ctx.fillText(f.text, f.x, f.y); });
+    ctx.globalAlpha = 1;
+    if (phase === 'clear') { ctx.fillStyle = '#3DF5B0'; ctx.font = '800 22px Unbounded, "Arial Black", sans-serif'; ctx.fillText('Уровень ' + (level + 1), W / 2, oy + cs * 8.75); }
+  }
+  function turn(d) { if (pac) pac.next = d; }
+  var sw = null;
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); sw = { x: e.clientX, y: e.clientY }; });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!sw) return;
+    var dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 16) return;
+    turn(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+    sw = { x: e.clientX, y: e.clientY };
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { canvas.addEventListener(ev, function () { sw = null; }); });
+  P.arrows(turn);
+})();
+</script>
+</body>
+</html>

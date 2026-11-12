@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Лук</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Лук. Потяни назад и отпусти, чтобы выстрелить"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['очко', 'очка', 'очков'], TOP = 70, ARROWS = 10, RINGS = [10, 8, 6, 4, 2];
+  var RCOL = ['#FFD84D', '#FF6B4A', '#6FD3FF', '#120630', '#F4F1FF'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var bow = { x: 0, y: 0 }, tgt = { x: 0, y: 0, base: 0, h: 80, move: 0, ph: 0 }, gy = 0, arrow = null, stuck = [], aim = null, shot = 0, total = 0, wind = 0, msg = null, t = 0, log = [];
+
+  var shell = P.shell({
+    id: 'archery', title: 'Лук', tagline: 'Десять стрел, ветер и мишень вдалеке.',
+    rulesHtml: '<p>Потяни пальцем назад, как тетиву, и отпусти. Чем сильнее натянешь, тем дальше полетит стрела. Стрела падает по дуге, а ветер сносит её — смотри на стрелку ветра наверху. Центр мишени — 10 очков. Десять стрел, мишень время от времени переезжает и начинает двигаться.</p>',
+    startLabel: 'Натянуть тетиву', countdown: false, overEyebrow: 'Колчан пуст', overTone: 'good',
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { place(true); });
+  function PH() { return view.H - TOP; }
+  function place(keep) {
+    gy = view.H - Math.max(40, view.H * 0.09);
+    bow = { x: view.W * 0.12, y: gy - PH() * 0.14 };
+    tgt.h = PH() * 0.2;
+    tgt.x = view.W * 0.86;
+    if (!keep || !tgt.base) tgt.base = TOP + PH() * (0.22 + Math.random() * 0.45);
+    tgt.y = tgt.base;
+  }
+  function newWind() { wind = shot < 2 ? 0 : (Math.random() - 0.5) * 2 * Math.min(1, 0.3 + shot * 0.08); }
+  function reset() { shot = 0; total = 0; log = []; stuck = []; arrow = null; msg = null; t = 0; tgt.move = 0; place(false); newWind(); shell.setScore('0'); side(); }
+  function side() { shell.setSide('стрела ' + Math.min(ARROWS, shot + 1) + '/' + ARROWS); }
+  function maxPull() { return Math.min(view.W, PH()) * 0.38; }
+  function fire(dx, dy) {
+    var len = Math.min(Math.hypot(dx, dy), maxPull());
+    if (len < 12 || !shell.running || arrow || shot >= ARROWS) return;
+    var a = Math.atan2(dy, dx), sp = (0.35 + 0.65 * len / maxPull()) * view.W * 1.55;
+    arrow = { x: bow.x, y: bow.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp };
+    P.haptic('tap');
+  }
+  function after(pts, text) {
+    shot++; total += pts; log.push(pts); shell.setScore(String(total));
+    msg = { text: text, life: 1.1 }; arrow = null;
+    if (shot >= ARROWS) { shell.end({ score: total, delay: 900, stats: 'по стрелам: ' + log.join(' · '), phrase: 'Из «Лука» я выбиваю ' + total + ' из 100. Попадёшь точнее?' }); return; }
+    if (shot % 2 === 0) { stuck = []; tgt.base = TOP + PH() * (0.18 + Math.random() * 0.5); tgt.move = shot >= 6 ? PH() * 0.08 : 0; }
+    newWind(); side();
+  }
+  P.loop(function (dt) {
+    if (!tgt.h) return;
+    t += dt;
+    tgt.y = tgt.base + Math.sin(t * 1.6) * tgt.move;
+    if (shell.running && arrow) {
+      var g = PH() * 0.9, steps = 4;
+      for (var s = 0; s < steps && arrow; s++) {
+        var h = dt / steps, px = arrow.x, py = arrow.y;
+        arrow.vy += g * h; arrow.vx += wind * view.W * 0.35 * h;
+        arrow.x += arrow.vx * h; arrow.y += arrow.vy * h;
+        if (px < tgt.x && arrow.x >= tgt.x) {
+          var k = (tgt.x - px) / (arrow.x - px), yy = py + (arrow.y - py) * k, off = Math.abs(yy - tgt.y) / (tgt.h / 2);
+          if (off <= 1) {
+            var ring = Math.min(4, Math.floor(off * 5)), pts = RINGS[ring];
+            stuck.push({ dy: yy - tgt.y, a: Math.atan2(arrow.vy, arrow.vx) });
+            P.haptic(pts >= 8 ? 'win' : 'coin');
+            after(pts, pts === 10 ? 'В яблочко! +10' : '+' + pts);
+            break;
+          }
+        }
+        if (arrow.y > gy || arrow.x > view.W + 40 || arrow.x < -40) { P.haptic('crash'); after(0, 'Мимо'); break; }
+      }
+    }
+    if (msg) { msg.life -= dt; if (msg.life <= 0) msg = null; }
+    draw();
+  });
+  function drawArrow(ctx, x, y, a, len) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+    ctx.strokeStyle = '#E9C38A'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-len, 0); ctx.lineTo(0, 0); ctx.stroke();
+    ctx.fillStyle = '#B9A8F0'; ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(-4, -3.5); ctx.lineTo(-4, 3.5); ctx.fill();
+    ctx.fillStyle = P.gold() ? '#FFD84D' : '#FF6B4A'; ctx.beginPath(); ctx.moveTo(-len, 0); ctx.lineTo(-len - 6, -5); ctx.lineTo(-len + 6, 0); ctx.lineTo(-len - 6, 5); ctx.fill();
+    ctx.restore();
+  }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!tgt.h) return;
+    ctx.fillStyle = '#1FB97F'; ctx.fillRect(0, gy, W, H - gy);
+    ctx.fillStyle = '#5A2E1A'; ctx.fillRect(tgt.x - 3, tgt.y, 6, gy - tgt.y);
+    for (var i = RINGS.length - 1; i >= 0; i--) { ctx.fillStyle = RCOL[i]; ctx.beginPath(); ctx.ellipse(tgt.x, tgt.y, tgt.h * 0.12 * (i + 1) / 5 + 3, tgt.h / 2 * (i + 1) / 5, 0, 0, Math.PI * 2); ctx.fill(); }
+    stuck.forEach(function (s) { drawArrow(ctx, tgt.x, tgt.y + s.dy, s.a, 34); });
+    var len = aim ? Math.min(Math.hypot(aim.sx - aim.x, aim.sy - aim.y), maxPull()) : 0, a = aim ? Math.atan2(aim.sy - aim.y, aim.sx - aim.x) : -0.4;
+    ctx.strokeStyle = '#F4F1FF'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    var bx = bow.x - 26, by = bow.y;
+    ctx.beginPath(); ctx.arc(bx, by - 26, 9, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx, by - 16); ctx.lineTo(bx, by + 22); ctx.lineTo(bx - 10, gy - 2); ctx.moveTo(bx, by + 22); ctx.lineTo(bx + 10, gy - 2); ctx.moveTo(bx, by - 6); ctx.lineTo(bow.x, bow.y); ctx.stroke();
+    ctx.save(); ctx.translate(bow.x, bow.y); ctx.rotate(a);
+    var pull = len / maxPull() * 22;
+    ctx.strokeStyle = '#E9C38A'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(-6, 0, 30, -1.2, 1.2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(244,241,255,.8)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-6 + 30 * Math.cos(-1.2), 30 * Math.sin(-1.2)); ctx.lineTo(-pull, 0); ctx.lineTo(-6 + 30 * Math.cos(1.2), 30 * Math.sin(1.2)); ctx.stroke();
+    ctx.restore();
+    if (!arrow && shell.running && shot < ARROWS) drawArrow(ctx, bow.x + Math.cos(a) * (28 - pull), bow.y + Math.sin(a) * (28 - pull), a, 40);
+    if (aim && len > 12) { ctx.strokeStyle = 'rgba(255,216,77,.6)'; ctx.setLineDash([4, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bow.x, bow.y); ctx.lineTo(bow.x + Math.cos(a) * (40 + len * 0.5), bow.y + Math.sin(a) * (40 + len * 0.5)); ctx.stroke(); ctx.setLineDash([]); }
+    if (arrow) drawArrow(ctx, arrow.x, arrow.y, Math.atan2(arrow.vy, arrow.vx), 40);
+    ctx.fillStyle = 'rgba(244,241,255,.8)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(wind === 0 ? 'ветра нет' : 'ветер ' + Math.abs(wind * 10).toFixed(0), W / 2, TOP + 18);
+    if (wind !== 0) {
+      var wl = Math.abs(wind) * 60, dir = wind > 0 ? 1 : -1;
+      ctx.strokeStyle = '#6FD3FF'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(W / 2 - dir * wl / 2, TOP + 32); ctx.lineTo(W / 2 + dir * wl / 2, TOP + 32); ctx.lineTo(W / 2 + dir * (wl / 2 - 7), TOP + 26); ctx.moveTo(W / 2 + dir * wl / 2, TOP + 32); ctx.lineTo(W / 2 + dir * (wl / 2 - 7), TOP + 38); ctx.stroke();
+    }
+    if (msg) { ctx.globalAlpha = Math.min(1, msg.life * 2); ctx.fillStyle = '#FFD84D'; ctx.font = '800 22px Unbounded, "Arial Black", sans-serif'; ctx.fillText(msg.text, W / 2, TOP + PH() * 0.12 + 30); ctx.globalAlpha = 1; }
+  }
+  function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  canvas.addEventListener('pointerdown', function (e) { if (!shell.running || arrow) return; var p = pos(e); aim = { sx: p.x, sy: p.y, x: p.x, y: p.y }; });
+  canvas.addEventListener('pointermove', function (e) { if (!aim) return; var p = pos(e); aim.x = p.x; aim.y = p.y; });
+  canvas.addEventListener('pointerup', function () { if (!aim) return; var a = aim; aim = null; fire(a.sx - a.x, a.sy - a.y); });
+  canvas.addEventListener('pointercancel', function () { aim = null; });
+})();
+</script>
+</body>
+</html>

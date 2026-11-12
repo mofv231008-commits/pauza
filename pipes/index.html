@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Трубы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Трубы. Нажимай на клетки, чтобы повернуть трубу"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['поле', 'поля', 'полей'], TOP = 70;
+  var DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var n = 4, cells = [], lit = [], src = 0, solved = 0, taps = 0, phase = 'play', phaseT = 0, cs = 40, ox = 0, oy = 0;
+
+  var shell = P.shell({
+    id: 'pipes', title: 'Трубы', tagline: 'Поверни трубы так, чтобы вода дошла до всех домиков.',
+    rulesHtml: '<p>Нажимай на клетку — труба поворачивается по часовой стрелке. Вода течёт из насоса в центре. Поверни трубы так, чтобы каждая клетка была подключена и вода дошла до всех домиков. Поля растут. Полторы минуты.</p>',
+    startLabel: 'Открыть кран', countdown: false, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 90, finish);
+  var view = P.canvas(canvas, stage, fit);
+  function fit() { cs = Math.floor(Math.min((view.W - 24) / n, (view.H - TOP - 40) / n, 90)); ox = Math.floor((view.W - cs * n) / 2); oy = TOP + Math.floor((view.H - TOP - cs * n) / 2); }
+  function rot(m) { return ((m << 1) | (m >> 3)) & 15; }
+  function build() {
+    n = Math.min(7, 4 + Math.floor(solved / 2));
+    var N = n * n, mask = new Array(N).fill(0), seen = new Array(N).fill(false);
+    src = Math.floor(n / 2) * n + Math.floor(n / 2);
+    var front = [src]; seen[src] = true;
+    while (front.length) {
+      var i = front[P.rand(front.length)], x = i % n, y = (i - x) / n, opts = [];
+      for (var d = 0; d < 4; d++) { var nx = x + DX[d], ny = y + DY[d]; if (nx >= 0 && ny >= 0 && nx < n && ny < n && !seen[ny * n + nx]) opts.push(d); }
+      if (!opts.length) { front.splice(front.indexOf(i), 1); continue; }
+      var dd = P.pick(opts), j = (y + DY[dd]) * n + x + DX[dd];
+      mask[i] |= 1 << dd; mask[j] |= 1 << ((dd + 2) % 4); seen[j] = true; front.push(j);
+    }
+    do {
+      cells = mask.map(function (m) { var r = P.rand(4); for (var k = 0; k < r; k++) m = rot(m); return { m: m, a: 0 }; });
+      flow();
+    } while (lit.every(Boolean));
+    fit(); phase = 'play';
+  }
+  function flow() {
+    lit = new Array(n * n).fill(false); lit[src] = true;
+    var st = [src];
+    while (st.length) {
+      var i = st.pop(), x = i % n, y = (i - x) / n;
+      for (var d = 0; d < 4; d++) {
+        if (!(cells[i].m & (1 << d))) continue;
+        var nx = x + DX[d], ny = y + DY[d]; if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+        var j = ny * n + nx; if (!lit[j] && (cells[j].m & (1 << ((d + 2) % 4)))) { lit[j] = true; st.push(j); }
+      }
+    }
+  }
+  function reset() { solved = 0; taps = 0; build(); shell.setScore('0'); timer.reset(); }
+  function finish() { phase = 'over'; shell.end({ score: solved, delay: 300, stats: 'поворотов: ' + taps, phrase: 'В «Трубах» я подключаю ' + solved + ' ' + P.plural(solved, U) + ' за полторы минуты. Сантехник со стажем.' }); }
+  function tap(px, py) {
+    if (!shell.running || phase !== 'play') return;
+    var x = Math.floor((px - ox) / cs), y = Math.floor((py - oy) / cs);
+    if (x < 0 || y < 0 || x >= n || y >= n) return;
+    var c = cells[y * n + x]; c.m = rot(c.m); c.a = -Math.PI / 2; taps++; P.haptic('tap');
+    flow();
+    if (lit.every(Boolean)) { solved++; shell.setScore(String(solved)); P.haptic('win'); phase = 'won'; phaseT = 1; }
+  }
+  P.loop(function (dt) {
+    cells.forEach(function (c) { if (c.a < 0) c.a = Math.min(0, c.a + dt * 14); });
+    if (phase === 'won' && shell.running) { phaseT -= dt; if (phaseT <= 0) build(); }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!cells.length) return;
+    for (var i = 0; i < n * n; i++) {
+      var x = i % n, y = (i - x) / n, cx = ox + (x + 0.5) * cs, cy = oy + (y + 0.5) * cs, c = cells[i], on = lit[i];
+      ctx.fillStyle = (x + y) % 2 ? '#22105A' : '#1B0A48'; ctx.fillRect(ox + x * cs, oy + y * cs, cs, cs);
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(c.a);
+      ctx.lineCap = 'round'; ctx.strokeStyle = on ? (phase === 'won' ? '#3DF5B0' : '#6FD3FF') : '#3B1E8C'; ctx.lineWidth = cs * 0.22;
+      ctx.beginPath();
+      for (var d = 0; d < 4; d++) if (c.m & (1 << d)) { ctx.moveTo(0, 0); ctx.lineTo(DX[d] * cs / 2, DY[d] * cs / 2); }
+      ctx.stroke();
+      ctx.strokeStyle = on ? 'rgba(244,241,255,.5)' : 'rgba(185,168,240,.25)'; ctx.lineWidth = cs * 0.06; ctx.stroke();
+      ctx.restore();
+      var deg = [0, 1, 2, 3].filter(function (q) { return c.m & (1 << q); }).length;
+      if (i === src) { ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.roundRect(cx - cs * 0.24, cy - cs * 0.24, cs * 0.48, cs * 0.48, cs * 0.1); ctx.fill(); ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(cx, cy, cs * 0.09, 0, Math.PI * 2); ctx.fill(); }
+      else if (deg === 1) {
+        ctx.fillStyle = on ? '#FFD84D' : '#B9A8F0'; ctx.beginPath(); ctx.moveTo(cx - cs * 0.2, cy - cs * 0.02); ctx.lineTo(cx, cy - cs * 0.22); ctx.lineTo(cx + cs * 0.2, cy - cs * 0.02); ctx.lineTo(cx + cs * 0.16, cy - cs * 0.02); ctx.lineTo(cx + cs * 0.16, cy + cs * 0.18); ctx.lineTo(cx - cs * 0.16, cy + cs * 0.18); ctx.lineTo(cx - cs * 0.16, cy - cs * 0.02); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = on ? '#FF6B4A' : '#3B1E8C'; ctx.fillRect(cx - cs * 0.05, cy + cs * 0.04, cs * 0.1, cs * 0.14);
+      }
+    }
+    ctx.strokeStyle = '#3B1E8C'; ctx.lineWidth = 2; ctx.strokeRect(ox, oy, cs * n, cs * n);
+    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    var left = lit.filter(function (v) { return !v; }).length;
+    ctx.fillText(phase === 'won' ? 'Всё подключено!' : 'Без воды: ' + left, W / 2, oy - 12);
+  }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var r = canvas.getBoundingClientRect(); tap(e.clientX - r.left, e.clientY - r.top); });
+})();
+</script>
+</body>
+</html>

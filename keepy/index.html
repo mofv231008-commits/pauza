@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Чеканка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Чеканка. Нажимай на мяч, чтобы подбить его"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['удар', 'удара', 'ударов'], TOP = 70;
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var ball = null, kicks = 0, best = 0, dead = false, rings = [], R = 30;
+
+  var shell = P.shell({
+    id: 'keepy', title: 'Чеканка', tagline: 'Не дай мячу коснуться травы.',
+    rulesHtml: '<p>Нажимай прямо на мяч — он подлетит вверх. Бьёшь по левому боку — мяч уходит вправо, по правому — влево. От бортиков он отскакивает. Мяч коснулся травы — конец. С каждым ударом он падает чуть быстрее.</p>',
+    startLabel: 'Подбросить', countdown: false, overEyebrow: 'Мяч на траве',
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () { R = Math.min(view.W, view.H - TOP) * 0.08; if (!ball) place(); });
+  function ground() { return view.H - Math.max(40, view.H * 0.08); }
+  function place() { ball = { x: view.W / 2, y: TOP + (view.H - TOP) * 0.62, vx: 0, vy: 0, rot: 0, va: 0 }; }
+  function reset() { kicks = 0; dead = false; rings = []; place(); ball.vy = -(view.H - TOP) * 1.05; ball.va = 2; shell.setScore('0'); }
+  function kick(px, py) {
+    if (!shell.running || dead || !ball) return;
+    var d = Math.hypot(px - ball.x, py - ball.y);
+    if (d > R * 1.7) return;
+    var off = P.clamp((ball.x - px) / R, -1.2, 1.2);
+    ball.vy = -(view.H - TOP) * (1.15 + Math.random() * 0.12);
+    ball.vx = off * view.W * 0.6 + (Math.random() - 0.5) * view.W * 0.08;
+    ball.va = -off * 8;
+    kicks++; shell.setScore(String(kicks)); P.haptic('tap');
+    rings.push({ x: ball.x, y: ball.y, life: 0.35 });
+  }
+  P.loop(function (dt) {
+    if (!ball) return;
+    if (shell.running && !dead) {
+      var g = (view.H - TOP) * (1.25 + Math.min(0.9, kicks * 0.025));
+      ball.vy += g * dt; ball.x += ball.vx * dt; ball.y += ball.vy * dt; ball.rot += ball.va * dt;
+      if (ball.x < R) { ball.x = R; ball.vx = Math.abs(ball.vx) * 0.8; }
+      if (ball.x > view.W - R) { ball.x = view.W - R; ball.vx = -Math.abs(ball.vx) * 0.8; }
+      if (ball.y < TOP + R) { ball.y = TOP + R; ball.vy = Math.abs(ball.vy) * 0.4; }
+      if (ball.y > ground() - R) {
+        ball.y = ground() - R; dead = true; P.haptic('crash');
+        shell.end({ score: kicks, delay: 600, phrase: 'В «Чеканке» я набиваю мяч ' + kicks + ' ' + P.plural(kicks, ['раз', 'раза', 'раз']) + ' подряд. А ты?' });
+      }
+    }
+    rings.forEach(function (r) { r.life -= dt; });
+    rings = rings.filter(function (r) { return r.life > 0; });
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H, gy = ground();
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#1FB97F'; ctx.fillRect(0, gy, W, H - gy);
+    ctx.fillStyle = '#138A5E'; for (var x = 0; x < W; x += 36) ctx.fillRect(x, gy, 18, H - gy);
+    if (!ball) return;
+    var hgt = P.clamp((gy - ball.y) / (gy - TOP), 0, 1);
+    ctx.fillStyle = 'rgba(0,0,0,' + (0.35 - hgt * 0.25) + ')'; ctx.beginPath(); ctx.ellipse(ball.x, gy + 4, R * (1 - hgt * 0.5), R * 0.22 * (1 - hgt * 0.5), 0, 0, Math.PI * 2); ctx.fill();
+    rings.forEach(function (r) { ctx.globalAlpha = r.life / 0.35; ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(r.x, r.y, R * (1.6 - r.life * 1.5), 0, Math.PI * 2); ctx.stroke(); });
+    ctx.globalAlpha = 1;
+    ctx.save(); ctx.translate(ball.x, ball.y); ctx.rotate(ball.rot);
+    ctx.fillStyle = P.gold() ? '#FFD84D' : '#F4F1FF'; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#120630';
+    function pent(cx, cy, s) { ctx.beginPath(); for (var i = 0; i < 5; i++) { var a = -Math.PI / 2 + i * Math.PI * 2 / 5; ctx[i ? 'lineTo' : 'moveTo'](cx + Math.cos(a) * s, cy + Math.sin(a) * s); } ctx.closePath(); ctx.fill(); }
+    pent(0, 0, R * 0.32);
+    for (var i = 0; i < 5; i++) { var a = -Math.PI / 2 + i * Math.PI * 2 / 5; pent(Math.cos(a) * R * 0.78, Math.sin(a) * R * 0.78, R * 0.2); }
+    ctx.strokeStyle = 'rgba(18,6,48,.5)'; ctx.lineWidth = 1.5;
+    for (var j = 0; j < 5; j++) { var b = -Math.PI / 2 + j * Math.PI * 2 / 5; ctx.beginPath(); ctx.moveTo(Math.cos(b) * R * 0.32, Math.sin(b) * R * 0.32); ctx.lineTo(Math.cos(b) * R * 0.6, Math.sin(b) * R * 0.6); ctx.stroke(); }
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(18,6,48,.25)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(ball.x, ball.y, R, 0, Math.PI * 2); ctx.stroke();
+  }
+  function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var p = pos(e); kick(p.x, p.y); });
+})();
+</script>
+</body>
+</html>

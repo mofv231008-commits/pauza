@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Неон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#0B0420}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Неон. Смахивай, чтобы повернуть световой мотоцикл"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['раунд', 'раунда', 'раундов'], TOP = 70, COLS = 22;
+  var DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }, OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  var BOTC = ['#FF6B4A', '#FFD84D', '#FF8AD8'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var cell = 16, rows = 30, ox = 0, oy = 0, grid = [], bikes = [], acc = 0, tick = 0.1, wins = 0, phase = 'play', phaseT = 0, queue = [], msg = null;
+
+  var shell = P.shell({
+    id: 'neon', title: 'Неон', tagline: 'Световые мотоциклы: запри соперников своим следом.',
+    rulesHtml: '<p>Твой мотоцикл — зелёный, он едет сам и оставляет светящийся след. Смахивай пальцем, чтобы повернуть. Врезался в стену или в любой след — проиграл. Соперники ездят так же: загоняй их в тупик. Выиграл раунд — в следующем соперников больше и всё быстрее.</p>',
+    startLabel: 'На старт', countdown: true, overEyebrow: 'Мотоцикл разбит',
+    unit: function (n) { return P.plural(n, U); },
+    kbdHint: 'На компьютере: стрелки',
+    onReset: reset
+  });
+  var view = P.canvas(canvas, stage, function () {
+    cell = Math.floor(Math.min((view.W - 16) / COLS, 40));
+    rows = Math.max(16, Math.floor((view.H - TOP - 16) / cell));
+    ox = Math.floor((view.W - cell * COLS) / 2); oy = TOP + Math.floor((view.H - TOP - 8 - rows * cell) / 2);
+    newRound();
+  });
+  function newRound() {
+    grid = []; for (var y = 0; y < rows; y++) { grid.push(new Array(COLS).fill(0)); }
+    var nb = Math.min(3, 1 + Math.floor(wins / 2)), cx = Math.floor(COLS / 2);
+    bikes = [{ x: cx, y: rows - 3, dir: 'up', col: '#3DF5B0', me: true, alive: true }];
+    var spots = [{ x: cx, y: 2, dir: 'down' }, { x: 2, y: Math.floor(rows / 2), dir: 'right' }, { x: COLS - 3, y: Math.floor(rows / 2), dir: 'left' }];
+    for (var i = 0; i < nb; i++) bikes.push({ x: spots[i].x, y: spots[i].y, dir: spots[i].dir, col: BOTC[i], me: false, alive: true });
+    bikes.forEach(function (b, i) { grid[b.y][b.x] = i + 1; });
+    tick = Math.max(0.055, 0.1 - wins * 0.006); acc = 0; queue = []; phase = 'play';
+  }
+  function reset() { wins = 0; msg = null; newRound(); shell.setScore('0'); }
+  function free(x, y) { return x >= 0 && y >= 0 && x < COLS && y < rows && !grid[y][x]; }
+  function space(x, y, limit) {
+    if (!free(x, y)) return 0;
+    var seen = {}, st = [[x, y]], n = 0; seen[x + ',' + y] = 1;
+    while (st.length && n < limit) {
+      var c = st.pop(); n++;
+      for (var k in DIRS) { var nx = c[0] + DIRS[k][0], ny = c[1] + DIRS[k][1], key = nx + ',' + ny; if (!seen[key] && free(nx, ny)) { seen[key] = 1; st.push([nx, ny]); } }
+    }
+    return n;
+  }
+  function think(b) {
+    var best = null, bestS = -1;
+    Object.keys(DIRS).forEach(function (d) {
+      if (d === OPP[b.dir]) return;
+      var nx = b.x + DIRS[d][0], ny = b.y + DIRS[d][1], s = space(nx, ny, 90);
+      if (d === b.dir) s += 2;
+      s += Math.random() * 3;
+      var me = bikes[0];
+      if (me.alive && s > 40) s += 6 - Math.min(6, (Math.abs(nx - me.x - DIRS[me.dir][0] * 3) + Math.abs(ny - me.y - DIRS[me.dir][1] * 3)) / 2);
+      if (s > bestS) { bestS = s; best = d; }
+    });
+    return best || b.dir;
+  }
+  function step() {
+    var me = bikes[0];
+    while (queue.length) { var q = queue.shift(); if (q !== OPP[me.dir] && q !== me.dir) { me.dir = q; break; } }
+    bikes.forEach(function (b) { if (b.alive && !b.me) b.dir = think(b); });
+    var targets = {};
+    bikes.forEach(function (b, i) {
+      if (!b.alive) return;
+      b.nx = b.x + DIRS[b.dir][0]; b.ny = b.y + DIRS[b.dir][1];
+      var key = b.nx + ',' + b.ny; targets[key] = (targets[key] || 0) + 1;
+    });
+    bikes.forEach(function (b) { if (b.alive && (!free(b.nx, b.ny) || targets[b.nx + ',' + b.ny] > 1)) { b.alive = false; b.crash = 0.6; } });
+    bikes.forEach(function (b, i) { if (b.alive) { b.x = b.nx; b.y = b.ny; grid[b.y][b.x] = i + 1; } });
+    if (!me.alive) {
+      phase = 'over'; P.haptic('crash');
+      shell.end({ score: wins, delay: 900, phrase: 'В «Неоне» я выигрываю ' + wins + ' ' + P.plural(wins, U) + ' подряд у световых мотоциклов.' });
+    } else if (bikes.every(function (b) { return b.me || !b.alive; })) {
+      wins++; shell.setScore(String(wins)); P.haptic('win'); phase = 'won'; phaseT = 1.1; msg = { text: 'Раунд ' + wins + '!', life: 1.1 };
+    } else if (bikes.some(function (b) { return !b.me && b.crash === 0.6; })) P.haptic('coin');
+  }
+  P.loop(function (dt) {
+    if (!grid.length) return;
+    if (shell.running) {
+      if (phase === 'play') { acc += dt; while (acc >= tick && phase === 'play') { acc -= tick; step(); } }
+      else if (phase === 'won') { phaseT -= dt; if (phaseT <= 0) newRound(); }
+    }
+    bikes.forEach(function (b) { if (b.crash > 0) b.crash -= dt; });
+    if (msg) { msg.life -= dt; if (msg.life <= 0) msg = null; }
+    draw();
+  });
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#0B0420'; ctx.fillRect(0, 0, W, H);
+    if (!grid.length) return;
+    ctx.fillStyle = '#140734'; ctx.fillRect(ox, oy, cell * COLS, cell * rows);
+    ctx.strokeStyle = 'rgba(111,211,255,.07)'; ctx.lineWidth = 1;
+    for (var x = 0; x <= COLS; x++) { ctx.beginPath(); ctx.moveTo(ox + x * cell, oy); ctx.lineTo(ox + x * cell, oy + rows * cell); ctx.stroke(); }
+    for (var y = 0; y <= rows; y++) { ctx.beginPath(); ctx.moveTo(ox, oy + y * cell); ctx.lineTo(ox + COLS * cell, oy + y * cell); ctx.stroke(); }
+    ctx.strokeStyle = '#6FD3FF'; ctx.lineWidth = 2; ctx.strokeRect(ox, oy, cell * COLS, cell * rows);
+    for (y = 0; y < rows; y++) for (x = 0; x < COLS; x++) {
+      var v = grid[y][x]; if (!v) continue;
+      var b = bikes[v - 1]; if (!b) continue;
+      ctx.globalAlpha = b.alive ? 0.85 : 0.3; ctx.fillStyle = b.me && P.gold() ? '#FFD84D' : b.col;
+      ctx.fillRect(ox + x * cell + cell * 0.2, oy + y * cell + cell * 0.2, cell * 0.6, cell * 0.6);
+    }
+    ctx.globalAlpha = 1;
+    bikes.forEach(function (b) {
+      var cx = ox + (b.x + 0.5) * cell, cy = oy + (b.y + 0.5) * cell;
+      if (b.alive) { ctx.shadowColor = b.col; ctx.shadowBlur = 12; ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(cx, cy, cell * 0.42, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; }
+      else if (b.crash > 0) { ctx.strokeStyle = b.col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, cell * (1.8 - b.crash * 2), 0, Math.PI * 2); ctx.stroke(); }
+    });
+    if (msg) { ctx.globalAlpha = Math.min(1, msg.life * 2); ctx.fillStyle = '#3DF5B0'; ctx.font = '800 26px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(msg.text, W / 2, oy + rows * cell / 2); ctx.globalAlpha = 1; }
+  }
+  function turn(d) { if (!shell.running || phase !== 'play') return; if (queue.length < 2) queue.push(d); }
+  var sw = null;
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); sw = { x: e.clientX, y: e.clientY }; });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!sw) return;
+    var dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+    turn(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+    sw = { x: e.clientX, y: e.clientY };
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { canvas.addEventListener(ev, function () { sw = null; }); });
+  P.arrows(turn);
+})();
+</script>
+</body>
+</html>

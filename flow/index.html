@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Соедини</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=4">
+<style>.stage{background:#140734}</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="game" aria-label="Соедини. Веди линии между точками одного цвета"></canvas></div>
+<script src="../shared/pauza.js?v=4"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['поле', 'поля', 'полей'], TOP = 70;
+  var COL = ['#FF6B4A', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8', '#B9A8F0', '#FF9A6B', '#F4F1FF'];
+  var stage = document.getElementById('stage'), canvas = document.getElementById('game');
+  var n = 5, dots = [], ends = [], paths = [], active = -1, solved = 0, phase = 'play', phaseT = 0, cs = 60, ox = 0, oy = 0;
+
+  var shell = P.shell({
+    id: 'flow', title: 'Соедини', tagline: 'Соедини точки одного цвета и заполни всё поле.',
+    rulesHtml: '<p>Веди пальцем от точки к точке такого же цвета — останется линия. Линии не должны пересекаться, а в конце они должны занять все клетки поля. Новая линия разрезает старую, если идёт поперёк. Полторы минуты, поля растут.</p>',
+    startLabel: 'Соединять', countdown: false, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); },
+    onReset: reset
+  });
+  var timer = P.timeLimit(shell, 90, finish);
+  var view = P.canvas(canvas, stage, fit);
+  function fit() { cs = Math.floor(Math.min((view.W - 24) / n, (view.H - TOP - 50) / n, 90)); ox = Math.floor((view.W - cs * n) / 2); oy = TOP + 20 + Math.floor((view.H - TOP - 30 - cs * n) / 2); }
+  function hamPath() {
+    var p = [], x, y;
+    for (y = 0; y < n; y++) for (x = 0; x < n; x++) p.push(y * n + (y % 2 ? n - 1 - x : x));
+    for (var it = 0; it < n * n * 30; it++) {
+      if (Math.random() < 0.5) p.reverse();
+      var h = p[0], hx = h % n, hy = (h - hx) / n, nb = [];
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) { var nx = hx + d[0], ny = hy + d[1]; if (nx >= 0 && ny >= 0 && nx < n && ny < n && ny * n + nx !== p[1]) nb.push(ny * n + nx); });
+      if (!nb.length) continue;
+      var i = p.indexOf(P.pick(nb));
+      var head = p.slice(0, i).reverse(); p = head.concat(p.slice(i));
+    }
+    return p;
+  }
+  function build() {
+    n = Math.min(8, 5 + Math.floor(solved / 2));
+    var N = n * n, k = n, p = hamPath(), cuts;
+    for (var tries = 0; tries < 500; tries++) {
+      cuts = []; for (var i = 0; i < k - 1; i++) cuts.push(1 + P.rand(N - 1));
+      cuts.sort(function (a, b) { return a - b; }); cuts = [0].concat(cuts, [N]);
+      var ok = true; for (i = 1; i < cuts.length; i++) if (cuts[i] - cuts[i - 1] < 3) ok = false;
+      if (ok) break;
+    }
+    dots = new Array(N).fill(-1); ends = []; paths = [];
+    for (i = 0; i < k; i++) { var a = p[cuts[i]], b = p[cuts[i + 1] - 1]; dots[a] = i; dots[b] = i; ends.push([a, b]); paths.push([]); }
+    active = -1; phase = 'play'; fit();
+  }
+  function reset() { solved = 0; build(); shell.setScore('0'); timer.reset(); }
+  function finish() { phase = 'over'; active = -1; shell.end({ score: solved, delay: 300, phrase: 'В «Соедини» я прохожу ' + solved + ' ' + P.plural(solved, U) + ' за полторы минуты.' }); }
+  function owner(c) { for (var k = 0; k < paths.length; k++) { var i = paths[k].indexOf(c); if (i !== -1) return { k: k, i: i }; } return null; }
+  function complete(k) { var p = paths[k]; return p.length > 1 && dots[p[p.length - 1]] === k && p[p.length - 1] !== p[0]; }
+  function cellAt(px, py) { var x = Math.floor((px - ox) / cs), y = Math.floor((py - oy) / cs); return x < 0 || y < 0 || x >= n || y >= n ? -1 : y * n + x; }
+  function down(c) {
+    if (c < 0 || !shell.running || phase !== 'play') return;
+    if (dots[c] !== -1) { active = dots[c]; paths[active] = [c]; return; }
+    var o = owner(c); if (o) { active = o.k; paths[active] = paths[active].slice(0, o.i + 1); }
+  }
+  function extend(c) {
+    var p = paths[active], last = p[p.length - 1];
+    var lx = last % n, ly = (last - lx) / n, cx = c % n, cy = (c - cx) / n;
+    if (Math.abs(lx - cx) + Math.abs(ly - cy) !== 1) return;
+    var i = p.indexOf(c);
+    if (i !== -1) { paths[active] = p.slice(0, i + 1); return; }
+    if (complete(active)) return;
+    if (dots[c] !== -1 && dots[c] !== active) return;
+    var o = owner(c); if (o) { paths[o.k] = paths[o.k].slice(0, o.i); }
+    p.push(c);
+    if (dots[c] === active) P.haptic('coin');
+  }
+  function move(px, py) {
+    if (active < 0 || phase !== 'play') return;
+    var c = cellAt(px, py); if (c < 0) return;
+    var guard = 0;
+    while (guard++ < 20) {
+      var p = paths[active], last = p[p.length - 1]; if (last === c) break;
+      var lx = last % n, ly = (last - lx) / n, cx = c % n, cy = (c - cx) / n;
+      var nx = lx + Math.sign(cx - lx), ny = ly;
+      if (nx === lx) ny = ly + Math.sign(cy - ly);
+      else if (Math.abs(cy - ly) > Math.abs(cx - lx)) { nx = lx; ny = ly + Math.sign(cy - ly); }
+      var before = p.length + ',' + p[p.length - 1];
+      extend(ny * n + nx);
+      var q = paths[active]; if (q.length + ',' + q[q.length - 1] === before) break;
+    }
+  }
+  function up() {
+    if (active < 0) return; active = -1;
+    var covered = 0; paths.forEach(function (p) { covered += p.length; });
+    if (paths.every(function (p, k) { return complete(k); }) && covered === n * n) { solved++; shell.setScore(String(solved)); P.haptic('win'); phase = 'won'; phaseT = 1.1; }
+  }
+  P.loop(function (dt) { if (phase === 'won' && shell.running) { phaseT -= dt; if (phaseT <= 0) build(); } draw(); });
+  function center(c) { var x = c % n, y = (c - x) / n; return { x: ox + (x + 0.5) * cs, y: oy + (y + 0.5) * cs }; }
+  function draw() {
+    var ctx = view.ctx, W = view.W, H = view.H;
+    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    if (!dots.length) return;
+    ctx.fillStyle = '#1B0A48'; ctx.fillRect(ox, oy, cs * n, cs * n);
+    paths.forEach(function (p, k) { ctx.fillStyle = COL[k]; ctx.globalAlpha = 0.16; p.forEach(function (c) { var x = c % n, y = (c - x) / n; ctx.fillRect(ox + x * cs, oy + y * cs, cs, cs); }); });
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#3B1E8C'; ctx.lineWidth = 1.5;
+    for (var i = 0; i <= n; i++) { ctx.beginPath(); ctx.moveTo(ox + i * cs, oy); ctx.lineTo(ox + i * cs, oy + n * cs); ctx.stroke(); ctx.beginPath(); ctx.moveTo(ox, oy + i * cs); ctx.lineTo(ox + n * cs, oy + i * cs); ctx.stroke(); }
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    paths.forEach(function (p, k) { if (p.length < 2) return; ctx.strokeStyle = COL[k]; ctx.lineWidth = cs * 0.3; ctx.beginPath(); p.forEach(function (c, j) { var q = center(c); ctx[j ? 'lineTo' : 'moveTo'](q.x, q.y); }); ctx.stroke(); });
+    for (i = 0; i < dots.length; i++) if (dots[i] !== -1) { var q = center(i); ctx.fillStyle = COL[dots[i]]; ctx.beginPath(); ctx.arc(q.x, q.y, cs * 0.34, 0, Math.PI * 2); ctx.fill(); if (complete(dots[i])) { ctx.fillStyle = 'rgba(18,6,48,.35)'; ctx.beginPath(); ctx.arc(q.x, q.y, cs * 0.12, 0, Math.PI * 2); ctx.fill(); } }
+    var done = paths.filter(function (p, k) { return complete(k); }).length, cov = 0; paths.forEach(function (p) { cov += p.length; });
+    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(phase === 'won' ? 'Готово!' : 'Линий: ' + done + '/' + paths.length + ' · поле ' + Math.round(cov / (n * n) * 100) + '%', W / 2, oy - 12);
+  }
+  function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var p = pos(e); down(cellAt(p.x, p.y)); });
+  canvas.addEventListener('pointermove', function (e) { var p = pos(e); move(p.x, p.y); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { canvas.addEventListener(ev, up); });
+})();
+</script>
+</body>
+</html>
