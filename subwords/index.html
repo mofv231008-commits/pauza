@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Слова из слова</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:var(--shoulder)}
+.sw{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;padding:80px 12px 12px}
+.sw .timebar{width:100%}
+.sw-src{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.sw-src button{width:38px;height:46px;border:0;border-radius:10px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:800;font-size:19px;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+.sw-src button:disabled{opacity:.25}
+.sw-cur{min-height:46px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:.06em;text-transform:uppercase;border-radius:14px;background:var(--night)}
+.sw-cur.bad{animation:shake .3s;color:var(--coral)}.sw-cur.good{color:var(--mint)}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.sw-btns{display:flex;gap:8px}
+.sw-btns button{flex:1;min-height:46px;border:0;border-radius:14px;font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer}
+.sw-btns .clr{background:transparent;color:var(--paper);border:1px solid var(--line)}.sw-btns .ok{background:var(--mint);color:var(--ink)}.sw-btns .nx{background:var(--sun);color:var(--ink)}
+.sw-info{font-size:13px;color:var(--lilac);text-align:center}
+.sw-found{flex:1;overflow-y:auto;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+.sw-found span{background:rgba(61,245,176,.14);color:var(--mint);border-radius:8px;padding:4px 8px;font-size:14px;font-weight:600}
+.stage[data-state="paused"] .sw,.stage[data-state="countdown"] .sw-src{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<script src="../shared/nouns.js"></script>
+<div class="sw"><div class="timebar" id="timebar"><i></i></div><div class="sw-src" id="src"></div><div class="sw-cur" id="cur"></div>
+<div class="sw-btns"><button class="clr" id="clr" type="button">Стереть</button><button class="ok" id="ok" type="button">Готово</button><button class="nx" id="nx" type="button">Другое слово</button></div>
+<div class="sw-info" id="info"></div><div class="sw-found" id="found"></div></div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['буква', 'буквы', 'букв'];
+  var LONG = ['путешествие', 'электричество', 'приключение', 'воспитатель', 'библиотека', 'математика', 'переводчик', 'программист', 'космонавт', 'одуванчик',
+    'подоконник', 'вертолет', 'велосипед', 'мороженое', 'телевизор', 'черепаха', 'светофор', 'карандаш', 'шоколадка', 'стрекоза', 'балерина', 'кораблестроение',
+    'достопримечательность', 'полицейский', 'предприниматель', 'железнодорожник', 'фотоаппарат', 'преподаватель', 'революционер', 'землетрясение'];
+  var SHORT = ('кот сок нос рот сон лес мир дом дым дуб лук мак рак сыр суп чай мед лед пол пот рис сад сом ток тон хор шар шум шаг щит ваза вода гора двор дело день дочь дуга дыра душа жара звук знак игла игра кино кожа коза кора кран круг лапа лето лиса луна лужа мама мост мука муха небо нога нора ночь обед окно осел пара парк перо плот порт пост роза рука рыба сено сеть сила снег сода соль сорт стол стон сова суть тело торт трос туча утро утка факт фара флаг хлеб цвет цена часы шкаф шина шило щека юла яма атом бант баня бобр бокс борт брат бык вал век вес вид вор газ гол гусь дар диск жук зал заяц зонт кит клад клей код кол крот лак лев лом лось лот люк мел мех мяч нерв нота нрав орел орех оса отец пар пес пила пир план поле приз пруд пуля рай рог род рой рост руда рысь сало сани сито слон слух спор срок стая стук сук тир торг трон трюк тур ужин указ урок усы утюг холм царь цех цирк час чек член шип шов штат щель эхо юг яд як ящик тень пень кит лист мышь ось ум жар пот вор чан лак тетя дядя сеть рост пирог порог торф фото ветер свет совет ворот').split(' ');
+  var DICT = {};
+  function addAll(list) { list.forEach(function (w) { w = w.toLowerCase().replace(/ё/g, 'е'); if (w.length >= 3) DICT[w] = 1; }); }
+  addAll(SHORT); addAll(window.PauzaNouns || []);
+  try { fetch('../word/words.txt').then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) { addAll(t.split(/\s+/).filter(Boolean)); if (src) recount(); }).catch(function () {}); } catch (e) {}
+  var $ = function (id) { return document.getElementById(id); };
+  var src = '', used = [], typed = [], found = [], total = 0, score = 0, words = 0;
+  var shell = P.shell({
+    id: 'subwords', title: 'Слова из слова', tagline: 'Одно длинное слово — десятки коротких.',
+    rulesHtml: '<p>Составляй слова из букв длинного слова: нажимай буквы по порядку и жми «Готово». Каждую букву можно взять столько раз, сколько она есть. Слова от трёх букв, только существительные и обычные слова. Очки — по числу букв. Надоело слово — возьми другое. Две минуты.</p>',
+    countdown: true, overEyebrow: 'Время вышло',
+    unit: function (n) { return P.plural(n, U); }, onReset: reset
+  });
+  var timer = P.timeLimit(shell, 120, finish, $('timebar'));
+  function canMake(w) { var pool = src.split(''); for (var i = 0; i < w.length; i++) { var k = pool.indexOf(w[i]); if (k < 0) return false; pool.splice(k, 1); } return true; }
+  function recount() { total = Object.keys(DICT).filter(function (w) { return w !== src && w.length <= src.length && canMake(w); }).length; info(); }
+  function info() { $('info').textContent = 'найдено ' + found.length + ' из ' + Math.max(total, found.length) + ' слов в словаре игры'; }
+  function newWord() { src = P.pick(LONG.filter(function (w) { return w !== src; })); found = []; typed = []; used = []; render(); recount(); }
+  function render() {
+    var s = $('src'); s.textContent = '';
+    src.split('').forEach(function (ch, i) { var b = document.createElement('button'); b.type = 'button'; b.textContent = ch; b.disabled = used.indexOf(i) >= 0; b.addEventListener('click', function () { if (!shell.running || used.indexOf(i) >= 0) return; used.push(i); typed.push(ch); P.haptic('tap'); render(); }); s.appendChild(b); });
+    $('cur').textContent = typed.join('') || '…'; $('cur').className = 'sw-cur';
+    var f = $('found'); f.textContent = ''; found.slice().reverse().forEach(function (w) { var sp = document.createElement('span'); sp.textContent = w; f.appendChild(sp); });
+    info();
+  }
+  function flash(cls) { var c = $('cur'); c.className = 'sw-cur'; void c.offsetWidth; c.className = 'sw-cur ' + cls; }
+  $('clr').addEventListener('click', function () { if (!shell.running) return; if (typed.length) { typed.pop(); used.pop(); } render(); });
+  $('ok').addEventListener('click', function () {
+    if (!shell.running || !typed.length) return;
+    var w = typed.join('');
+    if (w.length < 3 || !DICT[w] || w === src) { P.haptic('crash'); flash('bad'); setTimeout(function () { typed = []; used = []; render(); }, 350); return; }
+    if (found.indexOf(w) >= 0) { P.haptic('crash'); $('info').textContent = 'уже было: ' + w; typed = []; used = []; setTimeout(render, 600); return; }
+    found.push(w); score += w.length; words++; shell.setScore(String(score)); P.haptic('coin'); typed = []; used = []; render(); flash('good');
+  });
+  $('nx').addEventListener('click', function () { if (shell.running) newWord(); });
+  function reset() { score = 0; words = 0; timer.reset(); shell.setScore('0'); newWord(); }
+  function finish() { shell.end({ score: score, delay: 300, stats: 'слов: ' + words, phrase: 'В «Слова из слова» я собрал ' + words + ' слов на ' + score + ' ' + P.plural(score, U) + '. Найдёшь больше?' }); }
+  window.addEventListener('keydown', function (e) {
+    if (!shell.running) return;
+    if (e.key === 'Enter') { $('ok').click(); return; }
+    if (e.key === 'Backspace') { $('clr').click(); return; }
+    var ch = (e.key || '').toLowerCase().replace('ё', 'е');
+    for (var i = 0; i < src.length; i++) if (src[i] === ch && used.indexOf(i) < 0) { used.push(i); typed.push(ch); render(); return; }
+  });
+  newWord(); timer.show();
+})();
+</script>
+</body>
+</html>

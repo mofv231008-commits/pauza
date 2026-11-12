@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Валюты</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<script src="../shared/quiz.js?v=1"></script>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var C = [
+    ['Россия', 'рубль'], ['США', 'доллар'], ['Япония', 'иена'], ['Китай', 'юань'], ['Великобритания', 'фунт стерлингов'], ['Индия', 'рупия'],
+    ['Германия', 'евро'], ['Франция', 'евро'], ['Италия', 'евро'], ['Испания', 'евро'], ['Нидерланды', 'евро'], ['Греция', 'евро'], ['Финляндия', 'евро'], ['Хорватия', 'евро'],
+    ['Швейцария', 'франк'], ['Польша', 'злотый'], ['Чехия', 'крона'], ['Швеция', 'крона'], ['Норвегия', 'крона'], ['Дания', 'крона'], ['Исландия', 'крона'],
+    ['Венгрия', 'форинт'], ['Турция', 'лира'], ['Казахстан', 'тенге'], ['Украина', 'гривна'], ['Беларусь', 'рубль'], ['Армения', 'драм'], ['Грузия', 'лари'],
+    ['Азербайджан', 'манат'], ['Туркменистан', 'манат'], ['Узбекистан', 'сум'], ['Киргизия', 'сом'], ['Таджикистан', 'сомони'], ['Монголия', 'тугрик'],
+    ['Южная Корея', 'вона'], ['Вьетнам', 'донг'], ['Таиланд', 'бат'], ['Индонезия', 'рупия'], ['Малайзия', 'ринггит'], ['Филиппины', 'песо'],
+    ['Бразилия', 'реал'], ['Мексика', 'песо'], ['Аргентина', 'песо'], ['Канада', 'доллар'], ['Австралия', 'доллар'], ['ЮАР', 'рэнд'],
+    ['Египет', 'фунт'], ['Израиль', 'шекель'], ['Саудовская Аравия', 'риял'], ['ОАЭ', 'дирхам'], ['Иран', 'риал'], ['Румыния', 'лей'], ['Молдавия', 'лей'],
+    ['Сербия', 'динар'], ['Нигерия', 'найра'], ['Пакистан', 'рупия']
+  ];
+  var NAMES = []; C.forEach(function (c) { if (NAMES.indexOf(c[1]) < 0) NAMES.push(c[1]); });
+  function alike(a, b) { var g = [['фунт', 'фунт стерлингов'], ['риял', 'риал'], ['сом', 'сомони']]; return g.some(function (x) { return x.indexOf(a) >= 0 && x.indexOf(b) >= 0; }); }
+  var order = [], pos = 0;
+  PauzaQuiz({
+    id: 'currency', title: 'Валюты', tagline: 'Чем расплачиваются в разных странах.',
+    rules: '<p>Назвали страну — выбери её валюту из четырёх. Ошибка отнимает 3 секунды. На всё 60 секунд.</p>',
+    sub: 'Валюта страны',
+    onReset: function () { order = P.shuffle(C.map(function (_, i) { return i; })); pos = 0; },
+    next: function () {
+      if (!order.length || pos >= order.length) { order = P.shuffle(C.map(function (_, i) { return i; })); pos = 0; }
+      var c = C[order[pos++]], wrong = P.shuffle(NAMES.filter(function (n) { return n !== c[1] && !alike(n, c[1]); })).slice(0, 3), opts = P.shuffle([c[1]].concat(wrong));
+      return { q: c[0], opts: opts, right: opts.indexOf(c[1]) };
+    }
+  });
+})();
+</script>
+</body>
+</html>

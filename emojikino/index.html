@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Кино в эмодзи</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<script src="../shared/quiz.js?v=1"></script>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var M = [
+    ['🦁👑🌅', 'Король Лев'], ['🚢🧊💔', 'Титаник'], ['🧙‍♂️💍🌋', 'Властелин колец'], ['🕷️🧑‍🦱🏙️', 'Человек-паук'], ['🦖🏝️🚙', 'Парк юрского периода'],
+    ['🐠🔍🌊', 'В поисках Немо'], ['👸❄️⛄', 'Холодное сердце'], ['🧸🍯🐷', 'Винни-Пух'], ['🐺🐰🥚', 'Ну, погоди!'], ['🐱🐭🧀', 'Том и Джерри'],
+    ['🏠🎈👴', 'Вверх'], ['🤖🌱🗑️', 'ВАЛЛ-И'], ['🐀👨‍🍳🍲', 'Рататуй'], ['🧞🪔🐒', 'Аладдин'], ['🧜‍♀️🐚🦀', 'Русалочка'],
+    ['👻🚫🔫', 'Охотники за привидениями'], ['🧑‍🚀🌽🕳️', 'Интерстеллар'], ['💊🕶️🤖', 'Матрица'], ['🦈🏖️😱', 'Челюсти'], ['🐼🥋🥟', 'Кунг-фу Панда'],
+    ['🟩👹🫏', 'Шрек'], ['🚗⚡🏁', 'Тачки'], ['🐉🔥🧒', 'Как приручить дракона'], ['🍫🏭🎫', 'Чарли и шоколадная фабрика'], ['⚡👓🧙', 'Гарри Поттер'],
+    ['🏃‍♂️🍫🪶', 'Форрест Гамп'], ['🕰️🚗🔥', 'Назад в будущее'], ['🦍🏙️✈️', 'Кинг-Конг'], ['🎄🛁✈️', 'Ирония судьбы, или С лёгким паром!'], ['🚀🌌⚔️', 'Звёздные войны'],
+    ['👽🚲🌕', 'Инопланетянин'], ['🎃💀🎄', 'Кошмар перед Рождеством'], ['👧🐻🍯', 'Маша и Медведь'], ['🦢🩰🖤', 'Чёрный лебедь'], ['1️⃣0️⃣1️⃣🐶', '101 далматинец'],
+    ['🎅🏠👦', 'Один дома'], ['🐭🎩🪄', 'Микки Маус'], ['🧊🦣🐿️', 'Ледниковый период'], ['🐧🕺❄️', 'Делай ноги'], ['🧑‍🏫🎄🍊', 'Ёлки'],
+    ['🦊🐰🚓', 'Зверополис'], ['🧠😄😢', 'Головоломка'], ['🐟🐟🐢🌊', 'В поисках Дори'], ['🦸‍♂️🦸‍♀️👶', 'Суперсемейка'], ['👨‍🚀🌱🔴', 'Марсианин']
+  ];
+  var order = [], pos = 0;
+  PauzaQuiz({
+    id: 'emojikino', title: 'Кино в эмодзи', tagline: 'Три эмодзи — один фильм.',
+    rules: '<p>По трём эмодзи угадай фильм или мультфильм. Выбери из четырёх вариантов. Ошибка — минус 3 секунды. На всё 60 секунд.</p>',
+    unit: ['фильм', 'фильма', 'фильмов'], sub: 'Что это за фильм?',
+    onReset: function () { order = P.shuffle(M.map(function (_, i) { return i; })); pos = 0; },
+    next: function () {
+      if (!order.length || pos >= order.length) { order = P.shuffle(M.map(function (_, i) { return i; })); pos = 0; }
+      var m = M[order[pos++]], others = P.shuffle(M.filter(function (x) { return x !== m; })).slice(0, 3).map(function (x) { return x[1]; });
+      var opts = P.shuffle([m[1]].concat(others));
+      return { q: m[0], opts: opts, right: opts.indexOf(m[1]), cls: 'emoji' };
+    },
+    phrase: function (s) { return 'В «Кино в эмодзи» я угадал ' + s + ' фильмов за минуту. Обгонишь?'; }
+  });
+})();
+</script>
+</body>
+</html>

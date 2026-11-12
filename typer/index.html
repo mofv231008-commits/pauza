@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#140734">
+<meta name="color-scheme" content="dark">
+<title>Пауза · Скоропечать</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<style>
+.stage{background:var(--shoulder)}
+.ty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;gap:16px;padding:84px 16px 16px}
+.ty .timebar{width:100%}
+.ty-next{color:var(--lilac);font-size:14px;min-height:20px}
+.ty-word{font-family:var(--font-display);font-weight:800;font-size:clamp(26px,9vw,40px);letter-spacing:.02em;text-align:center;overflow-wrap:anywhere}
+.ty-word span.ok{color:var(--mint)}.ty-word span.bad{color:var(--coral)}
+.ty-in{width:min(100%,360px);height:56px;border-radius:16px;border:2px solid var(--line);background:var(--night);color:var(--paper);font-size:22px;text-align:center;font-family:var(--font-body);outline:none}
+.ty-in:focus{border-color:var(--mint)}
+.ty-in.bad{border-color:var(--coral)}
+.ty-hint{font-size:12.5px;color:var(--lilac);text-align:center}
+.stage[data-state="paused"] .ty,.stage[data-state="countdown"] .ty-word{visibility:hidden}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<script src="../shared/nouns.js"></script>
+<div class="ty"><div class="timebar" id="timebar"><i></i></div><div class="ty-next" id="nx"></div><div class="ty-word" id="word"></div>
+<input class="ty-in" id="in" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="next" aria-label="Набери слово">
+<div class="ty-hint">Ё можно печатать как Е. Ошибся — просто сотри.</div></div>
+</div>
+<script src="../shared/pauza.js?v=6"></script>
+<script>
+(function () {
+  'use strict';
+  var P = window.Pauza;
+  var U = ['слово', 'слова', 'слов'];
+  var WORDS = (window.PauzaNouns || ['дом', 'кот', 'стол', 'окно', 'книга']).filter(function (w) { return w.length >= 4 && w.length <= 9; });
+  var $ = function (id) { return document.getElementById(id); };
+  var inp = $('in'), cur = '', nxt = '', score = 0, chars = 0, typos = 0, lastLen = 0;
+  var shell = P.shell({
+    id: 'typer', title: 'Скоропечать', tagline: 'Сколько слов напечатаешь за минуту?',
+    rulesHtml: '<p>Печатай слово, которое видишь. Как только наберёшь его правильно — появится следующее. Длинные слова стоят столько же, сколько короткие, но считаются и знаки в минуту. На всё 60 секунд.</p>',
+    countdown: true, overEyebrow: 'Время вышло', pauseKeys: ['Escape'],
+    unit: function (n) { return P.plural(n, U); }, onReset: reset,
+    onRun: function () { setTimeout(function () { inp.disabled = false; inp.focus(); }, 30); },
+    onPause: function () { inp.blur(); }
+  });
+  var timer = P.timeLimit(shell, 60, finish, $('timebar'));
+  function norm(s) { return s.toLowerCase().replace(/ё/g, 'е').trim(); }
+  function pick() { return P.pick(WORDS); }
+  function show() {
+    var typed = norm(inp.value), html = '';
+    for (var i = 0; i < cur.length; i++) { var cls = i < typed.length ? (typed[i] === cur[i] ? 'ok' : 'bad') : ''; html += '<span class="' + cls + '">' + cur[i] + '</span>'; }
+    $('word').innerHTML = html; $('nx').textContent = 'дальше: ' + nxt;
+    inp.classList.toggle('bad', typed.length > 0 && cur.indexOf(typed) !== 0);
+  }
+  function reset() { score = 0; chars = 0; typos = 0; cur = pick(); nxt = pick(); inp.value = ''; inp.disabled = true; timer.reset(); shell.setScore('0'); show(); }
+  function finish() { inp.blur(); inp.disabled = true; var cpm = chars; shell.end({ score: score, delay: 300, stats: 'знаков в минуту: ' + cpm + ' · опечаток: ' + typos, phrase: 'В «Скоропечати» я набрал ' + score + ' ' + P.plural(score, U) + ' за минуту (' + cpm + ' знаков). Быстрее печатаешь?' }); }
+  inp.addEventListener('input', function () {
+    if (!shell.running) { inp.value = ''; return; }
+    var typed = norm(inp.value);
+    if (typed.length > lastLen && cur.indexOf(typed) !== 0) { typos++; P.haptic('crash'); }
+    lastLen = typed.length;
+    if (typed === cur) { score++; chars += cur.length; shell.setScore(String(score)); P.haptic('coin'); cur = nxt; nxt = pick(); inp.value = ''; lastLen = 0; }
+    show();
+  });
+  inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+  document.getElementById('stage').addEventListener('pointerdown', function (e) { if (shell.running && e.target !== inp) setTimeout(function () { inp.focus(); }, 0); });
+  cur = pick(); nxt = pick(); inp.disabled = true; show(); timer.show();
+})();
+</script>
+</body>
+</html>
