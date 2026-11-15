@@ -1,19 +1,19 @@
 /* Deterministic mechanics/lifecycle checks without network or Telegram. */
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 class Element {
- constructor(){this.children=[];this.textContent='';this.style={};this.dataset={};this.classList={toggle(){},remove(){},add(){}};}
+ constructor(){this.children=[];this.textContent='';this.style={};this.dataset={};this.attrs={};this.queries={};this.htmlWrites=0;this.classList={toggle(){},remove(){},add(){}};}
  prepend(e){this.children.unshift(e);} querySelectorAll(){return [];} click(){if(this.onclick)this.onclick();} appendChild(e){this.children.push(e);return e;} replaceChildren(){this.children=[];this.textContent='';}
- set innerHTML(v){this.html=v;this.children=[new Element()];} get innerHTML(){return this.html;}
- querySelector(){return this.children[0];}setPointerCapture(){} insertAdjacentHTML(_,v){this.html=(this.html||'')+v;}
+ set innerHTML(v){this.htmlWrites++;this.queries={};this.html=v;this.children=[new Element()];} get innerHTML(){return this.html;}
+ querySelector(selector){return this.queries[selector]||(this.queries[selector]=new Element());}setAttribute(k,v){this.attrs[k]=v;}setPointerCapture(){} insertAdjacentHTML(_,v){this.html=(this.html||'')+v;}
 }
 const source=fs.readFileSync('shared/ten-games.js','utf8');
 function game(id,timed){let els=Object.fromEntries(['prompt','hint','display','controls','feedback','chapter','main'].map(x=>[x,new Element()])),cfg,tick,result,events={};
  const shell={running:false,setScore(n){this.score=n;},setSide(){},end(r){result=r;this.running=false;}};
  const math=Object.create(Math);math.random=()=>.5;
  const context={Math:math,Map,console,document:{body:new Element(),querySelector:()=>els.main,getElementById:id=>els[id],createElement:()=>new Element(),addEventListener:(k,fn)=>events[k]=fn},window:{PauzaGameConfig:{id,title:id,timed,rules:'test'},Pauza:{shell(c){cfg=c;return shell;},loop(fn){tick=fn;}},addEventListener:(k,fn)=>events[k]=fn}};
- vm.runInNewContext(source,context);cfg.onReset();shell.running=true;
+ vm.runInNewContext(source.replace('P.loop(dt=>','window.testState=()=>s;P.loop(dt=>'),context);cfg.onReset();shell.running=true;
  const click=(label)=>{const b=typeof label==='number'?els.controls.children[label]:els.controls.children.find(b=>b.textContent===label);assert(b,'Missing '+label);assert(!b.disabled);b.onclick();};
- return {els,shell,click,step:dt=>tick(dt),events,reset(){cfg.onReset();shell.running=true;},get result(){return result;}};
+ return {els,shell,click,step:dt=>tick(dt),events,reset(){cfg.onReset();shell.running=true;},get state(){return context.window.testState();},get result(){return result;}};
 }
 for(const id of ['waterjug','onestroke','morse','binary','weighing','tightrope','boiler','rpsread','riskdice','chomp']){
  const timed=['waterjug','onestroke','morse','binary','weighing'].includes(id),g=game(id,timed);
@@ -39,3 +39,31 @@ for(const id of ['waterjug','onestroke','morse','binary','weighing','tightrope',
 }
 const cat=JSON.parse(fs.readFileSync('tools/catalog.json'));assert.equal(cat.games.length,187);assert.equal(new Set(cat.games.map(x=>x.id)).size,187);for(const g of cat.games)assert(fs.existsSync(g.id+'/index.html'));
 console.log('PASS catalog: 187 unique ids with game pages');
+
+// Physics should behave alike on slow and fast devices; rendering must reuse the scene.
+const falls=[];
+for(const fps of [30,60,120]){
+ const g=game('tightrope',false),display=g.els.display,writes=display.htmlWrites;
+ const person=g.state.view.person;let previous=person.attrs.transform;
+ for(let i=0;i<12;i++){g.step(1/fps);assert.notEqual(person.attrs.transform,previous,'movement must update each frame');previous=person.attrs.transform;}
+ assert.equal(display.htmlWrites,writes,'animation must not replace the SVG');
+ const before=g.state.x;g.shell.running=false;g.step(5);assert.equal(g.state.x,before,'pause freezes physics');g.shell.running=true;
+ let t=12/fps;while(!g.result&&t<15){g.step(1/fps);t+=1/fps;}
+ assert(g.result,'uncontrolled character must fall in hard mode');falls.push(t);
+ assert.equal(display.htmlWrites,writes,'scene is reused for the entire round');
+ g.reset();assert.equal(g.state.x,50);assert.equal(g.state.guard,12);assert.equal(g.state.gustTime,0);
+}
+assert(Math.max(...falls)-Math.min(...falls)<.12,'physics depends on device frame rate: '+falls);
+const challenge=game('tightrope',false);
+for(let i=0;i<1800&&!challenge.result;i++){
+ const st=challenge.state;
+ // Simple balancing controller models a player tapping in both directions.
+ const force=-(st.x-50)*6-st.v*8-st.wind;
+ const index=force<0?0:1;const b=challenge.els.controls.children[index];
+ if(Math.abs(force)>12)b.onpointerdown({preventDefault(){},pointerId:1});else b.onpointerup();
+ challenge.step(1/60);
+}
+assert(challenge.state.elapsed>10,'hard mode should remain controllable');
+assert(challenge.state.guard>12&&challenge.state.level>=2,'challenge ramps with survival time');
+console.log('PASS smooth SVG reuse, pause/reset, 30/60/120fps consistency; unattended falls:',falls.map(t=>t.toFixed(2)).join(', '));
+console.log('PASS harder mode remains controllable:',challenge.state.elapsed.toFixed(1),'seconds');

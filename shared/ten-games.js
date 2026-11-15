@@ -10,7 +10,41 @@ const svg=(body,cls='')=>'<svg class="scene '+cls+'" viewBox="0 0 320 190" aria-
 function status(){const el=$('chapter');if(el)el.textContent=['tightrope','boiler'].includes(C.id)?'Выживание · '+Math.floor(time)+' с':C.id==='riskdice'?'В банке '+s.bank+' · жизни '+s.lives:C.id==='chomp'?'Партия '+(round+1):'Этап '+(round+1)+' · '+(C.timed?'60 секунд':'до проигрыша');}
 function pulse(kind){let el=document.querySelector('.minigame');el.classList.remove('success','mistake');void el.offsetWidth;el.classList.add(kind);}
 function drawDie(value){$('display').innerHTML='<div class="dice-table"><div class="die">'+Array.from({length:9},(_,i)=>'<i class="'+([[],[4],[0,8],[0,4,8],[0,2,6,8],[0,2,4,6,8],[0,2,3,5,6,8]][value||1].includes(i)?'pip':'')+'"></i>').join('')+'</div><span class="bank-label">'+(value?'Выпало '+value:'Твой следующий ход')+'</span></div>';}
-function drawBalance(){let a=(s.x-50)*.65;$('display').innerHTML=svg('<g class="skyline"><path d="M0 175V120h30v55h10V95h35v80h12v-42h28v42h26V111h27v64h16V85h36v90h20v-55h28v55h20V105h32v85H0"/></g><path d="M15 131Q160 151 305 131" class="rope"/><g transform="translate('+ (50+s.x*2.2)+' 103) rotate('+a+')"><circle cy="-39" r="9" fill="#FFD84D"/><path d="M0-28v25m0 0-13 26m13-26 13 26m-43-42h86" class="acrobat"/></g><path d="M'+(s.wind>0?32:260)+' 30h28m-28 8h20" stroke="#B9A8F0" stroke-width="2"/><text x="160" y="25" text-anchor="middle" class="scene-caption">ВЕТЕР '+(s.wind>0?'→':'←')+'</text>');}
+// The scene is built once. Each frame only updates cached SVG nodes.
+function drawBalance(){
+ if(!s.view){
+  $('display').innerHTML=svg('<defs><linearGradient id="city-night" x2="0" y2="1"><stop stop-color="#352956"/><stop offset="1" stop-color="#17172c"/></linearGradient></defs><rect width="320" height="190" rx="14" fill="url(#city-night)"/><circle cx="270" cy="33" r="17" fill="#d7c4ec" opacity=".5"/><g class="skyline"><path d="M0 190V120h30v70h10V95h35v95h12v-57h28v57h26V111h27v79h16V85h36v105h20v-70h28v70h20V105h32v85H0"/></g><path d="M15 131Q160 151 305 131" class="rope"/><rect data-balance="band" y="151" height="4" rx="2" fill="#3df5b0" opacity=".65"/><g data-balance="person"><circle cy="-39" r="9" fill="#FFD84D"/><path d="M0-28v25m0 0-13 26m13-26 13 26m-43-42h86" class="acrobat"/></g><g data-balance="wind"><path d="M0 0h30m-7-6 7 6-7 6m-23 8h19" stroke="#B9A8F0" stroke-width="2" fill="none"/></g><text x="160" y="24" text-anchor="middle" class="scene-caption" data-balance="label"></text><text x="160" y="178" text-anchor="middle" class="scene-caption" data-balance="warning"></text>');
+  s.view={};['person','band','wind','label','warning'].forEach(key=>s.view[key]=$('display').querySelector('[data-balance="'+key+'"]'));
+ }
+ const v=s.view,x=50+s.x*2.2,near=Math.min(s.x-s.guard,100-s.guard-s.x)<9;
+ // Follow the sag of the rope, with lean indicating inertia.
+ const y=131+40*((x-15)/290)*(1-(x-15)/290)-23;
+ v.person.setAttribute('transform','translate('+x.toFixed(2)+' '+y.toFixed(2)+') rotate('+Math.max(-35,Math.min(35,s.v*.85)).toFixed(2)+')');
+ v.band.setAttribute('x',(50+s.guard*2.2).toFixed(2));v.band.setAttribute('width',((100-2*s.guard)*2.2).toFixed(2));
+ v.band.setAttribute('fill',near?'#FF6B4A':'#3DF5B0');
+ v.wind.setAttribute('transform','translate('+(s.wind>0?24:296)+' 38) scale('+(s.wind>0?1:-1)+' 1)');
+ if(visualTime>=.08||!v.label.textContent){
+  v.label.textContent='ВЕТЕР '+(s.wind>0?'→':'←')+' '+Math.round(Math.abs(s.wind))+' · УРОВЕНЬ '+s.level;
+  v.warning.textContent=s.gustTime>0?'ПОРЫВ!':s.gustIn<.65?'ПРИГОТОВЬСЯ К ПОРЫВУ':near?'ОСТОРОЖНО, КРАЙ':'ДЕРЖИСЬ В ЗЕЛЁНОЙ ЗОНЕ';
+  $('prompt').textContent='Удержи равновесие';
+  document.body.classList.toggle('danger',near||s.gustTime>0);
+ }
+}
+function stepBalance(dt){
+ // Small substeps make damping and controls consistent on different frame rates.
+ const steps=Math.max(1,Math.ceil(dt*120)),h=dt/steps;
+ for(let k=0;k<steps;k++){
+  s.elapsed+=h;s.level=1+Math.floor(s.elapsed/10);s.guard=12+Math.min(16,s.elapsed*.35);
+  s.change-=h;if(s.change<=0){s.target=(Math.random()<.5?-1:1)*(18+Math.random()*16+Math.min(20,s.elapsed*.45));s.change=Math.max(.6,1.65-s.elapsed*.012)+Math.random()*.4;}
+  s.gustIn-=h;s.gustTime=Math.max(0,s.gustTime-h);
+  if(s.gustIn<=0){s.gustTime=.75;s.gustDir=s.target>=0?1:-1;s.gustIn=Math.max(2.1,4.4-s.elapsed*.025);}
+  const target=s.target+Math.sin(s.elapsed*2.3)*8+(s.gustTime>0?s.gustDir*(20+Math.min(14,s.elapsed*.25)):0);
+  s.wind+=(target-s.wind)*(1-Math.exp(-h*5));
+  s.v+=(s.wind+held*82+(s.x-50)*.19)*h;s.v*=Math.exp(-h*1.05);s.x+=s.v*h;
+  if(s.x<=s.guard||s.x>=100-s.guard){finish('Сорвался с каната');return false;}
+ }
+ drawBalance();return true;
+}
 function drawBoiler(){let danger=s.pressure<25||s.pressure>75;document.body.classList.toggle('danger',danger);$('display').innerHTML=svg('<path d="M0 150h64m194 0h62M252 75h33V20" class="pipe"/><rect x="64" y="44" width="192" height="128" rx="24" class="tank"/><path d="M74 68h172m-166 96v22m160-22v22" class="pipe"/><circle cx="160" cy="100" r="39" fill="#110c23" stroke="'+(danger?'#FF6B4A':'#B9A8F0')+'" stroke-width="5"/><path d="M130 108a32 32 0 0 1 60 0" fill="none" stroke="#3DF5B0" stroke-width="5"/><path d="M160 100l0-27" stroke="#FFD84D" stroke-width="4" transform="rotate('+(s.pressure*2.4-120)+' 160 100)"/><circle cx="160" cy="100" r="5" fill="#FFD84D"/><text x="160" y="125" text-anchor="middle" class="scene-caption">'+Math.round(s.pressure)+' BAR</text><path d="M104 42q-12-16 0-30m28 30q-12-16 0-30m70 30q-12-16 0-30" class="steam '+(held?'venting':'')+'"/><path d="m135 167 12-26 13 14 14-24 13 36" fill="#FF9A6B" class="flame"/>');}
 
 const rand=n=>Math.floor(Math.random()*n), pick=a=>a[rand(a.length)];
@@ -55,7 +89,7 @@ case 'weighing':{
  for(let i=0;i<8;i++)button('№ '+(i+1),b=>{if(s.guess){if(i===s.heavy)win();else{add(-Math.min(3,score));feedback('Нет, тяжелее № '+(s.heavy+1));setup();}return;}s.pan[i]=(s.pan[i]+1)%3;b.textContent='№ '+(i+1)+['',' ←',' →'][s.pan[i]];draw();});
  button('Взвесить',()=>{let left=0,right=0;s.pan.forEach((v,i)=>{if(v===1)left+=i===s.heavy?11:10;if(v===2)right+=i===s.heavy?11:10;});s.weighs++;s.tilt=left===right?0:left>right?-8:8;draw();feedback((left===right?'Равновесие':left>right?'Левая чаша тяжелее':'Правая чаша тяжелее')+' · взвешиваний: '+s.weighs);});
  button('Назвать монету',b=>{s.guess=!s.guess;b.classList.toggle('active',s.guess);text(s.guess?'Нажми тяжёлую монету':'Одна монета тяжелее',s.guess?'Правильно: +10. Ошибка: −3.':'Нажимай монеты: вне весов → слева → справа.');});draw();break;}
-case 'tightrope':s={x:50,v:0,wind:0,change:0,earned:0};text('Удержи равновесие','Зажми ← или →. Ветер меняет направление.');drawBalance();holdButton('←',-1);holdButton('→',1);break;
+case 'tightrope':s={x:50,v:0,wind:0,target:0,change:0,elapsed:0,level:1,guard:12,gustIn:3.5,gustTime:0,gustDir:1,view:null};text('Удержи равновесие','Коротко жми ← / → против ветра. Учитывай инерцию.');drawBalance();holdButton('←',-1);holdButton('→',1);break;
 case 'boiler':s={pressure:50,heat:9,change:0,earned:0};text('Давление: 50','Зажимай клапан. Безопасный диапазон: 10–90.');drawBoiler();holdButton('Выпустить пар',1);break;
 case 'rpsread':s={move:rand(3),left:Math.max(.65,3-round*.08),limit:Math.max(.65,3-round*.08)};text('Соперник: '+['✊ камень','✂️ ножницы','✋ бумага'][s.move],'Выбери жест, который его победит');meter();$('display').insertAdjacentHTML('afterbegin','<div class="duel-scene"><div class="opponent-hand hand-'+s.move+'">'+['✊','✂️','✋'][s.move]+'</div><span>ХОД СОПЕРНИКА</span></div>');['✊','✂️','✋'].forEach((x,i)=>button(x,()=>{if(i===(s.move+2)%3)win();else finish('Соперник победил');}));break;
 case 'riskdice':s={bank:0,lives:3};text('Банк: 0','Жизни: ♥♥♥ · единица сжигает банк');drawDie(5);button('Бросить',()=>{let die=1+rand(6);drawDie(die);if(die===1){s.bank=0;s.lives--;feedback('Единица! Банк сгорел');if(!s.lives){finish('Три неудачных броска');return;}}else{s.bank+=die;feedback('Забрать банк или рискнуть ещё?');}text('Банк: '+s.bank,'Жизни: '+'♥'.repeat(s.lives));});button('Забрать',()=>{if(s.bank){add(s.bank);s.bank=0;text('Банк: 0','Жизни: '+'♥'.repeat(s.lives));feedback('Очки сохранены');}});break;
@@ -69,7 +103,7 @@ function bite(y,x){for(let k=y;k<3;k++)s.rows[k]=Math.min(s.rows[k],x);}
 const memo=new Map();function winning(rows){let key=rows.join();if(memo.has(key))return memo.get(key);for(let y=0;y<3;y++)for(let x=0;x<rows[y];x++){if(!x&&!y)continue;let next=rows.map((v,k)=>k>=y?Math.min(v,x):v);if(!winning(next)){memo.set(key,true);return true;}}memo.set(key,false);return false;}
 function botChomp(){let moves=[];for(let y=0;y<3;y++)for(let x=0;x<s.rows[y];x++){if(x||y){let next=s.rows.map((v,k)=>k>=y?Math.min(v,x):v);moves.push({x,y,good:!winning(next)});}}if(!moves.length){add(20);round++;feedback('Сопернику осталась отрава! +20');s={rows:[4,4,4],bot:false,wait:0};text('Новая плитка','Твой ход');drawChomp();return;}let good=moves.filter(m=>m.good),m=pick(Math.random()<.65&&good.length?good:moves);bite(m.y,m.x);s.bot=false;text('Твой ход','Красную клетку брать нельзя');drawChomp();}
 P.loop(dt=>{if(!shell.running){held=0;return;}time+=dt;visualTime+=dt;if(visualTime>=.08)status();if(C.timed){shell.setSide(Math.ceil(Math.max(0,60-time))+' с',time>50);if(time>=60){finish('Минута закончилась');return;}}else shell.setSide(Math.floor(time)+' с');
-if(C.id==='tightrope'){s.change-=dt;if(s.change<=0){s.wind=(Math.random()-.5)*(25+time*.3);s.change=.8+Math.random();}s.v+=(s.wind+held*42)*dt;s.v*=Math.exp(-dt*1.7);s.x+=s.v*dt;if(visualTime>=.08)drawBalance();$('prompt').textContent='Баланс: '+Math.round(s.x);if(s.x<=0||s.x>=100){finish('Потерял равновесие');return;}let n=Math.floor(time*10);if(n>score)add(n-score);}
+if(C.id==='tightrope'){if(!stepBalance(dt))return;let n=Math.floor(time*10);if(n>score)add(n-score);}
 if(C.id==='boiler'){s.change-=dt;if(s.change<=0){s.heat=8+Math.random()*10+time*.15;s.change=2;}s.pressure+=(s.heat-held*34)*dt;if(visualTime>=.08)drawBoiler();$('prompt').textContent='Давление: '+Math.round(s.pressure);if(s.pressure<=10||s.pressure>=90){finish(s.pressure<=10?'Котёл погас':'Избыточное давление');return;}let n=Math.floor(time*10);if(n>score)add(n-score);}
 if(C.id==='rpsread'){s.left-=dt;bar(s.left/s.limit*100);if(s.left<=0)finish('Не успел выбрать жест');}
 if(visualTime>=.08)visualTime=0;
