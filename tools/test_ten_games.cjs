@@ -1,16 +1,16 @@
 /* Deterministic mechanics/lifecycle checks without network or Telegram. */
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 class Element {
- constructor(){this.children=[];this.textContent='';this.style={};this.classList={toggle(){}};}
- appendChild(e){this.children.push(e);return e;} replaceChildren(){this.children=[];this.textContent='';}
+ constructor(){this.children=[];this.textContent='';this.style={};this.dataset={};this.classList={toggle(){},remove(){},add(){}};}
+ prepend(e){this.children.unshift(e);} querySelectorAll(){return [];} click(){if(this.onclick)this.onclick();} appendChild(e){this.children.push(e);return e;} replaceChildren(){this.children=[];this.textContent='';}
  set innerHTML(v){this.html=v;this.children=[new Element()];} get innerHTML(){return this.html;}
- querySelector(){return this.children[0];}setPointerCapture(){}
+ querySelector(){return this.children[0];}setPointerCapture(){} insertAdjacentHTML(_,v){this.html=(this.html||'')+v;}
 }
 const source=fs.readFileSync('shared/ten-games.js','utf8');
-function game(id,timed){let els=Object.fromEntries(['prompt','hint','display','controls','feedback'].map(x=>[x,new Element()])),cfg,tick,result,events={};
+function game(id,timed){let els=Object.fromEntries(['prompt','hint','display','controls','feedback','chapter','main'].map(x=>[x,new Element()])),cfg,tick,result,events={};
  const shell={running:false,setScore(n){this.score=n;},setSide(){},end(r){result=r;this.running=false;}};
  const math=Object.create(Math);math.random=()=>.5;
- const context={Math:math,Map,console,document:{getElementById:id=>els[id],createElement:()=>new Element(),addEventListener:(k,fn)=>events[k]=fn},window:{PauzaGameConfig:{id,title:id,timed,rules:'test'},Pauza:{shell(c){cfg=c;return shell;},loop(fn){tick=fn;}},addEventListener:(k,fn)=>events[k]=fn}};
+ const context={Math:math,Map,console,document:{body:new Element(),querySelector:()=>els.main,getElementById:id=>els[id],createElement:()=>new Element(),addEventListener:(k,fn)=>events[k]=fn},window:{PauzaGameConfig:{id,title:id,timed,rules:'test'},Pauza:{shell(c){cfg=c;return shell;},loop(fn){tick=fn;}},addEventListener:(k,fn)=>events[k]=fn}};
  vm.runInNewContext(source,context);cfg.onReset();shell.running=true;
  const click=(label)=>{const b=typeof label==='number'?els.controls.children[label]:els.controls.children.find(b=>b.textContent===label);assert(b,'Missing '+label);assert(!b.disabled);b.onclick();};
  return {els,shell,click,step:dt=>tick(dt),events,reset(){cfg.onReset();shell.running=true;},get result(){return result;}};
@@ -18,7 +18,7 @@ function game(id,timed){let els=Object.fromEntries(['prompt','hint','display','c
 for(const id of ['waterjug','onestroke','morse','binary','weighing','tightrope','boiler','rpsread','riskdice','chomp']){
  const timed=['waterjug','onestroke','morse','binary','weighing'].includes(id),g=game(id,timed);
  assert(g.els.controls.children.length>0);g.shell.running=false;g.step(100);assert.equal(g.result,undefined,'paused game ended');g.click(0);assert.equal(g.shell.score,0,'paused input changed score');g.shell.running=true;
- if(id==='binary'){g.click('16');g.click('Проверить');assert.equal(g.shell.score,10);}
+ if(id==='binary'){g.click('16');g.click('Проверить');assert.equal(g.shell.score,10);for(let n=0;n<2;n++){g.click('16');g.click('Проверить');}assert.equal(g.shell.score,35,'three correct solutions award a streak bonus');g.click('Проверить');g.click('16');g.click('Проверить');assert.equal(g.shell.score,45,'incorrect answer breaks streak');}
  if(id==='morse'){g.click('Д');assert.equal(g.shell.score,10);}
  if(id==='weighing'){g.click(4);g.click('Взвесить');assert.match(g.els.feedback.textContent,/Левая/);g.click('Назвать монету');g.click(4);assert.equal(g.shell.score,10);}
  if(id==='waterjug'){
