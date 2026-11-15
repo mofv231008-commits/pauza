@@ -39,6 +39,116 @@
  ],
  "games": [
   {
+   "id": "waterjug",
+   "title": "Перелей",
+   "into": "«Перелей»",
+   "about": "Получай нужный объём двумя кувшинами · 60 с",
+   "section": "puzzle",
+   "icon": "🫗",
+   "unit": "points",
+   "new": true,
+   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">🫗</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">60 С</text></svg>"
+  },
+  {
+   "id": "onestroke",
+   "title": "Одним росчерком",
+   "into": "«Одним росчерком»",
+   "about": "Пройди каждое ребро ровно один раз · 60 с",
+   "section": "puzzle",
+   "icon": "✒️",
+   "unit": "points",
+   "new": true,
+   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">✒️</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">60 С</text></svg>"
+  },
+  {
+   "id": "morse",
+   "title": "Азбука Морзе",
+   "into": "«Азбука Морзе»",
+   "about": "Расшифровывай точки и тире по ключу · 60 с",
+   "section": "words",
+   "icon": "📟",
+   "unit": "points",
+   "new": true,
+   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">📟</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">60 С</text></svg>"
+  },
+  {
+   "id": "binary",
+   "title": "Двоичный пульт",
+   "into": "«Двоичный пульт»",
+   "about": "Включай биты и собирай число · 60 с",
+   "section": "puzzle",
+   "icon": "💻",
+   "unit": "points",
+   "new": true,
+   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">💻</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">60 С</text></svg>"
+  },
+  {
+   "id": "weighing",
+   "title": "Весовая",
+   "into": "«Весовая»",
+   "about": "Найди тяжёлую монету взвешиваниями · 60 с",
+   "section": "puzzle",
+   "icon": "⚖️",
+   "unit": "points",
+   "new": true,
+   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">⚖️</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">60 С</text></svg>"
+  },
+  {
+   "id": "tightrope",
+   "title": "Равновесие",
+   "into": "«Равновесие»",
+   "about": "Удерживай баланс до первого падения · до проигрыша",
+   "section": "skill",
+   "icon": "🎪",
+   "unit": "tenths",
+   "new": true,
+   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">🎪</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">∞</text></svg>"
+  },
+  {
+   "id": "boiler",
+   "title": "Котельная",
+   "into": "«Котельная»",
+   "about": "Выпускай пар и не заглуши котёл · до проигрыша",
+   "section": "skill",
+   "icon": "♨️",
+   "unit": "tenths",
+   "new": true,
+   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">♨️</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">∞</text></svg>"
+  },
+  {
+   "id": "rpsread",
+   "title": "Камень, ножницы…",
+   "into": "«Камень, ножницы…»",
+   "about": "Читай намерение и выбирай контрход · до проигрыша",
+   "section": "skill",
+   "icon": "✊",
+   "unit": "points",
+   "new": true,
+   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">✊</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">∞</text></svg>"
+  },
+  {
+   "id": "riskdice",
+   "title": "Не жадничай",
+   "into": "«Не жадничай»",
+   "about": "Копи броски и вовремя забирай очки · до проигрыша",
+   "section": "board",
+   "icon": "🎲",
+   "unit": "points",
+   "new": true,
+   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">🎲</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">∞</text></svg>"
+  },
+  {
+   "id": "chomp",
+   "title": "Шоколадная ловушка",
+   "into": "«Шоколадная ловушка»",
+   "about": "Оставь сопернику отравленную клетку · до проигрыша",
+   "section": "board",
+   "icon": "🍫",
+   "unit": "points",
+   "new": true,
+   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">🍫</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">∞</text></svg>"
+  },
+  {
    "id": "space",
    "title": "Звездолёт",
    "into": "Звездолёт",

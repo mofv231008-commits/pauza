@@ -178,7 +178,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
     <div class="mark" aria-hidden="true"><i></i><i></i></div>
     <div>
       <h1>Пауза <span class="badge" id="badge" title="Спасибо за поддержку" hidden>%%STAR%%</span></h1>
-      <p class="tag">%%COUNT%% на минуту, пока ждёшь ответа.</p>
+      <p class="tag">%%COUNT%%, пока ждёшь ответа.</p>
     </div>
   </header>
   <div class="hub-actions">
