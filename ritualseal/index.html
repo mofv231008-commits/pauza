@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#140734"><meta name="color-scheme" content="dark">
+<title>Пауза · Печать</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/horror.css?v=1">
+<style>.seal{height:230px;display:grid;place-items:center;padding:0;background:radial-gradient(ellipse,#5e2448,#100c20 70%)}.seal svg{width:min(100%,230px);height:100%}.ring-controls{display:flex;flex-direction:column;gap:7px;width:100%;max-width:360px}.ring-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--lilac)}.ring-row button{width:56px;min-height:42px;padding:4px;font-size:22px}.seal .eye{fill:#100610;stroke:#FF9A6B;stroke-width:2}.seal .crack{stroke:#100c20;stroke-width:8}.seal line{stroke-linecap:round}@media(max-height:650px){.seal{height:160px}.ring-row button{min-height:36px}.ring-controls{gap:4px}}</style></head><body>
+<div class="stage horror" id="stage"><div class="play">
+<div class="timebar" id="timebar"><i></i></div>
+<p class="case">Архив запретных знаков / печать III</p><p class="instruction">Поверни каждое кольцо, чтобы его светящаяся метка оказалась наверху.</p><div class="monitor seal"><svg viewBox="0 0 240 240" aria-hidden="true"><path d="M120 8v16" stroke="#3DF5B0" stroke-width="3"/><g id="rings"></g><path class="eye" d="M92 120q28-34 56 0q-28 34-56 0"/><ellipse cx="120" cy="120" rx="5" ry="13" fill="#FF9A6B"/></svg></div><div class="ring-controls" id="ring-controls"></div>
+<p class="readout" id="message" role="status" aria-live="polite">Продержись до конца минуты.</p>
+</div></div>
+<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/horror.js?v=1"></script>
+<script>(function(){'use strict'; var P=window.Pauza;
+var positions=[],turns=0,wait=0,deadline=0,round=0,radii=[92,69,46],colors=['#FF9A6B','#B9A8F0','#3DF5B0'];
+var svg=document.getElementById('rings'),controls=document.getElementById('ring-controls');
+var g=PauzaHorror({id:'ritualseal',title:'Печать',tagline:'Три кольца держат то, что по ту сторону.',rules:'Кнопками со стрелками поверни кольца. У каждого кольца светящаяся метка: совмести все три метки с верхней чертой. У внешнего кольца шаг один, у среднего — два, у внутреннего — три из восьми секторов. На печать 14 секунд, всего 60 секунд. Каждая закрытая печать даёт 20 очков.',reset:reset,tick:tick});
+radii.forEach(function(r,i){var row=document.createElement('div');row.className='ring-row';row.innerHTML='<button type="button" class="control" aria-label="Кольцо '+(i+1)+' против часовой стрелки">↶</button><span>Кольцо '+(i+1)+' · шаг '+(i+1)+'</span><button type="button" class="control" aria-label="Кольцо '+(i+1)+' по часовой стрелке">↷</button>';row.children[0].addEventListener('click',function(){rotate(i,-1);});row.children[2].addEventListener('click',function(){rotate(i,1);});controls.appendChild(row);});
+function render(){svg.innerHTML=positions.map(function(pos,i){var r=radii[i],a=pos*Math.PI/4,x=120+Math.sin(a)*r,y=120-Math.cos(a)*r;return '<circle cx="120" cy="120" r="'+r+'" fill="none" stroke="'+colors[i]+'" stroke-width="2" opacity=".65"/><circle cx="'+x+'" cy="'+y+'" r="6" fill="'+colors[i]+'"/>';}).join('');controls.querySelectorAll('button').forEach(function(b){b.disabled=wait>0;});}
+function next(){round++;wait=0;positions=[1+P.rand(7),2*(1+P.rand(3)),1+P.rand(7)];deadline=14;g.say('Печать '+round+' · сведи три метки наверх.');render();}
+function reset(){round=0;turns=0;next();}
+function rotate(i,d){if(!g.shell.running||wait)return;positions[i]=(positions[i]+d*(i+1)+8)%8;turns++;P.haptic('tap');render();if(positions.every(function(p){return p===0;})){g.good(20);g.say('Портал закрыт. Изнутри стало тише. +20','good');wait=1;render();}}
+function tick(dt){if(wait>0){wait-=dt;if(wait<=0)next();return;}deadline-=dt;if(deadline<=0){g.bad();g.say('Печать треснула. Начертим новую.','bad');wait=1;render();}}reset();
+})();</script></body></html>

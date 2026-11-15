@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#140734"><meta name="color-scheme" content="dark">
+<title>Пауза · Ночная смена</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/horror.css?v=1">
+<style>.cameras{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;max-width:360px}.camera{position:relative;min-height:96px;border:1px solid #5e4964;border-radius:16px;padding:12px;background:linear-gradient(110deg,#1c1829,#08060e);text-align:left;cursor:pointer;overflow:hidden}.camera.active{border-color:var(--mint);box-shadow:0 0 0 1px var(--mint)}.camera .name{position:relative;z-index:2;font-size:11px;color:var(--lilac)}.camera .shadow{position:absolute;left:50%;top:45%;width:25px;height:40px;border-radius:50% 50% 0 0;background:#050308;box-shadow:0 0 16px #ff8a7b66;transform-origin:50% 100%}.camera .shadow:before,.camera .shadow:after{content:"";position:absolute;top:10px;width:4px;height:3px;background:var(--coral-2)}.camera .shadow:before{left:6px}.camera .shadow:after{right:6px}.camera .meter{position:absolute;bottom:9px;left:10px;right:10px}.camera .closed{position:absolute;inset:34px 0 20px;display:grid;place-items:center;color:var(--mint);font-size:11px;background:#131020}.power{display:flex;align-items:center;gap:12px;font-size:12px}.power .meter{flex:1}.power .meter i{background:var(--mint)}</style></head><body>
+<div class="stage horror" id="stage"><div class="play">
+<div class="timebar" id="timebar"><i></i></div>
+<p class="case">Объект 04 / пост охраны</p><p class="instruction">Выбери камеру. Запри дверь, когда тень приблизится к красной полосе.</p><div class="cameras" id="cameras"></div><div class="monitor power">Энергия <span id="energy">100%</span><div class="meter"><i id="power"></i></div></div><button class="control" id="door">Запереть выбранную дверь · 25%</button>
+<p class="readout" id="message" role="status" aria-live="polite">Продержись до конца минуты.</p>
+</div></div>
+<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/horror.js?v=1"></script>
+<script>(function(){'use strict'; var P=window.Pauza;
+var names=['Холл','Архив','Подвал','Лестница'], rooms=[],selected=0,energy=100,passed=0;
+var cams=document.getElementById('cameras'),door=document.getElementById('door');
+names.forEach(function(name,i){var b=document.createElement('button');b.type='button';b.className='camera';b.innerHTML='<span class="name">CAM 0'+(i+1)+' · '+name+'</span><span class="shadow"></span><span class="closed" hidden>ДВЕРЬ ЗАПЕРТА</span><span class="meter"><i></i></span>';b.addEventListener('click',function(){if(!g.shell.running)return;selected=i;render();});cams.appendChild(b);});
+var g=PauzaHorror({id:'nightshift',title:'Ночная смена',tagline:'Четыре камеры. Одна минута до рассвета.',rules:'Следи за четырьмя коридорами. Выбери камеру и запри дверь, когда шкала тени заполнена хотя бы на 60%. Это стоит 25% энергии. Энергия восстанавливается. Если тень доберётся до конца, она проникнет внутрь: получишь ошибку и потеряешь энергию. Набери больше очков за 60 секунд.',reset:reset,tick:tick});
+function reset(){selected=0;energy=100;passed=0;rooms=names.map(function(_,i){return {p:.08+i*.1,speed:.04+Math.random()*.012,closed:0};});g.say('Тени движутся. Дождись отметки 60%.');render();}
+function render(){Array.from(cams.children).forEach(function(b,i){var r=rooms[i];b.classList.toggle('active',selected===i);b.setAttribute('aria-pressed',String(selected===i));b.setAttribute('aria-label',names[i]+': приближение '+Math.floor(r.p*100)+' процентов');b.querySelector('.shadow').style.transform='translateX(-50%) scale('+(0.4+r.p*1.3)+')';b.querySelector('.shadow').style.opacity=r.closed?'0':String(.25+r.p*.75);b.querySelector('.closed').hidden=!r.closed;b.querySelector('i').style.width=(r.p*100)+'%';b.querySelector('i').style.background=r.p>=.6?'var(--coral)':'var(--lilac)';});document.getElementById('energy').textContent=Math.floor(energy)+'%';document.getElementById('power').style.width=energy+'%';door.disabled=!g.shell.running||energy<25||rooms[selected].closed>0;}
+function tick(dt){passed+=dt;energy=Math.min(100,energy+9*dt);rooms.forEach(function(r){if(r.closed>0){r.closed=Math.max(0,r.closed-dt);return;}r.p+=r.speed*dt*(1+passed/90);if(r.p>=1){r.p=.04;r.speed=.04+Math.random()*.015;energy=Math.max(0,energy-15);g.bad();g.say('Кто-то прошёл внутрь. Камеры снова в сети.','bad');}});render();}
+door.addEventListener('click',function(){if(!g.shell.running||energy<25||rooms[selected].closed)return;energy-=25;var r=rooms[selected];if(r.p>=.6){g.good(10);g.say('Тень осталась за дверью. +10','good');}else{g.bad();g.say('Слишком рано: тень ещё далеко.','bad');}r.p=.02;r.closed=2.2;render();});
+reset();
+})();</script></body></html>
