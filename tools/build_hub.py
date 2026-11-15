@@ -178,7 +178,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
     <div class="mark" aria-hidden="true"><i></i><i></i></div>
     <div>
       <h1>Пауза <span class="badge" id="badge" title="Спасибо за поддержку" hidden>%%STAR%%</span></h1>
-      <p class="tag">%%COUNT%% на минуту, пока ждёшь ответа.</p>
+      <p class="tag">%%COUNT%% — пока ждёшь ответа.</p>
     </div>
   </header>
   <div class="hub-actions">
@@ -204,6 +204,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
   'use strict';
   var P = window.Pauza;
   var GAMES = %%KNOWN%%;
+  document.querySelector('.hub-head .tag').textContent = GAMES.length + ' ' + P.plural(GAMES.length, ['игра', 'игры', 'игр']) + ' — пока ждёшь ответа.';
   /* Как подписать рекорд на карточке: слова после числа, 'points', 'ms' или 'clock' */
   var units = %%UNITS%%;
   var POINTS = ['очко', 'очка', 'очков'];
