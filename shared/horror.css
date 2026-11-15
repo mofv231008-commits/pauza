@@ -1,0 +1,26 @@
+/* Небольшой общий слой для минутных хорроров; меню и HUD остаются Pauza. */
+.stage.horror{background:#100c20}
+.horror .play{gap:12px;padding-top:88px;padding-bottom:max(18px,env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% 35%,#302344 0,transparent 70%)}
+.horror .play::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.12;background:repeating-linear-gradient(0deg,transparent 0 3px,#000 3px 4px)}
+.horror .play>*{z-index:1}
+.horror .timebar{height:5px}
+.case{margin:0;color:var(--coral-2);font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+.instruction{margin:0;text-align:center;color:var(--lilac);font-size:13px;min-height:2.8em;max-width:360px}
+.readout{margin:0;text-align:center;min-height:2.8em;font-size:14px;color:var(--paper);max-width:360px}
+.readout[data-tone="bad"]{color:var(--coral-2)}
+.readout[data-tone="good"]{color:var(--mint)}
+.control{appearance:none;border:1px solid var(--line);background:#211831;border-radius:15px;min-height:48px;padding:10px 16px;font:600 14px var(--font-body);cursor:pointer;touch-action:manipulation}
+.control:active{transform:translateY(1px)}
+.control:disabled{opacity:.45;cursor:default}
+.controls{display:flex;gap:8px;width:100%;max-width:360px}
+.controls>*{flex:1;min-width:0}
+.monitor{position:relative;width:100%;max-width:360px;border:1px solid #55415e;background:#151020;border-radius:22px;padding:16px;box-shadow:inset 0 0 30px #0008}
+.horror .panel{background:rgba(18,11,29,.95);border-color:#604958}
+.horror .mark i{background:var(--coral-2)}
+.horror [type="range"]{width:100%;accent-color:var(--mint);min-height:40px;touch-action:pan-x}
+.horror label{font-size:13px;color:var(--lilac)}
+.horror .meter{height:6px;background:#09060f;border-radius:10px;overflow:hidden}
+.horror .meter i{display:block;height:100%;background:var(--coral-2);width:0;transition:width .12s linear}
+.horror .play .small{font-size:11px;letter-spacing:.1em;color:var(--lilac);margin:0;text-align:center}
+@media(max-height:650px){.horror .play{gap:7px;padding-top:78px;padding-bottom:10px}.horror .monitor{padding:10px}.instruction,.readout{font-size:12px;min-height:2.4em}.case{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.horror *{animation:none!important;transition:none!important}}
