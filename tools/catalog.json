@@ -47,7 +47,7 @@
    "icon": "🫗",
    "unit": "points",
    "new": true,
-   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">🫗</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">60 С</text></svg>"
+   "art": "<svg viewBox=\"0 0 160 90\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#170A3E\"/><path d=\"M28 25h36v43q0 8-8 8H36q-8 0-8-8zM92 39h30v29q0 8-8 8h-14q-8 0-8-8z\" fill=\"#2E177A\" stroke=\"#B9A8F0\" stroke-width=\"3\"/><path d=\"M30 49h32v20q0 5-6 5H36q-6 0-6-5zM94 58h26v11q0 5-6 5h-14q-6 0-6-5z\" fill=\"#3DF5B0\"/><path d=\"M67 20q23-15 35 8m-9-2 10 3 1-10\" fill=\"none\" stroke=\"#FFD84D\" stroke-width=\"3\"/><path d=\"M35 36h9m-9 9h6m60 1h8\" stroke=\"#B9A8F0\" stroke-width=\"2\"/></svg>"
   },
   {
    "id": "onestroke",
@@ -58,7 +58,7 @@
    "icon": "✒️",
    "unit": "points",
    "new": true,
-   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">✒️</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">60 С</text></svg>"
+   "art": "<svg viewBox=\"0 0 160 90\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#170A3E\"/><path d=\"M36 65V25l43 40V25l44 40H36l43-40 44 40V25H36\" fill=\"none\" stroke=\"#3B1E8C\" stroke-width=\"6\" stroke-linejoin=\"round\"/><path d=\"M36 65V25l43 40V25l44 40\" fill=\"none\" stroke=\"#3DF5B0\" stroke-width=\"4\" stroke-linejoin=\"round\"/><g fill=\"#FFD84D\"><circle cx=\"36\" cy=\"65\" r=\"5\"/><circle cx=\"36\" cy=\"25\" r=\"5\"/><circle cx=\"79\" cy=\"65\" r=\"5\"/><circle cx=\"79\" cy=\"25\" r=\"5\"/><circle cx=\"123\" cy=\"65\" r=\"5\"/><circle cx=\"123\" cy=\"25\" r=\"5\"/></g><path d=\"m126 54 12-24 6 3-12 24-7 5z\" fill=\"#F4F1FF\"/></svg>"
   },
   {
    "id": "morse",
@@ -69,7 +69,7 @@
    "icon": "📟",
    "unit": "points",
    "new": true,
-   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">📟</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">60 С</text></svg>"
+   "art": "<svg viewBox=\"0 0 160 90\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#170A3E\"/><rect x=\"25\" y=\"19\" width=\"110\" height=\"57\" rx=\"10\" fill=\"#2E177A\" stroke=\"#B9A8F0\" stroke-width=\"2\"/><rect x=\"34\" y=\"28\" width=\"92\" height=\"22\" rx=\"4\" fill=\"#120630\"/><g fill=\"#3DF5B0\"><circle cx=\"44\" cy=\"39\" r=\"3\"/><circle cx=\"54\" cy=\"39\" r=\"3\"/><circle cx=\"64\" cy=\"39\" r=\"3\"/><rect x=\"76\" y=\"36\" width=\"14\" height=\"6\" rx=\"3\"/><rect x=\"96\" y=\"36\" width=\"14\" height=\"6\" rx=\"3\"/></g><circle cx=\"113\" cy=\"63\" r=\"7\" fill=\"#FFD84D\"/><path d=\"M39 60h48m-48 7h35m33-49 13-11\" stroke=\"#B9A8F0\" stroke-width=\"3\"/></svg>"
   },
   {
    "id": "binary",
@@ -80,7 +80,7 @@
    "icon": "💻",
    "unit": "points",
    "new": true,
-   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">💻</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">60 С</text></svg>"
+   "art": "<svg viewBox=\"0 0 160 90\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#170A3E\"/><rect x=\"20\" y=\"15\" width=\"120\" height=\"61\" rx=\"10\" fill=\"#2E177A\" stroke=\"#B9A8F0\" stroke-width=\"2\"/><text x=\"80\" y=\"37\" text-anchor=\"middle\" fill=\"#FFD84D\" font-size=\"20\">10</text><rect x=\"30\" y=\"46\" width=\"22\" height=\"22\" rx=\"5\" fill=\"#3DF5B0\"/><text x=\"41\" y=\"62\" text-anchor=\"middle\" fill=\"#120630\" font-size=\"12\">1</text><rect x=\"56\" y=\"46\" width=\"22\" height=\"22\" rx=\"5\" fill=\"#120630\"/><text x=\"67\" y=\"62\" text-anchor=\"middle\" fill=\"#B9A8F0\" font-size=\"12\">0</text><rect x=\"82\" y=\"46\" width=\"22\" height=\"22\" rx=\"5\" fill=\"#3DF5B0\"/><text x=\"93\" y=\"62\" text-anchor=\"middle\" fill=\"#120630\" font-size=\"12\">1</text><rect x=\"108\" y=\"46\" width=\"22\" height=\"22\" rx=\"5\" fill=\"#120630\"/><text x=\"119\" y=\"62\" text-anchor=\"middle\" fill=\"#B9A8F0\" font-size=\"12\">0</text></svg>"
   },
   {
    "id": "weighing",
@@ -91,7 +91,7 @@
    "icon": "⚖️",
    "unit": "points",
    "new": true,
-   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">⚖️</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">60 С</text></svg>"
+   "art": "<svg viewBox=\"0 0 160 90\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#170A3E\"/><path d=\"M80 20v51m-20 4h40M40 31h80M40 31 25 58m15-27 15 27m65-27-15 27m15-27 15 27\" fill=\"none\" stroke=\"#B9A8F0\" stroke-width=\"3\" stroke-linecap=\"round\"/><path d=\"M23 58h34q-3 13-17 13T23 58M103 58h34q-3 13-17 13t-17-13\" fill=\"#3DF5B0\"/><g fill=\"#FFD84D\" stroke=\"#CC9F36\" stroke-width=\"2\"><circle cx=\"37\" cy=\"53\" r=\"7\"/><circle cx=\"47\" cy=\"53\" r=\"7\"/><circle cx=\"120\" cy=\"52\" r=\"8\"/></g><circle cx=\"80\" cy=\"28\" r=\"5\" fill=\"#FFD84D\"/></svg>"
   },
   {
    "id": "tightrope",
@@ -102,7 +102,7 @@
    "icon": "🎪",
    "unit": "tenths",
    "new": true,
-   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">🎪</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">∞</text></svg>"
+   "art": "<svg viewBox=\"0 0 160 90\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#170A3E\"/><path d=\"M12 67q68 15 136 0\" fill=\"none\" stroke=\"#B9A8F0\" stroke-width=\"3\"/><path d=\"M22 60v23m116-23v23\" stroke=\"#3B1E8C\" stroke-width=\"7\"/><circle cx=\"80\" cy=\"22\" r=\"7\" fill=\"#FFD84D\"/><path d=\"M80 31v19m0 0-12 21m12-21 10 21M58 41h44\" fill=\"none\" stroke=\"#3DF5B0\" stroke-width=\"5\" stroke-linecap=\"round\"/><path d=\"M43 43h75\" stroke=\"#FFD84D\" stroke-width=\"3\"/><path d=\"m113 18 9 3-7 7\" fill=\"none\" stroke=\"#FF9A6B\" stroke-width=\"2\"/></svg>"
   },
   {
    "id": "boiler",
@@ -113,7 +113,7 @@
    "icon": "♨️",
    "unit": "tenths",
    "new": true,
-   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">♨️</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">∞</text></svg>"
+   "art": "<svg viewBox=\"0 0 160 90\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#170A3E\"/><rect x=\"44\" y=\"29\" width=\"72\" height=\"46\" rx=\"12\" fill=\"#3B1E8C\" stroke=\"#B9A8F0\" stroke-width=\"3\"/><path d=\"M49 39h62M56 77v6m48-6v6m11-30h15V36\" fill=\"none\" stroke=\"#B9A8F0\" stroke-width=\"4\"/><circle cx=\"80\" cy=\"52\" r=\"14\" fill=\"#120630\" stroke=\"#FFD84D\" stroke-width=\"2\"/><path d=\"m80 52 7-7\" stroke=\"#FF6B4A\" stroke-width=\"3\"/><path d=\"M61 25q-7-7 0-13m19 12q-7-7 0-13m19 14q-7-7 0-13\" fill=\"none\" stroke=\"#B9A8F0\" stroke-width=\"3\"/><path d=\"m70 76 6-11 4 6 5-10 7 15\" fill=\"#FF9A6B\"/></svg>"
   },
   {
    "id": "rpsread",
@@ -124,7 +124,7 @@
    "icon": "✊",
    "unit": "points",
    "new": true,
-   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">✊</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">∞</text></svg>"
+   "art": "<svg viewBox=\"0 0 160 90\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#170A3E\"/><circle cx=\"43\" cy=\"45\" r=\"23\" fill=\"#2E177A\"/><circle cx=\"117\" cy=\"45\" r=\"23\" fill=\"#2E177A\"/><path d=\"M29 50V37q0-4 5-4h17q5 0 5 5v17H36z\" fill=\"#FFD84D\"/><path d=\"m102 56 9-15-8-12q-2-5 3-6l11 16 8-15q4-5 7-1l-8 22-3 14z\" fill=\"#3DF5B0\"/><path d=\"M70 45h19m-6-6 6 6-6 6\" fill=\"none\" stroke=\"#B9A8F0\" stroke-width=\"3\"/></svg>"
   },
   {
    "id": "riskdice",
@@ -135,7 +135,7 @@
    "icon": "🎲",
    "unit": "points",
    "new": true,
-   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">🎲</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">∞</text></svg>"
+   "art": "<svg viewBox=\"0 0 160 90\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#170A3E\"/><rect x=\"27\" y=\"22\" width=\"45\" height=\"45\" rx=\"9\" fill=\"#F4F1FF\" transform=\"rotate(-12 49 44)\"/><g fill=\"#3B1E8C\"><circle cx=\"38\" cy=\"35\" r=\"4\"/><circle cx=\"59\" cy=\"53\" r=\"4\"/><circle cx=\"49\" cy=\"44\" r=\"4\"/></g><g fill=\"#FFD84D\" stroke=\"#B88C29\" stroke-width=\"2\"><ellipse cx=\"110\" cy=\"67\" rx=\"20\" ry=\"6\"/><path d=\"M90 53v13q20 12 40 0V53\"/><ellipse cx=\"110\" cy=\"53\" rx=\"20\" ry=\"6\"/><path d=\"M90 41v12q20 12 40 0V41\"/><ellipse cx=\"110\" cy=\"41\" rx=\"20\" ry=\"6\"/></g><path d=\"m89 22 8-10 8 10\" fill=\"none\" stroke=\"#3DF5B0\" stroke-width=\"3\"/></svg>"
   },
   {
    "id": "chomp",
@@ -146,7 +146,7 @@
    "icon": "🍫",
    "unit": "points",
    "new": true,
-   "art": "<svg viewBox=\"0 0 160 90\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#22105A\"/><circle cx=\"80\" cy=\"43\" r=\"32\" fill=\"#3B1E8C\"/><text x=\"80\" y=\"56\" text-anchor=\"middle\" font-size=\"34\">🍫</text><text x=\"150\" y=\"82\" text-anchor=\"end\" fill=\"#3DF5B0\" font-size=\"10\">∞</text></svg>"
+   "art": "<svg viewBox=\"0 0 160 90\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" fill=\"#170A3E\"/><path d=\"M29 20h101v52H29z\" fill=\"#A46544\" stroke=\"#FFD2A0\" stroke-width=\"2\"/><path d=\"M54 20v52m25-52v52m25-52v52M29 46h101\" stroke=\"#502B32\" stroke-width=\"4\"/><path d=\"M79 20h51v26H79z\" fill=\"#22105A\"/><path d=\"m101 17 10 10m-10 0 10-10\" stroke=\"#FF9A6B\" stroke-width=\"3\"/><circle cx=\"41\" cy=\"59\" r=\"8\" fill=\"#FF6B4A\"/><path d=\"m37 55 8 8m0-8-8 8\" stroke=\"#120630\" stroke-width=\"2\"/></svg>"
   },
   {
    "id": "space",
