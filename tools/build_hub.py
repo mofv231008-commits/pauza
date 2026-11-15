@@ -40,6 +40,9 @@ rows = []
 fresh = games[:10]
 if fresh:
     rows.append(row('new', 'Новые игры', fresh))
+# Сюжетные игры также остаются в своих жанровых разделах.
+story_ids = ['space', 'spamattack']
+rows.append(row('story', 'Сюжетные игры', [by_id[i] for i in story_ids]))
 for s in data['sections']:
     items = [g for g in games if g['section'] == s['id']]
     if items:
