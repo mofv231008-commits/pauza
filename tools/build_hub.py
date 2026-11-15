@@ -36,9 +36,8 @@ def row(sid, title, items):
 
 
 rows = []
-fresh = [g for g in games if g.get('new')]
-if data.get('featured'):
-    fresh = [by_id[i] for i in data['featured'] if i in by_id]
+# Каталог: новые игры добавляем в начало. Витрина заменяет прошлую десятку.
+fresh = games[:10]
 if fresh:
     rows.append(row('new', 'Новые игры', fresh))
 for s in data['sections']:
