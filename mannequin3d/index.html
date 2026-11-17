@@ -8,7 +8,7 @@
   <title>Пауза · Манекен</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="../shared/pauza.css?v=6">
-  <link rel="stylesheet" href="tunnel.css?v=1">
+  <link rel="stylesheet" href="tunnel.css?v=2">
 </head>
 <body>
   <main class="stage tunnel">
@@ -22,13 +22,14 @@
       <div class="tunnel-panel">
         <div class="tunnel-status" id="tunnel-status">Прислушайся</div>
         <div class="tunnel-controls" role="group" aria-label="Управление">
-          <button class="turn-left" id="turn-left" aria-label="Поворот влево" type="button">↶</button>
-          <div class="walk">
-            <button id="forward" aria-label="Шаг вперёд" type="button">↑</button>
-            <button id="backward" aria-label="Шаг назад" type="button">↓</button>
+          <div class="joystick" id="joystick" role="group" aria-label="Джойстик движения">
+            <div class="joystick-guide" aria-hidden="true"></div>
+            <div class="joystick-thumb" id="joystick-thumb" aria-hidden="true"></div>
           </div>
-          <button class="turn-right" id="turn-right" aria-label="Поворот вправо" type="button">↷</button>
-          <button class="flashlight" id="flashlight" aria-pressed="true" type="button">Фонарь</button>
+          <div class="tunnel-actions">
+            <button class="flashlight" id="flashlight" aria-pressed="true" type="button">Фонарь</button>
+            <span class="look-hint">Свайп по тоннелю — поворот</span>
+          </div>
         </div>
       </div>
     </div>
@@ -36,6 +37,6 @@
   <script src="../shared/pauza.js?v=6"></script>
   <script src="model.js?v=1"></script>
   <script src="scene.js?v=1"></script>
-  <script src="tunnel.js?v=1"></script>
+  <script src="tunnel.js?v=2"></script>
 </body>
 </html>
