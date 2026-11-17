@@ -69,9 +69,6 @@
 
 .club canvas:focus-visible { outline: 1px solid #f4c78966; outline-offset: -2px; }
 
-.club canvas[data-view="3d"] { cursor: grab; }
-.club canvas[data-view="3d"]:active { cursor: grabbing; }
-
 @media (orientation: landscape) and (max-height: 550px) {
   .stage.club { width: min(100%, 860px); }
   .club-layout { grid-template: minmax(0, 1fr) / minmax(0, 1fr) minmax(240px, 30%); }

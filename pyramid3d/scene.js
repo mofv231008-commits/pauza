@@ -10,8 +10,9 @@
     const foreground = document.createElement('canvas');
     const fg = foreground.getContext('2d');
     let w = 1, h = 1, pixelRatio = 1, scale = 1, offsetY = 0;
-    const orbit = { yaw: 0, pitch: .71 };
-    const camera = { ...orbit };
+    const perspectivePitch = .71;
+    let yaw = 0;
+    const camera = { yaw, pitch: perspectivePitch };
     let overhead = false, dirty = true;
     let sine = 0, cosine = 0, side = 0, front = 1;
     let eyeX = 0, eyeZ = 0;
@@ -237,8 +238,8 @@
     }
 
     function draw(balls, cue, direction, power, canAim, selecting, dt, moving) {
-      const pitchTarget = overhead ? Math.PI / 2 : orbit.pitch;
-      const yawTarget = overhead ? Math.PI / 2 : orbit.yaw;
+      const pitchTarget = overhead ? Math.PI / 2 : perspectivePitch;
+      const yawTarget = overhead ? Math.PI / 2 : yaw;
       const yawDelta = Math.atan2(Math.sin(yawTarget - camera.yaw), Math.cos(yawTarget - camera.yaw));
       const pitchDelta = pitchTarget - camera.pitch;
       if (Math.abs(yawDelta) > .001 || Math.abs(pitchDelta) > .001) {
@@ -263,10 +264,7 @@
     root.addEventListener('resize', fit);
     return { draw, project, unproject, invalidate() { dirty = true; },
       setOverhead(on) { overhead = on; },
-      orbit(dx, dy) {
-        orbit.yaw += dx * .009;
-        orbit.pitch = Math.max(.46, Math.min(1.2, orbit.pitch - dy * .005));
-      } };
+      rotate(angle) { yaw = (yaw + angle) % (2 * Math.PI); } };
   }
 
   root.PyramidScene = { create };
