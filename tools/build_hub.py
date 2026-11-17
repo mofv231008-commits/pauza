@@ -120,6 +120,30 @@ body.hub{overflow-y:auto;overflow-x:hidden;height:auto;min-height:100%}
 .hub-head .mark i{width:16px;height:46px;border-radius:8px}
 .hub-head h1{font-size:34px;display:flex;align-items:center;gap:10px}
 .hub-head .tag{margin:4px 0 0;font-size:15px}
+.hub-nav{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid var(--line);border-radius:16px;background:var(--ink)}
+.hub-nav a{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border-radius:12px;color:var(--lilac);text-decoration:none;font-family:var(--font-display);font-size:13px;font-weight:600}
+.hub-nav svg{width:18px;height:18px;flex:none}
+.hub-nav [aria-current="page"]{background:var(--road);color:var(--paper)}
+.hub-nav [aria-current="page"] svg{color:var(--mint)}
+.hub-games{display:flex;flex-direction:column;gap:24px}
+.player-stats{display:grid;gap:20px}
+.player-stats h2{font-size:clamp(20px,6vw,28px);line-height:1.2}
+.stats-note,.stats-empty p{margin:6px 0 0;color:var(--lilac);font-size:14px}
+.stats-totals{margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.stats-totals div{display:flex;flex-direction:column-reverse;gap:5px;min-width:0;padding:12px 8px;border:1px solid var(--line);border-radius:14px;background:var(--shoulder)}
+.stats-totals dd{margin:0;font-family:var(--font-display);font-size:clamp(17px,5vw,26px);font-weight:800;color:var(--mint);overflow-wrap:anywhere}
+.stats-totals dt{font-size:12px;line-height:1.25;color:var(--lilac)}
+.stats-title{margin:0 0 10px;font-family:var(--font-display);font-size:14px;font-weight:600}
+.stats-list{margin:0;padding:0;list-style:none;border:1px solid var(--line);border-radius:16px;background:var(--shoulder)}
+.stats-list li+li{border-top:1px solid var(--line)}
+.stats-game{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:12px 14px;min-height:52px;color:var(--paper);text-decoration:none;border-radius:10px}
+.stats-game:hover,.stats-game:active{background:var(--road)}
+.stats-name{font-family:var(--font-display);font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.stats-detail{grid-column:1;color:var(--lilac);font-size:13px;overflow-wrap:anywhere}
+.stats-record{color:var(--mint)}
+.stats-arrow{grid-column:2;grid-row:1 / span 2;color:var(--lilac)}
+.stats-empty{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--shoulder)}
+.stats-empty .chip{margin-top:12px}
 .hub-actions{display:flex;gap:10px;margin-top:-6px}
 .chip{
   appearance:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:999px;
@@ -192,9 +216,14 @@ body.gold .hub-head .mark i{background:var(--sun)}
     <div class="mark" aria-hidden="true"><i></i><i></i></div>
     <div>
       <h1>Пауза <span class="badge" id="badge" title="Спасибо за поддержку" hidden>%%STAR%%</span></h1>
-      <p class="tag">%%COUNT%%, пока ждёшь ответа.</p>
+      <p class="tag" id="hub-tag">%%COUNT%%, пока ждёшь ответа.</p>
     </div>
   </header>
+  <nav class="hub-nav" aria-label="Разделы Паузы">
+    <a href="./" id="games-tab" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.2"/><rect x="14" y="4" width="6" height="6" rx="1.2"/><rect x="4" y="14" width="6" height="6" rx="1.2"/><rect x="14" y="14" width="6" height="6" rx="1.2"/></svg>Игры</a>
+    <a href="?open=stats" id="stats-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v16h16M8 15v-3m5 3V8m5 7V5"/></svg>Статистика</a>
+  </nav>
+  <div class="hub-games" id="hub-games">
   <div class="hub-actions">
     <button class="chip" type="button" id="random"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="#3DF5B0" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.6" fill="#3DF5B0"/><circle cx="15.5" cy="15.5" r="1.6" fill="#3DF5B0"/><circle cx="12" cy="12" r="1.6" fill="#3DF5B0"/></svg>Случайная игра</button>
     <a class="chip" href="#support"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" fill="#FFD84D"/></svg>Поддержать</a>
@@ -211,6 +240,28 @@ body.gold .hub-head .mark i{background:var(--sun)}
 %%SUPPORT%%
 
   <p class="hub-foot">Набери @Pauzagame_bot в любом чате, чтобы позвать друга.</p>
+  </div>
+
+  <section class="player-stats" id="player-stats" aria-labelledby="stats-heading" hidden>
+    <div>
+      <h2 id="stats-heading">Моя статистика</h2>
+      <p class="stats-note">Результаты сохраняются на этом устройстве.</p>
+    </div>
+    <dl class="stats-totals">
+      <div><dt>Завершено партий</dt><dd id="stats-runs">0</dd></div>
+      <div><dt>Игр сыграно</dt><dd id="stats-played">0</dd></div>
+      <div><dt>Игр с рекордом</dt><dd id="stats-records">0</dd></div>
+    </dl>
+    <div id="stats-results" hidden>
+      <h3 class="stats-title">Сыгранные игры</h3>
+      <ul class="stats-list" id="stats-list"></ul>
+    </div>
+    <div class="stats-empty" id="stats-empty">
+      <strong>Пока нет результатов</strong>
+      <p>Заверши партию, чтобы увидеть её здесь.</p>
+      <a class="chip" href="./">Выбрать игру</a>
+    </div>
+  </section>
 </main>
 
 <script>
@@ -228,12 +279,91 @@ body.gold .hub-head .mark i{background:var(--sun)}
     if (u === 'points') u = POINTS;
     return P.fmt(v) + ' ' + P.plural(v, u);
   }
+  var open = new URLSearchParams(location.search).get('open');
+  var start = P.startParam();
+  var showStats = open === 'stats' || (!open && start === 'stats');
+  var cards = document.querySelectorAll('.card');
+
   /* Рекорд гонки из первой версии игры */
   if (P.store.get('pz_best_race', null) === null && P.store.get('pz_best', 0) > 0) {
     P.store.set('pz_best_race', P.store.get('pz_best', 0));
   }
   P.init();
-  Array.prototype.forEach.call(document.querySelectorAll('.card'), function (card) {
+  if (showStats) {
+    document.title = 'Пауза · Моя статистика';
+    document.getElementById('hub-tag').hidden = true;
+    document.getElementById('hub-games').hidden = true;
+    document.getElementById('games-tab').removeAttribute('aria-current');
+    document.getElementById('stats-tab').setAttribute('aria-current', 'page');
+    document.getElementById('player-stats').hidden = false;
+    P.back(function () { location.replace('./'); });
+
+    var gameCards = Object.create(null);
+    Array.prototype.forEach.call(cards, function (card) {
+      var id = card.getAttribute('data-id');
+      if (!gameCards[id]) {
+        gameCards[id] = { title: card.querySelector('.card-title').textContent, path: card.getAttribute('href') };
+      }
+    });
+    function renderStats() {
+      var total = 0, records = 0, played = [];
+      GAMES.forEach(function (id) {
+        var runs = P.store.get('pz_runs_' + id, 0);
+        var best = P.store.get('pz_best_' + id, null);
+        runs = Number.isSafeInteger(runs) && runs > 0 ? runs : 0;
+        var hasBest = Number.isFinite(best) && best > 0 && !!units[id];
+        if (!runs && !hasBest) return;
+        total += runs;
+        if (hasBest) records++;
+        played.push({ game: gameCards[id], runs: runs, record: hasBest ? label(units[id], best) : null });
+      });
+      played.sort(function (a, b) { return b.runs - a.runs || a.game.title.localeCompare(b.game.title, 'ru'); });
+      document.getElementById('stats-runs').textContent = P.fmt(total);
+      document.getElementById('stats-played').textContent = P.fmt(played.length);
+      document.getElementById('stats-records').textContent = P.fmt(records);
+      document.getElementById('stats-results').hidden = !played.length;
+      document.getElementById('stats-empty').hidden = !!played.length;
+
+      var rows = document.createDocumentFragment();
+      played.forEach(function (entry) {
+        var item = document.createElement('li');
+        var link = document.createElement('a');
+        link.className = 'stats-game';
+        link.href = entry.game.path;
+        var title = document.createElement('span');
+        title.className = 'stats-name';
+        title.textContent = entry.game.title;
+        link.appendChild(title);
+        var detail = document.createElement('span');
+        detail.className = 'stats-detail';
+        if (entry.runs) detail.textContent = P.fmt(entry.runs) + ' ' + P.plural(entry.runs, ['партия', 'партии', 'партий']);
+        if (entry.record) {
+          var record = document.createElement('span');
+          record.className = 'stats-record';
+          record.textContent = 'Рекорд: ' + entry.record;
+          if (entry.runs) detail.appendChild(document.createTextNode(' · '));
+          detail.appendChild(record);
+        }
+        link.appendChild(detail);
+        var arrow = document.createElement('span');
+        arrow.className = 'stats-arrow';
+        arrow.setAttribute('aria-hidden', 'true');
+        arrow.textContent = '›';
+        link.appendChild(arrow);
+        item.appendChild(link);
+        rows.appendChild(item);
+      });
+      var list = document.getElementById('stats-list');
+      list.textContent = '';
+      list.appendChild(rows);
+    }
+    renderStats();
+    window.addEventListener('pageshow', function (event) { if (event.persisted) renderStats(); });
+    window.addEventListener('storage', function (event) { if (!event.key || /^pz_(runs|best)_/.test(event.key)) renderStats(); });
+    return;
+  }
+
+  Array.prototype.forEach.call(cards, function (card) {
     var id = card.getAttribute('data-id');
     var best = P.store.get('pz_best_' + id, null);
     if (best === null || !units[id]) return;
@@ -307,8 +437,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
     a.addEventListener('click', function (e) { if (P.inTelegram) { e.preventDefault(); P.openLink(a.href); } });
   });
   P.ping('hub');
-  var open = new URLSearchParams(location.search).get('open');
-  if (open === 'support' || P.startParam() === 'support') {
+  if (open === 'support' || start === 'support') {
     setTimeout(function () { document.getElementById('support').scrollIntoView({ block: 'start', behavior: P.reduceMotion ? 'auto' : 'smooth' }); }, 60);
   }
 })();
