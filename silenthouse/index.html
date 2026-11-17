@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#151017">
+  <meta name="color-scheme" content="dark">
+  <title>Пауза · Дом тишины</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="../shared/pauza.css?v=6">
+  <link rel="stylesheet" href="house.css?v=1">
+</head>
+<body>
+  <main class="stage house">
+    <div class="house-play">
+      <div class="map-wrap"><canvas id="floor" aria-label="План дома. Ты отмечен жёлтым, хозяйка красным."></canvas></div>
+      <div class="house-panel">
+        <p id="warning" class="warning">Тихо</p>
+        <p id="objective" class="objective">Найди ключ и предохранитель</p>
+        <div class="house-controls">
+          <div class="dpad" role="group" aria-label="Движение">
+            <button type="button" class="up" data-dx="0" data-dy="-1" aria-label="Вверх">↑</button>
+            <button type="button" class="left" data-dx="-1" data-dy="0" aria-label="Влево">←</button>
+            <button type="button" class="down" data-dx="0" data-dy="1" aria-label="Вниз">↓</button>
+            <button type="button" class="right" data-dx="1" data-dy="0" aria-label="Вправо">→</button>
+          </div>
+          <div class="house-tools">
+            <button type="button" class="sneak" id="sneak" aria-pressed="false">Красться</button>
+            <div class="noise" aria-label="Шум"><span>Шум</span><i></i><i></i><i></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="../shared/pauza.js?v=6"></script>
+  <script src="model.js?v=1"></script>
+  <script src="art.js?v=1"></script>
+  <script src="house.js?v=1"></script>
+</body>
+</html>

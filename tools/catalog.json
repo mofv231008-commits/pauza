@@ -43,6 +43,16 @@
  ],
  "games": [
   {
+   "id": "silenthouse",
+   "title": "Дом тишины",
+   "into": "«Дом тишины»",
+   "about": "Сбеги из дома за минуту. Она слышит шаги.",
+   "section": "horror",
+   "icon": "🏚️",
+   "unit": "tenths",
+   "art": "<img src=\"silenthouse/cover.webp\" alt=\"\" width=\"480\" height=\"300\" loading=\"lazy\">"
+  },
+  {
    "id": "pyramid3d",
    "revision": 5,
    "title": "Русский бильярд 3D",

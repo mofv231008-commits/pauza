@@ -1,0 +1,46 @@
+.house { background: #151017; --house-amber: #ffd592; }
+.house-play {
+  position: absolute;
+  inset: max(65px,calc(env(safe-area-inset-top) + 60px)) 0 0;
+  display: grid;
+  grid-template-rows: minmax(0,1fr) auto;
+}
+.map-wrap { min-height: 0; }
+.house-panel {
+  padding: 8px 14px max(13px,env(safe-area-inset-bottom));
+  background: #211720;
+  border-top: 1px solid #ffd59239;
+}
+.warning,.objective { text-align: center; margin: 0; }
+.warning { font: 600 12px var(--font-display); color: #c8ad9c; }
+.warning[data-danger="true"] { color: #ff9d87; }
+.objective { font-size: 13px; color: #ead4c2; margin: 3px 0 7px; min-height: 18px; }
+.house-controls { display: flex; align-items: center; justify-content: space-around; gap: 12px; }
+.dpad { display: grid; grid-template: repeat(2,43px) / repeat(3,43px); gap: 4px; }
+.up { grid-area: 1 / 2; }
+.left { grid-area: 2 / 1; }
+.down { grid-area: 2 / 2; }
+.right { grid-area: 2 / 3; }
+.house-controls button {
+  border: 1px solid #ffd59245;
+  border-radius: 10px;
+  background: #39282e;
+  color: #fff2e2;
+  touch-action: none;
+  cursor: pointer;
+}
+.dpad button { font-size: 21px; }
+.house-controls button:active, .house-controls button[aria-pressed="true"] { background: var(--house-amber); color: #261916; }
+.house-tools { display: grid; gap: 10px; }
+.sneak { min-height: 44px; padding-inline: 12px; font: 600 12px var(--font-display); }
+.noise { display: flex; align-items: center; gap: 4px; justify-content: center; font-size: 12px; color: #d7bdae; }
+.noise span { margin-right: 2px; }
+.noise i { width: 9px; height: 6px; border-radius: 2px; background: #6a5156; }
+.noise i.active { background: #ff9c80; }
+.house[data-state="paused"] .house-panel,.house[data-state="over"] .house-panel { visibility: hidden; }
+@media (orientation: landscape) and (max-height: 550px) {
+  .stage.house { width: min(100%,760px); }
+  .house-play { grid-template: minmax(0,1fr) / minmax(0,1fr) minmax(190px,34%); }
+  .house-panel { align-content: center; }
+  .house-controls { flex-wrap: wrap; }
+}
