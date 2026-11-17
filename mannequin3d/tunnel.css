@@ -1,0 +1,73 @@
+.stage.tunnel { background: #101119; }
+.tunnel-layout {
+  position: absolute;
+  inset: max(68px,calc(env(safe-area-inset-top) + 63px)) 0 0;
+  display: grid;
+  grid-template-rows: minmax(0,1fr) auto;
+}
+.corridor { min-height: 0; position: relative; }
+.corridor canvas { cursor: ew-resize; }
+.exit-direction {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border: 1px solid #a6d6bd52;
+  border-radius: 7px;
+  color: #b7e8d1;
+  background: #101c24d9;
+  font-size: 13px;
+  pointer-events: none;
+}
+.exit-direction span { display: inline-block; font-size: 19px; font-weight: 800; line-height: 1; }
+.tunnel-panel {
+  padding: 9px 14px max(12px,env(safe-area-inset-bottom));
+  border-top: 1px solid #87848b44;
+  background: #1d1c26;
+}
+.tunnel-status {
+  min-height: 20px;
+  margin: 0 0 7px;
+  color: #c7bba9;
+  text-align: center;
+  font-size: 13px;
+}
+.tunnel-status[data-danger="true"] { color: #ff9c92; }
+.tunnel-controls {
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: 44px 54px 44px minmax(72px,1fr);
+  align-items: center;
+  gap: 7px;
+  max-width: 330px;
+}
+.tunnel-controls button {
+  touch-action: none;
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 6px;
+  border: 1px solid #b1a5a544;
+  border-radius: 9px;
+  background: #35323b;
+  color: #f3e7cc;
+  cursor: pointer;
+  font-size: 21px;
+}
+.walk { display: grid; gap: 4px; }
+.tunnel-controls .flashlight { font: 600 12px var(--font-display); }
+.tunnel-controls button:active,.tunnel-controls .flashlight[aria-pressed="true"] {
+  background: #d7b788;
+  color: #1e1b24;
+}
+.tunnel-controls button:disabled { opacity: .45; }
+.tunnel[data-state="paused"] .tunnel-panel,.tunnel[data-state="over"] .tunnel-panel { visibility: hidden; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .stage.tunnel { width: min(100%,900px); }
+  .tunnel-layout { grid-template: minmax(0,1fr) / minmax(0,1fr) 215px; }
+  .tunnel-panel { align-content: center; }
+  .tunnel-controls { grid-template-columns: repeat(3,1fr); }
+  .tunnel-controls .flashlight { grid-column: 1 / -1; }
+}

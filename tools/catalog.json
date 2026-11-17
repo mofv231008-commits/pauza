@@ -43,6 +43,16 @@
  ],
  "games": [
   {
+   "id": "mannequin3d",
+   "title": "Манекен",
+   "into": "«Манекен»",
+   "about": "3D-хоррор. Он движется, когда ты не смотришь.",
+   "section": "3d",
+   "icon": "🔦",
+   "unit": "tenths",
+   "art": "<img src=\"mannequin3d/cover.webp\" alt=\"\" width=\"480\" height=\"300\" loading=\"lazy\">"
+  },
+  {
    "id": "silenthouse",
    "title": "Дом тишины",
    "into": "«Дом тишины»",
