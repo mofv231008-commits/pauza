@@ -12,7 +12,7 @@
 (function () {
   var known = ["pyramid3d", "waterjug", "onestroke", "morse", "binary", "weighing", "tightrope", "boiler", "rpsread", "riskdice", "chomp", "space", "race", "flight", "snake", "bounce", "tower", "reaction", "2048", "match3", "fifteen", "mines", "pairs", "simon", "shade", "arrows", "word", "math", "tetris", "runner", "jumper", "moles", "tiles", "knives", "stick", "schulte", "sudoku", "hangman", "slice", "hoops", "pong", "hockey", "balloons", "catch", "aim", "colors", "sort", "lines", "frog", "ski", "fall", "zigzag", "maze", "golf", "bubbles", "ten", "flood", "lights", "gomoku", "connect4", "reversi", "battleship", "bulls", "nonogram", "game24", "anagram", "wordsearch", "capitals", "stress", "diff", "digits", "missing", "stroop", "dots", "pattern", "shells", "tug", "duel", "typing", "voices", "cat", "wrongchat", "grandma", "asteroids", "copter", "lander", "hexagon", "orbit", "pinball", "billiards", "bowling", "darts", "penalty", "keepy", "wire", "neon", "glutton", "archery", "walls", "sokoban", "pipes", "jigsaw", "flow", "parking", "hanoi", "mahjong", "solitaire", "merge", "checkers", "corners", "tictactoe", "dotsboxes", "nim", "morris", "odd", "mirror", "compare", "twins", "clock", "rotate", "cubes", "nback", "multiply", "flags", "proverbs", "antonyms", "chain", "spelling", "roman", "elements", "hockey2", "pong2", "race2", "spamattack", "missile", "helix", "tank", "xonix", "paint", "tron", "defense", "dodge", "traffic", "lumber", "rope", "fishing", "burger", "rhythm", "estimate", "blocks10", "binairo", "knight", "queens", "pegs", "durak", "dominoes", "mancala", "blackjack", "yahtzee", "ladders", "path", "order", "dobble", "unread", "quiz", "truefalse", "riddles", "emojikino", "synonyms", "typer", "subwords", "currency", "dates", "spamfilter", "fractions", "equation", "primes", "sequence", "change", "sumo", "snap", "math2", "battery", "nightshift", "deadfrequency", "lastlift", "ritualseal", "impostorroom"];
   var wanted = window.Pauza.startParam();
-  var versioned = {"pyramid3d": "pyramid3d/?v=4"};
+  var versioned = {"pyramid3d": "pyramid3d/?v=5"};
   if (wanted && known.indexOf(wanted) !== -1) location.replace((versioned[wanted] || wanted + '/') + location.hash);
 })();
 </script>
@@ -122,7 +122,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
   <section class="group" aria-labelledby="g-new">
     <div class="group-head"><h2 class="group-title" id="g-new">Новые игры</h2><span class="group-count">10</span></div>
     <ul class="cards">
-      <li><a class="card" href="pyramid3d/?v=4" data-id="pyramid3d">
+      <li><a class="card" href="pyramid3d/?v=5" data-id="pyramid3d">
         <span class="art"><img src="pyramid3d/cover.webp" alt="" width="480" height="300" loading="lazy"></span>
         <span class="card-body"><span class="card-title">Русский бильярд 3D</span><span class="card-desc">Русская пирамида со свободной камерой</span><span class="card-best" hidden></span></span>
       </a></li>
@@ -201,7 +201,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
   <section class="group" aria-labelledby="g-3d">
     <div class="group-head"><h2 class="group-title" id="g-3d">3D-игры</h2><span class="group-count">1</span></div>
     <ul class="cards">
-      <li><a class="card" href="pyramid3d/?v=4" data-id="pyramid3d">
+      <li><a class="card" href="pyramid3d/?v=5" data-id="pyramid3d">
         <span class="art"><img src="pyramid3d/cover.webp" alt="" width="480" height="300" loading="lazy"></span>
         <span class="card-body"><span class="card-title">Русский бильярд 3D</span><span class="card-desc">Русская пирамида со свободной камерой</span><span class="card-best" hidden></span></span>
       </a></li>
@@ -1910,7 +1910,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
   });
   document.getElementById('random').addEventListener('click', function () {
     var picked = P.pick(GAMES);
-    var versioned = {"pyramid3d": "pyramid3d/?v=4"};
+    var versioned = {"pyramid3d": "pyramid3d/?v=5"};
     location.href = versioned[picked] || picked + '/';
   });
 

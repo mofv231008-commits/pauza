@@ -4,6 +4,8 @@
   const width = 1;
   const length = 2;
   const radius = .049;
+  const timeStep = 1 / 240;
+  const restSpeed = .023;
   const cushionInset = .051;
   const faceX = width - cushionInset;
   const faceZ = length - cushionInset;
@@ -31,24 +33,51 @@
   }
 
   function rail(ball, axis, limit, velocity) {
-    if (Math.abs(ball[axis]) < limit) return;
+    if (Math.abs(ball[axis]) < limit) return false;
     const sign = Math.sign(ball[axis]);
     ball[axis] = sign * limit;
-    if (sign * ball[velocity] > 0) ball[velocity] *= -.78;
+    if (sign * ball[velocity] <= 0) return false;
+    ball[velocity] *= -.78;
+    return true;
+  }
+
+  function roll(ball, dt) {
+    ball.x += ball.vx * dt;
+    ball.z += ball.vz * dt;
+    const speed = Math.hypot(ball.vx, ball.vz);
+    if (speed) {
+      const friction = Math.max(0, 1 - (.32 / speed + .18) * dt);
+      ball.vx *= friction;
+      ball.vz *= friction;
+    }
+  }
+
+  function resolveTable(ball) {
+    const inPocket = pockets.some(({ x, z, mouth }) =>
+      (ball.x - x) ** 2 + (ball.z - z) ** 2 < mouth ** 2);
+    if (inPocket) {
+      ball.pocketed = true;
+      ball.vx = ball.vz = 0;
+      return null;
+    }
+    const hitSide = rail(ball, 'x', cushionX, 'vx');
+    const hitEnd = rail(ball, 'z', cushionZ, 'vz');
+    if (hitSide || hitEnd) {
+      return {
+        x: hitSide ? Math.sign(ball.x) * faceX : ball.x,
+        z: hitEnd ? Math.sign(ball.z) * faceZ : ball.z
+      };
+    }
+    return null;
+  }
+
+  function launchSpeed(power) {
+    return .82 + power * .063;
   }
 
   function advance(balls, dt, onContact, onPocket) {
     const live = balls.filter(ball => !ball.pocketed);
-    for (const ball of live) {
-      ball.x += ball.vx * dt;
-      ball.z += ball.vz * dt;
-      const speed = Math.hypot(ball.vx, ball.vz);
-      if (speed) {
-        const friction = Math.max(0, 1 - (.32 / speed + .18) * dt);
-        ball.vx *= friction;
-        ball.vz *= friction;
-      }
-    }
+    for (const ball of live) roll(ball, dt);
 
     for (let i = 0; i < live.length; i++) {
       const a = live[i];
@@ -77,16 +106,8 @@
     }
 
     for (const ball of live) {
-      const inPocket = pockets.some(({ x, z, mouth }) =>
-        (ball.x - x) ** 2 + (ball.z - z) ** 2 < mouth ** 2);
-      if (inPocket) {
-        ball.pocketed = true;
-        ball.vx = ball.vz = 0;
-        onPocket(ball);
-        continue;
-      }
-      rail(ball, 'x', cushionX, 'vx');
-      rail(ball, 'z', cushionZ, 'vz');
+      resolveTable(ball);
+      if (ball.pocketed) onPocket(ball);
     }
   }
 
@@ -103,24 +124,31 @@
     }
   }
 
-  function aimLine(cue, direction, balls) {
-    const rayX = direction.x > 0 ? cushionX : -cushionX;
-    const rayZ = direction.z > 0 ? cushionZ : -cushionZ;
-    const toX = direction.x ? (rayX - cue.x) / direction.x : Infinity;
-    const toZ = direction.z ? (rayZ - cue.z) / direction.z : Infinity;
-    let distance = Math.min(toX, toZ);
-    for (const ball of balls) {
-      if (ball === cue || ball.pocketed) continue;
-      const x = ball.x - cue.x;
-      const z = ball.z - cue.z;
-      const forward = x * direction.x + z * direction.z;
-      const cross = x * direction.z - z * direction.x;
-      if (forward > 0 && Math.abs(cross) < radius * 2) {
-        distance = Math.min(distance, Math.max(0, forward - Math.sqrt((radius * 2) ** 2 - cross ** 2)));
+  // Follow the same friction, pocket and bounce rules as a shot until the first ball or second cushion.
+  function aimPath(cue, direction, balls, power) {
+    const probe = ball(cue.id, cue.x, cue.z);
+    const speed = launchSpeed(power);
+    probe.vx = direction.x * speed;
+    probe.vz = direction.z * speed;
+    const targets = balls.filter(ball => ball !== cue && !ball.pocketed);
+    const contactDistance = (2 * radius) ** 2;
+    const path = [];
+    while (Math.hypot(probe.vx, probe.vz) >= restSpeed) {
+      roll(probe, timeStep);
+      if (targets.some(ball => (ball.x - probe.x) ** 2 + (ball.z - probe.z) ** 2 < contactDistance)) break;
+      const edge = resolveTable(probe);
+      if (edge) {
+        path.push({ x: probe.x, z: probe.z, edge });
+        if (path.length === 2) return path;
       }
+      if (probe.pocketed) break;
     }
-    return { x: cue.x + direction.x * distance, z: cue.z + direction.z * distance };
+    path.push({ x: probe.x, z: probe.z });
+    return path;
   }
 
-  root.PyramidPhysics = { width, length, radius, faceX, faceZ, pockets, rack, advance, respot, aimLine };
+  root.PyramidPhysics = {
+    width, length, radius, faceX, faceZ, pockets, timeStep, restSpeed,
+    rack, launchSpeed, advance, respot, aimPath
+  };
 })(globalThis);

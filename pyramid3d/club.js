@@ -11,7 +11,7 @@
   const shoot = byId('shoot'), power = byId('power');
   const hasTouchEvents = 'ontouchstart' in window;
   const scene = window.PyramidScene.create(canvas);
-  const timeStep = 1 / 240;
+  const { timeStep, restSpeed } = physics;
   const tapTolerance = 7;
   const units = ['шар', 'шара', 'шаров'];
   let balls = physics.rack(), cue = balls[0], direction = { x: 0, z: -1 };
@@ -65,7 +65,7 @@
 
   function startShot() {
     if (!shell.running || shot || selecting) return;
-    const speed = .82 + Number(power.value) * .063;
+    const speed = physics.launchSpeed(Number(power.value));
     cue.vx = direction.x * speed;
     cue.vz = direction.z * speed;
     carry = 0;
@@ -248,7 +248,7 @@
           if (a === cue || b === cue) shot.contact = true;
         }, ball => shot.potted.push(ball));
       }
-      if (balls.every(ball => Math.hypot(ball.vx, ball.vz) < .023)) settleShot();
+      if (balls.every(ball => Math.hypot(ball.vx, ball.vz) < restSpeed)) settleShot();
     }
     scene.draw(balls, cue, direction, Number(power.value), shell.running && !shot, selecting, dt, Boolean(shot && shell.running));
   });

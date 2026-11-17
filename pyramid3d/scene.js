@@ -16,6 +16,7 @@
     let overhead = false, dirty = true;
     let sine = 0, cosine = 0, side = 0, front = 1;
     let eyeX = 0, eyeZ = 0;
+    let preview = null;
     const distance = 6.4;
 
     function project(x, y, z) {
@@ -219,15 +220,26 @@
     }
 
     function drawAim(cue, direction, balls, power) {
-      const end = root.PyramidPhysics.aimLine(cue, direction, balls);
+      if (!preview || preview.cue !== cue || preview.balls !== balls ||
+          preview.direction !== direction || preview.power !== power) {
+        preview = { cue, balls, direction, power, path: root.PyramidPhysics.aimPath(cue, direction, balls, power) };
+      }
+      let from = cue;
       ctx.setLineDash([4, 5]);
-      stroke(ctx, [cue.x, radius, cue.z], [end.x, radius, end.z], '#fff0c4b8', 1.4);
+      preview.path.forEach((end, index) => {
+        stroke(ctx, [from.x, radius, from.z], [end.x, radius, end.z],
+          index === 0 ? '#fff0c4d9' : '#9ff5dce0', index === 0 ? 1.5 : 1.7);
+        from = end;
+      });
       ctx.setLineDash([]);
-      const point = project(end.x, radius, end.z);
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
-      ctx.strokeStyle = '#f6d193';
-      ctx.stroke();
+      if (!from.edge) {
+        const point = project(from.x, radius, from.z);
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
+        ctx.strokeStyle = preview.path.length > 1 ? '#a4f6de' : '#f6d193';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      }
       const onCue = offset => [cue.x - direction.x * offset, radius, cue.z - direction.z * offset];
       const gap = .1 + power * .0016;
       ctx.lineCap = 'round';
@@ -235,6 +247,24 @@
       stroke(ctx, onCue(gap + .04), onCue(gap + .79), '#c89768', 3);
       stroke(ctx, onCue(gap + .03), onCue(gap), '#a2dedd', 2);
       ctx.lineCap = 'butt';
+    }
+
+    function drawRailMarks(path) {
+      for (const { edge } of path) {
+        if (!edge) continue;
+        const point = project(edge.x, .046, edge.z);
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#133e37';
+        ctx.fill();
+        ctx.strokeStyle = '#b9ffe9';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 1.7, 0, Math.PI * 2);
+        ctx.fillStyle = '#d7fff2';
+        ctx.fill();
+      }
     }
 
     function draw(balls, cue, direction, power, canAim, selecting, dt, moving) {
@@ -249,6 +279,7 @@
         drawBackdrop();
         dirty = true;
       }
+      if (!canAim || selecting) preview = null;
       if (!dirty && !moving) return;
       dirty = false;
       ctx.drawImage(backdrop, 0, 0, w, h);
@@ -257,6 +288,7 @@
         .sort((a, b) => (a.x - b.x) * side + (a.z - b.z) * front);
       for (const ball of visible) drawBall(ball, cue, selecting);
       ctx.drawImage(foreground, 0, 0, w, h);
+      if (preview) drawRailMarks(preview.path);
     }
 
     fit();
