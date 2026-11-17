@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Стены</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Стены. Нажимай, чтобы перепрыгнуть на другую стену"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -79,12 +79,12 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!Y0) return;
     var bh = 22, off = dist % (bh * 2);
     [0, W - ww].forEach(function (x0) {
-      ctx.fillStyle = '#3B1E8C'; ctx.fillRect(x0, 0, ww, H);
-      ctx.fillStyle = '#2E177A';
+      ctx.fillStyle = '#45413C'; ctx.fillRect(x0, 0, ww, H);
+      ctx.fillStyle = '#3C3833';
       for (var y = -bh * 2 + off; y < H; y += bh) { ctx.fillRect(x0, y, ww, 2); var mid = (Math.round((y - off) / bh) % 2) ? ww / 2 : ww / 4; ctx.fillRect(x0 + mid, y, 2, bh); }
     });
     spikes.forEach(function (s) {
@@ -94,15 +94,15 @@
       ctx.fill();
     });
     saws.forEach(function (s) {
-      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.a); ctx.fillStyle = '#B9A8F0'; ctx.beginPath();
+      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.a); ctx.fillStyle = '#C7C0B7'; ctx.beginPath();
       for (var i = 0; i < 16; i++) { var a = i * Math.PI / 8, r = i % 2 ? s.r * 0.75 : s.r; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
-      ctx.closePath(); ctx.fill(); ctx.fillStyle = '#22105A'; ctx.beginPath(); ctx.arc(0, 0, s.r * 0.25, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      ctx.closePath(); ctx.fill(); ctx.fillStyle = '#33312E'; ctx.beginPath(); ctx.arc(0, 0, s.r * 0.25, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     });
     if (!dead) {
       var p = px(), r = sz / 2, face = jump ? (jump.to === 0 ? -1 : 1) : (side === 0 ? 1 : -1);
       ctx.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; ctx.beginPath(); ctx.roundRect(p.x - r, p.y - r, sz, sz, sz * 0.25); ctx.fill();
-      ctx.fillStyle = '#120630'; ctx.fillRect(p.x - r, p.y - r * 0.35, sz, r * 0.5);
-      ctx.fillStyle = '#F4F1FF'; ctx.fillRect(p.x + face * r * 0.15 - 3, p.y - r * 0.25, 6, 6); ctx.fillRect(p.x + face * r * 0.55 - 3, p.y - r * 0.25, 6, 6);
+      ctx.fillStyle = '#292724'; ctx.fillRect(p.x - r, p.y - r * 0.35, sz, r * 0.5);
+      ctx.fillStyle = '#FAF7F2'; ctx.fillRect(p.x + face * r * 0.15 - 3, p.y - r * 0.25, 6, 6); ctx.fillRect(p.x + face * r * 0.55 - 3, p.y - r * 0.25, 6, 6);
       ctx.fillStyle = '#FF6B4A'; ctx.fillRect(p.x - face * r - (face > 0 ? 8 : -2), p.y - r * 0.3, 8, 4);
     }
     parts.forEach(function (q) { ctx.globalAlpha = Math.min(1, q.life * 2); ctx.fillStyle = '#3DF5B0'; ctx.fillRect(q.x - 2, q.y - 2, 4, 4); });

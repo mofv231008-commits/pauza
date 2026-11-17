@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Блоки 10×10</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Блоки 10 на 10. Перетаскивай фигуры на поле"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -30,7 +30,7 @@
     [[0, 0], [0, 1], [1, 1]], [[1, 0], [0, 1], [1, 1]], [[0, 0], [1, 0], [0, 1]], [[0, 0], [1, 0], [1, 1]],
     [[0, 0], [0, 1], [0, 2], [1, 2], [2, 2]], [[2, 0], [2, 1], [0, 2], [1, 2], [2, 2]], [[0, 0], [1, 0], [2, 0], [0, 1], [0, 2]], [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2]]
   ];
-  var COLS = ['#3DF5B0', '#FF8AD8', '#FFD84D', '#6FD3FF', '#FF9A6B', '#B9A8F0', '#FF6B4A'];
+  var COLS = ['#3DF5B0', '#FF8AD8', '#FFD84D', '#6FD3FF', '#F5AD7A', '#C7C0B7', '#FF6B4A'];
   var stage = document.getElementById('stage'), canvas = document.getElementById('game');
   var g = [], tray = [], score = 0, lines = 0, drag = null, flashes = [], S = 1;
   var shell = P.shell({
@@ -64,8 +64,8 @@
   function cellRect(c, x, y, s, col) { c.fillStyle = col; c.beginPath(); if (c.roundRect) c.roundRect(x + 1, y + 1, s - 2, s - 2, s * 0.18); else c.rect(x + 1, y + 1, s - 2, s - 2); c.fill(); c.fillStyle = 'rgba(255,255,255,.22)'; c.fillRect(x + s * 0.2, y + s * 0.14, s * 0.6, s * 0.12); }
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, G = geo();
-    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
-    c.fillStyle = '#140734'; c.fillRect(G.x - 4, G.y - 4, G.size + 8, G.size + 8);
+    c.fillStyle = '#33312E'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#22211F'; c.fillRect(G.x - 4, G.y - 4, G.size + 8, G.size + 8);
     var ghost = null;
     if (drag && drag.gx != null && fits(drag.p.cells, drag.gx, drag.gy)) ghost = drag;
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {

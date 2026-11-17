@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · 2048 за минуту</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 /* Поле 4×4. Размер клетки считает скрипт и кладёт в --cell и --gap. */
 .board{
@@ -19,7 +19,7 @@
 }
 .cells,.tiles{position:absolute;inset:var(--gap)}
 .cells{display:grid;grid-template-columns:repeat(4,var(--cell));grid-auto-rows:var(--cell);gap:var(--gap)}
-.cells i{display:block;border-radius:12px;background:rgba(185,168,240,.09)}
+.cells i{display:block;border-radius:12px;background:rgba(199,192,183,.09)}
 .tile{
   position:absolute;left:0;top:0;width:var(--cell);height:var(--cell);
   transform:translate(calc(var(--c) * var(--step)),calc(var(--r) * var(--step)));
@@ -28,7 +28,7 @@
 .tile b{
   display:grid;place-items:center;width:100%;height:100%;border-radius:12px;
   font-family:var(--font-display);font-weight:800;font-size:calc(var(--cell) * .42);line-height:1;font-variant-numeric:tabular-nums;
-  background:#2E1A78;color:var(--paper);
+  background:#78736C;color:var(--paper);
 }
 .tile[data-len="3"] b{font-size:calc(var(--cell) * .32)}
 .tile[data-len="4"] b{font-size:calc(var(--cell) * .25)}
@@ -36,7 +36,7 @@
 .tile.pop b{animation:tile-pop .16s ease-out both}
 @keyframes tile-in{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes tile-pop{0%{transform:scale(1)}50%{transform:scale(1.14)}100%{transform:scale(1)}}
-.tile[data-v="4"] b{background:#4B2FB8}
+.tile[data-v="4"] b{background:#8A6750}
 .tile[data-v="8"] b{background:var(--lilac);color:var(--ink)}
 .tile[data-v="16"] b{background:var(--mint);color:var(--ink)}
 .tile[data-v="32"] b{background:var(--sun);color:var(--ink)}
@@ -62,7 +62,7 @@
   </div>
 </div>
 
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';

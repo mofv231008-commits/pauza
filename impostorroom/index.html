@@ -1,31 +1,31 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#140734"><meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#22211F"><meta name="color-scheme" content="dark">
 <title>Пауза · Подмена</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<link rel="stylesheet" href="../shared/horror.css?v=1">
-<style>.room{height:240px;padding:0;overflow:hidden;background:linear-gradient(#322336 66%,#19131f 66%);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:10px;padding:16px}.object{position:relative;border:1px solid transparent;background:transparent;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;min-width:0;padding:6px}.object svg{width:62px;height:62px;overflow:visible}.object span{font-size:11px;color:var(--lilac)}.object.selected{border-color:var(--mint);background:#3df5b015}.room.dark .object,.stage[data-state="paused"] .room .object,.stage[data-state="countdown"] .room .object{visibility:hidden}.room.dark:after{content:'СВЕТ ПОГАС';position:absolute;inset:0;display:grid;place-items:center;color:var(--coral-2);letter-spacing:.2em;background:#08060e}.object .feature{fill:var(--mint)}.object.changed .feature{fill:var(--coral-2)}@media(max-height:650px){.room{height:185px}.object svg{width:45px;height:45px}}</style></head><body>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<link rel="stylesheet" href="../shared/horror.css?v=7">
+<style>.room{height:240px;padding:0;overflow:hidden;background:linear-gradient(#363431 66%,#1F1E1C 66%);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:10px;padding:16px}.object{position:relative;border:1px solid transparent;background:transparent;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;min-width:0;padding:6px}.object svg{width:62px;height:62px;overflow:visible}.object span{font-size:11px;color:var(--lilac)}.object.selected{border-color:var(--mint);background:#3DF5B015}.room.dark .object,.stage[data-state="paused"] .room .object,.stage[data-state="countdown"] .room .object{visibility:hidden}.room.dark:after{content:'СВЕТ ПОГАС';position:absolute;inset:0;display:grid;place-items:center;color:var(--coral-2);letter-spacing:.2em;background:#0E0D0D}.object .feature{fill:var(--mint)}.object.changed .feature{fill:var(--coral-2)}@media(max-height:650px){.room{height:185px}.object svg{width:45px;height:45px}}</style></head><body>
 <div class="stage horror" id="stage"><div class="play">
 <div class="timebar" id="timebar"><i></i></div>
 <p class="case">Квартира 06 / здесь никто не живёт</p><p class="instruction" id="phase-label">Запомни предметы. После темноты один из них изменится.</p><div class="monitor room" id="room"></div><div class="controls"><button type="button" class="control" id="inspect">Я запомнил · выключить свет</button></div>
 <p class="readout" id="message" role="status" aria-live="polite">Продержись до конца минуты.</p>
 </div></div>
-<script src="../shared/pauza.js?v=6"></script>
-<script src="../shared/horror.js?v=1"></script>
+<script src="../shared/pauza.js?v=7"></script>
+<script src="../shared/horror.js?v=7"></script>
 <script>(function(){'use strict'; var P=window.Pauza;
 var room=document.getElementById('room'),inspect=document.getElementById('inspect'),label=document.getElementById('phase-label');
 var names=['Часы','Картина','Лампа','Зеркало','Растение','Дверь'],items=[],phase='study',phaseTime=0,changed=-1,round=0;
 var drawings=[
-'<circle cx="32" cy="32" r="25" fill="#151020" stroke="#B9A8F0" stroke-width="3"/><path class="feature" d="M30 12h4v22H19v-4h11z"/>',
-'<rect x="5" y="8" width="54" height="46" rx="3" fill="#151020" stroke="#B9A8F0" stroke-width="3"/><path class="feature" d="M12 45l14-22 12 14 7-10 9 18z"/>',
-'<path class="feature" d="M20 8h24l10 28H10z"/><path d="M32 36v20m-14 0h28" stroke="#B9A8F0" stroke-width="4"/>',
-'<ellipse cx="32" cy="29" rx="21" ry="25" fill="#151020" stroke="#B9A8F0" stroke-width="3"/><path class="feature" d="M17 29q15-20 30 0q-15 20-30 0"/><path d="M25 56h14" stroke="#B9A8F0" stroke-width="3"/>',
-'<path d="M21 42h22l-4 17H25z" fill="#B9A8F0"/><path class="feature" d="M30 44V14h4v12q3-16 20-13-2 17-20 19v12zm0-10Q8 34 9 15q20-2 21 19"/>',
-'<path d="M13 60V5h38v55" fill="#151020" stroke="#B9A8F0" stroke-width="3"/><circle class="feature" cx="42" cy="34" r="4"/>'
+'<circle cx="32" cy="32" r="25" fill="#201F1D" stroke="#C7C0B7" stroke-width="3"/><path class="feature" d="M30 12h4v22H19v-4h11z"/>',
+'<rect x="5" y="8" width="54" height="46" rx="3" fill="#201F1D" stroke="#C7C0B7" stroke-width="3"/><path class="feature" d="M12 45l14-22 12 14 7-10 9 18z"/>',
+'<path class="feature" d="M20 8h24l10 28H10z"/><path d="M32 36v20m-14 0h28" stroke="#C7C0B7" stroke-width="4"/>',
+'<ellipse cx="32" cy="29" rx="21" ry="25" fill="#201F1D" stroke="#C7C0B7" stroke-width="3"/><path class="feature" d="M17 29q15-20 30 0q-15 20-30 0"/><path d="M25 56h14" stroke="#C7C0B7" stroke-width="3"/>',
+'<path d="M21 42h22l-4 17H25z" fill="#C7C0B7"/><path class="feature" d="M30 44V14h4v12q3-16 20-13-2 17-20 19v12zm0-10Q8 34 9 15q20-2 21 19"/>',
+'<path d="M13 60V5h38v55" fill="#201F1D" stroke="#C7C0B7" stroke-width="3"/><circle class="feature" cx="42" cy="34" r="4"/>'
 ];
 var g=PauzaHorror({id:'impostorroom',title:'Подмена',tagline:'В темноте комната перестаёт быть прежней.',rules:'Осмотри шесть предметов и запомни цвет их деталей. Нажми «Я запомнил» или дождись выключения света. После темноты одна деталь сменит цвет. Коснись изменившегося предмета: +10 очков. Ошибка или 7 секунд без ответа — новая комната. За 60 секунд найди больше подмен.',reset:reset,tick:tick});
 function render(){room.textContent='';items.forEach(function(on,i){var b=document.createElement('button');b.type='button';b.className='object'+(on?' changed':'');b.setAttribute('aria-label',names[i]+', '+(on?'оранжевая':'зелёная')+' деталь');b.innerHTML='<svg viewBox="0 0 64 64" aria-hidden="true">'+drawings[i]+'</svg><span>'+names[i]+'</span>';b.addEventListener('click',function(){answer(i,b);});room.appendChild(b);});}

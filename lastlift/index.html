@@ -1,21 +1,21 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#140734"><meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#22211F"><meta name="color-scheme" content="dark">
 <title>Пауза · Последний лифт</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<link rel="stylesheet" href="../shared/horror.css?v=1">
-<style>.lift{height:180px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(90deg,#191421 49.5%,#806174 50%,#191421 50.5%);transition:background .25s}.floor-display{font-family:var(--font-display);font-size:60px;color:var(--coral-2);text-shadow:0 0 25px #ff6b4a77;border:1px solid #5c3540;padding:8px 24px;border-radius:12px;background:#100c20}.note{background:#d6c7b3;color:#251b26;transform:rotate(-1deg);padding:14px 18px;font-size:14px;max-width:360px;width:100%;border-radius:3px;margin:0}.floors{display:flex;gap:10px;max-width:360px;width:100%}.floors button{flex:1;font-family:var(--font-display);font-size:26px}.floors button.chosen{border-color:var(--mint);color:var(--mint)}@media(max-height:650px){.lift{height:115px}.floor-display{font-size:44px}}</style></head><body>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<link rel="stylesheet" href="../shared/horror.css?v=7">
+<style>.lift{height:180px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(90deg,#21201E 49.5%,#806174 50%,#21201E 50.5%);transition:background .25s}.floor-display{font-family:var(--font-display);font-size:60px;color:var(--coral-2);text-shadow:0 0 25px #ff6b4a77;border:1px solid #5c3540;padding:8px 24px;border-radius:12px;background:#1D1C1A}.note{background:#d6c7b3;color:#262422;transform:rotate(-1deg);padding:14px 18px;font-size:14px;max-width:360px;width:100%;border-radius:3px;margin:0}.floors{display:flex;gap:10px;max-width:360px;width:100%}.floors button{flex:1;font-family:var(--font-display);font-size:26px}.floors button.chosen{border-color:var(--mint);color:var(--mint)}@media(max-height:650px){.lift{height:115px}.floor-display{font-size:44px}}</style></head><body>
 <div class="stage horror" id="stage"><div class="play">
 <div class="timebar" id="timebar"><i></i></div>
 <p class="case">Лифт Б / кнопка вызова не работает</p><div class="monitor lift"><span class="floor-display" id="floor">—</span></div><p class="note" id="note"></p><p class="instruction" id="deadline">Выбери единственный безопасный этаж.</p><div class="floors" id="floors"></div>
 <p class="readout" id="message" role="status" aria-live="polite">Продержись до конца минуты.</p>
 </div></div>
-<script src="../shared/pauza.js?v=6"></script>
-<script src="../shared/horror.js?v=1"></script>
+<script src="../shared/pauza.js?v=7"></script>
+<script src="../shared/horror.js?v=7"></script>
 <script>(function(){'use strict'; var P=window.Pauza;
 var opts=document.getElementById('floors'),note=document.getElementById('note'),safe=0,deadline=0,wait=0,round=0;
 var g=PauzaHorror({id:'lastlift',title:'Последний лифт',tagline:'Не каждый этаж существует.',rules:'В лифте появляется записка с условиями безопасного этажа. Из трёх кнопок подходит ровно одна. С каждым подъёмом времени меньше. За правильный этаж +10 очков, за неверный или пропущенный — ошибка. Смена длится 60 секунд.',reset:reset,tick:tick});

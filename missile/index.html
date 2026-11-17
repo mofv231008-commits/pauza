@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Ракеты</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Ракеты. Нажимай на небо, чтобы сбить ракету"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -92,13 +92,13 @@
   });
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, g = gy();
-    var sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#0B0420'); sky.addColorStop(1, '#22105A'); c.fillStyle = sky; c.fillRect(0, 0, W, H);
-    c.fillStyle = '#F4F1FF'; stars.forEach(function (s) { c.globalAlpha = 0.5; c.beginPath(); c.arc(s.x, s.y, s.r, 0, 7); c.fill(); }); c.globalAlpha = 1;
-    c.fillStyle = '#1A0C44'; c.fillRect(0, g, W, H - g);
+    var sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#201F1D'); sky.addColorStop(1, '#33312E'); c.fillStyle = sky; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#FAF7F2'; stars.forEach(function (s) { c.globalAlpha = 0.5; c.beginPath(); c.arc(s.x, s.y, s.r, 0, 7); c.fill(); }); c.globalAlpha = 1;
+    c.fillStyle = '#44413D'; c.fillRect(0, g, W, H - g);
     cities.forEach(function (ct) {
       var x = cityX(ct), w = 30 * S, h = 30 * S * ct.h;
-      if (!ct.alive) { c.fillStyle = '#3B1E8C'; c.fillRect(x - w / 2, g - 6 * S, w, 6 * S); return; }
-      c.fillStyle = '#3B1E8C'; c.fillRect(x - w / 2, g - h, w, h); c.fillStyle = '#5B3FD0'; c.fillRect(x - w / 2 + 4 * S, g - h - 8 * S, w * 0.45, 8 * S);
+      if (!ct.alive) { c.fillStyle = '#45413C'; c.fillRect(x - w / 2, g - 6 * S, w, 6 * S); return; }
+      c.fillStyle = '#45413C'; c.fillRect(x - w / 2, g - h, w, h); c.fillStyle = '#9E7054'; c.fillRect(x - w / 2 + 4 * S, g - h - 8 * S, w * 0.45, 8 * S);
       c.fillStyle = '#FFD84D'; for (var i = 0; i < 3; i++) for (var j = 0; j < Math.floor(h / (9 * S)); j++) if ((i + j) % 2 === 0) c.fillRect(x - w / 2 + 4 * S + i * 8 * S, g - h + 4 * S + j * 9 * S, 4 * S, 4 * S);
     });
     c.fillStyle = '#3DF5B0'; c.beginPath(); c.moveTo(W / 2 - 18 * S, g); c.lineTo(W / 2, g - 22 * S); c.lineTo(W / 2 + 18 * S, g); c.fill();
@@ -112,7 +112,7 @@
     shots.forEach(function (s) { c.beginPath(); c.moveTo(W / 2, g - 22 * S); c.lineTo(s.x, s.y); c.stroke(); c.save(); c.setLineDash([]); c.strokeStyle = 'rgba(61,245,176,.5)'; c.beginPath(); c.arc(s.tx, s.ty, 6 * S, 0, 7); c.stroke(); c.restore(); });
     c.setLineDash([]);
     booms.forEach(function (b) {
-      var gr = c.createRadialGradient(b.x, b.y, 0, b.x, b.y, Math.max(1, b.r)); gr.addColorStop(0, '#fff'); gr.addColorStop(0.45, b.own ? '#FFD84D' : '#FF9A6B'); gr.addColorStop(1, 'rgba(255,107,74,0)');
+      var gr = c.createRadialGradient(b.x, b.y, 0, b.x, b.y, Math.max(1, b.r)); gr.addColorStop(0, '#fff'); gr.addColorStop(0.45, b.own ? '#FFD84D' : '#F5AD7A'); gr.addColorStop(1, 'rgba(255,107,74,0)');
       c.fillStyle = gr; c.beginPath(); c.arc(b.x, b.y, Math.max(0, b.r), 0, 7); c.fill();
     });
     fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = p.col; c.fillRect(p.x - 2, p.y - 2, 4, 4); }); c.globalAlpha = 1;

@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Трубы</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Трубы. Нажимай на клетки, чтобы повернуть трубу"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -82,27 +82,27 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!cells.length) return;
     for (var i = 0; i < n * n; i++) {
       var x = i % n, y = (i - x) / n, cx = ox + (x + 0.5) * cs, cy = oy + (y + 0.5) * cs, c = cells[i], on = lit[i];
-      ctx.fillStyle = (x + y) % 2 ? '#22105A' : '#1B0A48'; ctx.fillRect(ox + x * cs, oy + y * cs, cs, cs);
+      ctx.fillStyle = (x + y) % 2 ? '#33312E' : '#484541'; ctx.fillRect(ox + x * cs, oy + y * cs, cs, cs);
       ctx.save(); ctx.translate(cx, cy); ctx.rotate(c.a);
-      ctx.lineCap = 'round'; ctx.strokeStyle = on ? (phase === 'won' ? '#3DF5B0' : '#6FD3FF') : '#3B1E8C'; ctx.lineWidth = cs * 0.22;
+      ctx.lineCap = 'round'; ctx.strokeStyle = on ? (phase === 'won' ? '#3DF5B0' : '#6FD3FF') : '#45413C'; ctx.lineWidth = cs * 0.22;
       ctx.beginPath();
       for (var d = 0; d < 4; d++) if (c.m & (1 << d)) { ctx.moveTo(0, 0); ctx.lineTo(DX[d] * cs / 2, DY[d] * cs / 2); }
       ctx.stroke();
-      ctx.strokeStyle = on ? 'rgba(244,241,255,.5)' : 'rgba(185,168,240,.25)'; ctx.lineWidth = cs * 0.06; ctx.stroke();
+      ctx.strokeStyle = on ? 'rgba(250,247,242,.5)' : 'rgba(199,192,183,.25)'; ctx.lineWidth = cs * 0.06; ctx.stroke();
       ctx.restore();
       var deg = [0, 1, 2, 3].filter(function (q) { return c.m & (1 << q); }).length;
-      if (i === src) { ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.roundRect(cx - cs * 0.24, cy - cs * 0.24, cs * 0.48, cs * 0.48, cs * 0.1); ctx.fill(); ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(cx, cy, cs * 0.09, 0, Math.PI * 2); ctx.fill(); }
+      if (i === src) { ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.roundRect(cx - cs * 0.24, cy - cs * 0.24, cs * 0.48, cs * 0.48, cs * 0.1); ctx.fill(); ctx.fillStyle = '#292724'; ctx.beginPath(); ctx.arc(cx, cy, cs * 0.09, 0, Math.PI * 2); ctx.fill(); }
       else if (deg === 1) {
-        ctx.fillStyle = on ? '#FFD84D' : '#B9A8F0'; ctx.beginPath(); ctx.moveTo(cx - cs * 0.2, cy - cs * 0.02); ctx.lineTo(cx, cy - cs * 0.22); ctx.lineTo(cx + cs * 0.2, cy - cs * 0.02); ctx.lineTo(cx + cs * 0.16, cy - cs * 0.02); ctx.lineTo(cx + cs * 0.16, cy + cs * 0.18); ctx.lineTo(cx - cs * 0.16, cy + cs * 0.18); ctx.lineTo(cx - cs * 0.16, cy - cs * 0.02); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = on ? '#FF6B4A' : '#3B1E8C'; ctx.fillRect(cx - cs * 0.05, cy + cs * 0.04, cs * 0.1, cs * 0.14);
+        ctx.fillStyle = on ? '#FFD84D' : '#C7C0B7'; ctx.beginPath(); ctx.moveTo(cx - cs * 0.2, cy - cs * 0.02); ctx.lineTo(cx, cy - cs * 0.22); ctx.lineTo(cx + cs * 0.2, cy - cs * 0.02); ctx.lineTo(cx + cs * 0.16, cy - cs * 0.02); ctx.lineTo(cx + cs * 0.16, cy + cs * 0.18); ctx.lineTo(cx - cs * 0.16, cy + cs * 0.18); ctx.lineTo(cx - cs * 0.16, cy - cs * 0.02); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = on ? '#FF6B4A' : '#45413C'; ctx.fillRect(cx - cs * 0.05, cy + cs * 0.04, cs * 0.1, cs * 0.14);
       }
     }
-    ctx.strokeStyle = '#3B1E8C'; ctx.lineWidth = 2; ctx.strokeRect(ox, oy, cs * n, cs * n);
-    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.strokeStyle = '#45413C'; ctx.lineWidth = 2; ctx.strokeRect(ox, oy, cs * n, cs * n);
+    ctx.fillStyle = 'rgba(250,247,242,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
     var left = lit.filter(function (v) { return !v; }).length;
     ctx.fillText(phase === 'won' ? 'Всё подключено!' : 'Без воды: ' + left, W / 2, oy - 12);
   }

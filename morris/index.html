@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Мельница</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>.stage{background:var(--shoulder)}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Мельница. Ставь и двигай фишки по точкам доски"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -122,10 +122,10 @@
   }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#33312E'; ctx.fillRect(0, 0, W, H);
     if (!S) return;
-    ctx.fillStyle = '#2E177A'; ctx.beginPath(); ctx.roundRect(ox - cs * 0.5, oy - cs * 0.5, cs * 7, cs * 7, 18); ctx.fill();
-    ctx.strokeStyle = '#B9A8F0'; ctx.lineWidth = 3;
+    ctx.fillStyle = '#3C3833'; ctx.beginPath(); ctx.roundRect(ox - cs * 0.5, oy - cs * 0.5, cs * 7, cs * 7, 18); ctx.fill();
+    ctx.strokeStyle = '#C7C0B7'; ctx.lineWidth = 3;
     ADJ.forEach(function (a, i) { a.forEach(function (j) { if (j > i) { ctx.beginPath(); ctx.moveTo(ox + PTS[i][0] * cs, oy + PTS[i][1] * cs); ctx.lineTo(ox + PTS[j][0] * cs, oy + PTS[j][1] * cs); ctx.stroke(); } }); });
     var targets = {};
     if (!busy && shell.running && !pend) legal.forEach(function (m) { if (S.hand[0] > 0 || m.from === sel) targets[m.to] = 1; });
@@ -133,18 +133,18 @@
     PTS.forEach(function (p, i) {
       var x = ox + p[0] * cs, y = oy + p[1] * cs, v = S.b[i], r = cs * 0.34;
       if (lastAi && (lastAi.m.to === i || lastAi.m.from === i || lastAi.m.rem === i)) { ctx.globalAlpha = Math.min(1, lastAi.life) * 0.5; ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(x, y, cs * 0.46, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
-      if (!v) { ctx.fillStyle = targets[i] ? '#3DF5B0' : '#B9A8F0'; ctx.beginPath(); ctx.arc(x, y, targets[i] ? 7 : 5, 0, Math.PI * 2); ctx.fill(); return; }
+      if (!v) { ctx.fillStyle = targets[i] ? '#3DF5B0' : '#C7C0B7'; ctx.beginPath(); ctx.arc(x, y, targets[i] ? 7 : 5, 0, Math.PI * 2); ctx.fill(); return; }
       var shown = pend && i === pend[0].from ? 0 : v;
       if (pend && i === pend[0].to) shown = 1;
       if (shown) piece(ctx, x, y, shown, r);
       if (rem[i]) { ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 3; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(x, y, r + 5, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
-      if (i === sel && !pend) { ctx.strokeStyle = '#F4F1FF'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2); ctx.stroke(); }
+      if (i === sel && !pend) { ctx.strokeStyle = '#FAF7F2'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2); ctx.stroke(); }
     });
     if (pend && !S.b[pend[0].to]) piece(ctx, ox + PTS[pend[0].to][0] * cs, oy + PTS[pend[0].to][1] * cs, 1, cs * 0.34);
     var hr = Math.min(10, cs * 0.18);
     for (var k = 0; k < S.hand[1]; k++) piece(ctx, W / 2 - 8 * hr * 1.1 + k * hr * 2.2, oy - cs * 0.5 - 22, -1, hr);
     for (k = 0; k < S.hand[0]; k++) piece(ctx, W / 2 - 8 * hr * 1.1 + k * hr * 2.2, oy + cs * 6.5 + 22, 1, hr);
-    ctx.fillStyle = 'rgba(244,241,255,.85)'; ctx.font = '600 14px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(250,247,242,.85)'; ctx.font = '600 14px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(note, W / 2, oy - cs * 0.5 - 46);
   }
   canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var rc = canvas.getBoundingClientRect(); tap(e.clientX - rc.left, e.clientY - rc.top); });

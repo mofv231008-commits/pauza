@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Танчики</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Танчики. Веди пальцем — танк едет туда и стреляет сам"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -109,7 +109,7 @@
     bullets.forEach(function (b) {
       for (var s = 0; s < 3 && !b.dead; s++) {
         b.x += DX[b.dir] * f * 11 * dt / 3; b.y += DY[b.dir] * f * 11 * dt / 3;
-        if (hitCell(b.x, b.y, b.dir)) { b.dead = true; boom(b.x, b.y, '#FF9A6B', 6); break; }
+        if (hitCell(b.x, b.y, b.dir)) { b.dead = true; boom(b.x, b.y, '#F5AD7A', 6); break; }
         for (var i = 0; i < tanks.length; i++) {
           var t = tanks[i];
           if (t.mine === b.mine || Math.abs(t.x - b.x) > f || Math.abs(t.y - b.y) > f) continue;
@@ -131,22 +131,22 @@
   });
   function draw() {
     var c = view.ctx, W = view.W, H = view.H;
-    c.fillStyle = '#0E0526'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#1D1C1A'; c.fillRect(0, 0, W, H);
     c.save(); c.translate(0, top);
-    c.fillStyle = '#140734'; c.fillRect(0, 0, FW * f, FH * f);
+    c.fillStyle = '#22211F'; c.fillRect(0, 0, FW * f, FH * f);
     for (var y = 0; y < map.length; y++) for (var x = 0; x < FW; x++) {
       var v = map[y][x]; if (!v) continue;
       if (v === 1) { c.fillStyle = '#FF6B4A'; c.fillRect(x * f, y * f, f, f); c.fillStyle = 'rgba(18,6,48,.35)'; c.fillRect(x * f, y * f + f * 0.45, f, f * 0.1); c.fillRect(x * f + (y % 2 ? f * 0.3 : f * 0.7), y * f, f * 0.1, f * 0.45); }
-      else if (v === 2) { c.fillStyle = '#B9A8F0'; c.fillRect(x * f, y * f, f, f); c.fillStyle = 'rgba(255,255,255,.5)'; c.fillRect(x * f + 2, y * f + 2, f * 0.3, f * 0.3); }
+      else if (v === 2) { c.fillStyle = '#C7C0B7'; c.fillRect(x * f, y * f, f, f); c.fillStyle = 'rgba(255,255,255,.5)'; c.fillRect(x * f + 2, y * f + 2, f * 0.3, f * 0.3); }
     }
     var bx = 12 * f, by = (FH - 2) * f;
-    c.fillStyle = over ? '#3B1E8C' : '#22105A'; c.fillRect(bx, by, 2 * f, 2 * f);
-    c.fillStyle = over ? '#5B3FD0' : '#3DF5B0'; c.fillRect(bx + f * 0.45, by + f * 0.4, f * 0.4, f * 1.2); c.fillRect(bx + f * 1.15, by + f * 0.4, f * 0.4, f * 1.2);
+    c.fillStyle = over ? '#45413C' : '#33312E'; c.fillRect(bx, by, 2 * f, 2 * f);
+    c.fillStyle = over ? '#9E7054' : '#3DF5B0'; c.fillRect(bx + f * 0.45, by + f * 0.4, f * 0.4, f * 1.2); c.fillRect(bx + f * 1.15, by + f * 0.4, f * 0.4, f * 1.2);
     tanks.forEach(function (t) {
       if (t.mine && t.inv > 0 && Math.floor(t.inv * 10) % 2) return;
       c.save(); c.translate(t.x, t.y); c.rotate(t.dir * Math.PI / 2);
       var s = f * 0.92;
-      c.fillStyle = '#120630'; c.fillRect(-s, -s, s * 0.5, s * 2); c.fillRect(s * 0.5, -s, s * 0.5, s * 2);
+      c.fillStyle = '#292724'; c.fillRect(-s, -s, s * 0.5, s * 2); c.fillRect(s * 0.5, -s, s * 0.5, s * 2);
       c.fillStyle = t.col; c.fillRect(-s * 0.75, -s * 0.8, s * 1.5, s * 1.6);
       c.fillStyle = 'rgba(18,6,48,.35)'; c.beginPath(); c.arc(0, s * 0.1, s * 0.48, 0, 7); c.fill();
       c.fillStyle = t.col; c.fillRect(-s * 0.13, -s * 1.15, s * 0.26, s * 1.05);

@@ -3,23 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Сапёр</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 /* Поле 9×9 из кнопок, под ним переключатель «Открыть / Флажок» */
 .board{--size:340px;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);gap:3px;width:var(--size);height:var(--size);flex:none;padding:6px;border-radius:16px;background:var(--night)}
 .cell{
   display:grid;place-items:center;min-width:0;padding:0;border:0;border-radius:6px;cursor:pointer;
-  background:#4B2FB8;color:var(--paper);font-family:var(--font-display);font-weight:800;font-size:calc(var(--size) / 9 * .46);line-height:1;
+  background:#8A6750;color:var(--paper);font-family:var(--font-display);font-weight:800;font-size:calc(var(--size) / 9 * .46);line-height:1;
   touch-action:manipulation;-webkit-touch-callout:none;
 }
-.cell.open{background:rgba(185,168,240,.1);cursor:default}
-.cell.flag{background:#4B2FB8}
+.cell.open{background:rgba(199,192,183,.1);cursor:default}
+.cell.flag{background:#8A6750}
 .cell svg{display:block;width:62%;height:62%}
 .cell.boom{background:var(--coral)}
 .cell[data-n="1"]{color:var(--sky)}
@@ -53,14 +53,14 @@
   </div>
 </div>
 
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
   var N = 9, MINES = 10;
   var FLAG_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 15 V2 L13 5.5 L4 9" fill="#FF6B4A" stroke="#FF6B4A" stroke-width="1.6" stroke-linejoin="round"/></svg>';
-  var MINE_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="4.6" fill="#120630"/><path d="M8 1.5 V14.5 M1.5 8 H14.5 M3.4 3.4 L12.6 12.6 M12.6 3.4 L3.4 12.6" stroke="#120630" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  var MINE_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="4.6" fill="#292724"/><path d="M8 1.5 V14.5 M1.5 8 H14.5 M3.4 3.4 L12.6 12.6 M12.6 3.4 L3.4 12.6" stroke="#292724" stroke-width="1.6" stroke-linecap="round"/></svg>';
 
   var stage = document.getElementById('stage'), board = document.getElementById('board');
   var modeOpen = document.getElementById('modeOpen'), modeFlag = document.getElementById('modeFlag');

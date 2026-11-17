@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Провод</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Провод. Веди кольцо вдоль провода, не касаясь его"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -90,16 +90,16 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = flash > 0 ? '#3A0F2E' : '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = flash > 0 ? '#3A0F2E' : '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!path.length) return;
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath(); path.forEach(function (p, i) { ctx[i ? 'lineTo' : 'moveTo'](p.x, p.y); });
-    ctx.strokeStyle = 'rgba(185,168,240,.07)'; ctx.lineWidth = tol * 2; ctx.stroke();
-    ctx.strokeStyle = '#120630'; ctx.lineWidth = 7; ctx.stroke();
+    ctx.strokeStyle = 'rgba(199,192,183,.07)'; ctx.lineWidth = tol * 2; ctx.stroke();
+    ctx.strokeStyle = '#292724'; ctx.lineWidth = 7; ctx.stroke();
     ctx.strokeStyle = '#E9C38A'; ctx.lineWidth = 4; ctx.stroke();
     var s = path[0], e = path[path.length - 1];
     ctx.fillStyle = '#3DF5B0'; ctx.beginPath(); ctx.arc(s.x, s.y, 7, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#F4F1FF'; ctx.fillRect(e.x - 1.5, e.y - 30, 3, 30);
+    ctx.fillStyle = '#FAF7F2'; ctx.fillRect(e.x - 1.5, e.y - 30, 3, 30);
     ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.moveTo(e.x + 1.5, e.y - 30); ctx.lineTo(e.x + 22, e.y - 23); ctx.lineTo(e.x + 1.5, e.y - 16); ctx.fill();
     if (ring) {
       ctx.strokeStyle = flash > 0 ? '#FF6B4A' : (P.gold() ? '#FFD84D' : '#3DF5B0'); ctx.lineWidth = 4;

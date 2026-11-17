@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Световой след</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Световой след. Свайпай, чтобы поворачивать"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -84,19 +84,19 @@
   });
   function draw() {
     var c = view.ctx, W = view.W, H = view.H;
-    c.fillStyle = '#0B0420'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#201F1D'; c.fillRect(0, 0, W, H);
     c.save(); c.translate(0, top);
     c.strokeStyle = 'rgba(59,30,140,.45)'; c.lineWidth = 1;
     for (var x = 0; x <= COLS; x += 2) { c.beginPath(); c.moveTo(x * cs, 0); c.lineTo(x * cs, R * cs); c.stroke(); }
     for (var y = 0; y <= R; y += 2) { c.beginPath(); c.moveTo(0, y * cs); c.lineTo(COLS * cs, y * cs); c.stroke(); }
-    c.strokeStyle = '#3B1E8C'; c.lineWidth = 2; c.strokeRect(1, 1, COLS * cs - 2, R * cs - 2);
+    c.strokeStyle = '#45413C'; c.lineWidth = 2; c.strokeRect(1, 1, COLS * cs - 2, R * cs - 2);
     var cols = {}; riders.forEach(function (r) { cols[r.id] = r.col; });
     for (y = 0; y < grid.length; y++) for (x = 0; x < COLS; x++) { var v = grid[y][x]; if (v) { c.fillStyle = cols[v]; c.globalAlpha = 0.75; c.fillRect(x * cs + 1, y * cs + 1, cs - 2, cs - 2); } }
     c.globalAlpha = 1;
     riders.forEach(function (r) { if (!r.alive && !r.me) return; c.fillStyle = '#fff'; c.shadowColor = r.col; c.shadowBlur = 12; c.fillRect(r.x * cs, r.y * cs, cs, cs); c.shadowBlur = 0; });
     fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = p.col; c.fillRect(p.x - 2, p.y - 2, 4, 4); }); c.globalAlpha = 1;
     c.restore();
-    if (pause > 0 && msg && shell.running) { c.globalAlpha = Math.min(1, pause * 2); c.fillStyle = '#F4F1FF'; c.font = '800 28px Unbounded, "Arial Black", sans-serif'; c.textAlign = 'center'; c.fillText(msg, W / 2, H / 2); c.globalAlpha = 1; }
+    if (pause > 0 && msg && shell.running) { c.globalAlpha = Math.min(1, pause * 2); c.fillStyle = '#FAF7F2'; c.font = '800 28px Unbounded, "Arial Black", sans-serif'; c.textAlign = 'center'; c.fillText(msg, W / 2, H / 2); c.globalAlpha = 1; }
   }
   function turnTo(d) { var me = riders[0]; if (!shell.running || !me || !me.alive) return; if (d === (me.d + 2) % 4) return; me.nd = d; }
   P.gestures(canvas, { swipe: function (d) { turnTo({ up: 0, right: 1, down: 2, left: 3 }[d]); }, tap: function (x) { var me = riders[0]; if (me) turnTo(x < view.W / 2 ? (me.d + 3) % 4 : (me.d + 1) % 4); } });

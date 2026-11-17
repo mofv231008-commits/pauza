@@ -1,12 +1,13 @@
 /* «Пауза»: общий скрипт всех игр.
-   Даёт игре связь с Telegram, рекорды, паузу, экраны меню и кнопку «Вызвать друга».
+   Даёт игре связь с Telegram, рекорды, паузу, экраны меню и кнопку «Позвать друга».
    Этим же набором функций будут пользоваться сторонние разработчики. */
 (function () {
   'use strict';
 
   var BOT = 'Pauzagame_bot';
   var PLAY_LINK = 'https://t.me/' + BOT + '/play';
-  var NIGHT = '#140734';
+  var NIGHT = '#22211F';
+  var SURFACE = '#F1F0EC';
   var reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   function safe(fn, fallback) { try { return fn(); } catch (e) { return fallback; } }
@@ -49,9 +50,10 @@
     postEvent('web_app_ready');
     postEvent('web_app_expand');
     postEvent('web_app_setup_swipe_behavior', { allow_vertical_swipe: false });
-    postEvent('web_app_set_header_color', { color: NIGHT });
-    postEvent('web_app_set_background_color', { color: NIGHT });
-    postEvent('web_app_set_bottom_bar_color', { color: NIGHT });
+    var chromeColor = document.body && (document.body.classList.contains('hub') || document.body.classList.contains('doc')) ? SURFACE : NIGHT;
+    postEvent('web_app_set_header_color', { color: chromeColor });
+    postEvent('web_app_set_background_color', { color: chromeColor });
+    postEvent('web_app_set_bottom_bar_color', { color: chromeColor });
     /* Крестик Telegram сначала спрашивает «Закрыть?», а не выкидывает сразу */
     postEvent('web_app_setup_closing_behavior', { need_confirmation: true });
     if (!backHandler) postEvent('web_app_setup_back_button', { is_visible: false });
@@ -86,12 +88,12 @@
     }
   }
 
-  /* «Вызвать друга»: в Telegram вставляет вызов в выбранный чат, в браузере копирует текст */
+  /* «Позвать друга»: в Telegram вставляет вызов в выбранный чат, в браузере копирует текст */
   function share(gameId, phrase) {
-    if (postEvent('web_app_switch_inline_query', { query: gameId + ' ' + phrase, chat_types: ['users', 'groups'] })) {
+    if (postEvent('web_app_switch_inline_query', { query: gameId + (phrase ? ' ' + phrase : ''), chat_types: ['users', 'groups'] })) {
       return Promise.resolve('telegram');
     }
-    var text = phrase + ' Побьёшь? ' + PLAY_LINK + '?startapp=' + gameId;
+    var text = (phrase ? phrase + ' Побьёшь? ' : 'Сделаем паузу? ') + PLAY_LINK + '?startapp=' + gameId;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       return navigator.clipboard.writeText(text).then(function () { return 'copied'; }, function () { return Promise.reject(text); });
     }
@@ -221,16 +223,16 @@
   }
   /* Окно оплаты Telegram. Ответ: 'paid', 'cancelled', 'failed' или 'pending' */
   function buy(id) {
-    if (!PRODUCTS[id]) return Promise.reject(new Error('Такого набора нет.'));
-    if (!inTelegram) return Promise.reject(new Error('Оплата звёздами работает только внутри Telegram. Открой игру через @' + BOT + '.'));
+    if (!PRODUCTS[id]) return Promise.reject(new Error('Не нашли такой набор. Вернись к выбору покупок.'));
+    if (!inTelegram) return Promise.reject(new Error('Чтобы оплатить звёздами, открой «Паузу» через @' + BOT + '.'));
     return fetch(BOT_API + '/invoice?product=' + encodeURIComponent(id)).then(function (r) {
-      if (!r.ok) throw new Error('Сервер оплаты не ответил. Попробуй ещё раз через минуту.');
+      if (!r.ok) throw new Error('Не удалось связаться с оплатой. Попробуй через минуту.');
       return r.json();
     }, function () {
-      throw new Error('Нет связи с сервером оплаты. Проверь интернет и попробуй ещё раз.');
+      throw new Error('Нет связи с оплатой. Проверь интернет и попробуй ещё раз.');
     }).then(function (data) {
       var m = /^https:\/\/t\.me\/(?:\$|invoice\/)([A-Za-z0-9_\-=]+)$/.exec((data && data.link) || '');
-      if (!m) throw new Error('Не получилось создать счёт. Попробуй ещё раз через минуту.');
+      if (!m) throw new Error('Не удалось подготовить оплату. Попробуй через минуту.');
       var slug = m[1];
       return new Promise(function (resolve, reject) {
         function closed(d) {
@@ -242,7 +244,7 @@
         on('invoice_closed', closed);
         if (!postEvent('web_app_open_invoice', { slug: slug })) {
           off('invoice_closed', closed);
-          reject(new Error('Не получилось открыть окно оплаты.'));
+          reject(new Error('Не удалось открыть оплату. Попробуй ещё раз.'));
         }
       });
     });
@@ -454,11 +456,11 @@
     var pauseScr = el('section', 'overlay'); pauseScr.hidden = true;
     var pp = el('div', 'panel');
     pp.appendChild(el('h2', '', 'Пауза'));
-    pp.appendChild(el('p', 'pause-text', 'Тебе ответили? Беги в чат, игра подождёт.'));
+    pp.appendChild(el('p', 'pause-text', 'Отвлекайся спокойно. Продолжишь, когда захочешь.'));
     var pauseActions = el('div', 'actions');
-    var resumeBtn = button('btn-primary', 'Дальше', resume);
+    var resumeBtn = button('btn-primary', 'Продолжить', resume);
     pauseActions.appendChild(resumeBtn);
-    pauseActions.appendChild(button('btn-ghost', 'Заново', begin));
+    pauseActions.appendChild(button('btn-ghost', 'Начать заново', begin));
     pp.appendChild(pauseActions);
     pp.appendChild(backLink());
     pauseScr.appendChild(pp);
@@ -475,11 +477,11 @@
     var overActions = el('div', 'actions');
     var againBtn = button('btn-primary', 'Ещё раз', begin);
     overActions.appendChild(againBtn);
-    overActions.appendChild(button('btn-ghost', 'Вызвать друга', function () {
+    overActions.appendChild(button('btn-ghost', 'Позвать друга', function () {
       share(cfg.id, lastPhrase).then(function (how) {
-        if (how === 'copied') toast('Скопировано. Отправь другу в чат');
+        if (how === 'copied') toast('Ссылка скопирована. Отправь её другу.');
       }, function (text) {
-        toast('Скопируй и отправь другу: ' + text, true);
+        toast('Скопируй ссылку и отправь другу: ' + text, true);
       });
     }));
     op.appendChild(overActions);
@@ -549,16 +551,16 @@
         (best === null || (cfg.lowerIsBetter ? score < best : score > best));
       if (isNew) { best = score; store.set(bestKey, best); }
       runs++; store.set(runsKey, runs);
-      lastPhrase = res.phrase || '';
+      lastPhrase = res.record === false && res.phrase ? res.phrase : 'Мой результат в «' + cfg.title + '» — ' + withUnit(score) + '.';
       haptic(res.haptic || (isNew ? 'win' : null));
       clearTimeout(overTimer);
       overTimer = setTimeout(function () {
-        eyebrow.textContent = res.eyebrow || cfg.overEyebrow || 'Итог';
+        eyebrow.textContent = res.eyebrow || cfg.overEyebrow || 'Твой результат';
         eyebrow.className = 'eyebrow' + ((res.tone || cfg.overTone) === 'good' ? ' good' : '');
         big.textContent = formatScore(score);
         bigLabel.textContent = unit(score);
         bigLabel.hidden = !bigLabel.textContent;
-        record.textContent = isNew ? 'Новый рекорд!' : (best !== null ? 'Рекорд: ' + withUnit(best) : '');
+        record.textContent = isNew ? 'Твой новый рекорд!' : (best !== null ? 'Рекорд: ' + withUnit(best) : '');
         record.className = 'record' + (isNew ? ' new' : '');
         record.hidden = !record.textContent;
         stats.textContent = res.stats || '';

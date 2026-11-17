@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Неон</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#0B0420}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#201F1D}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Неон. Смахивай, чтобы повернуть световой мотоцикл"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -103,9 +103,9 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#0B0420'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#201F1D'; ctx.fillRect(0, 0, W, H);
     if (!grid.length) return;
-    ctx.fillStyle = '#140734'; ctx.fillRect(ox, oy, cell * COLS, cell * rows);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(ox, oy, cell * COLS, cell * rows);
     ctx.strokeStyle = 'rgba(111,211,255,.07)'; ctx.lineWidth = 1;
     for (var x = 0; x <= COLS; x++) { ctx.beginPath(); ctx.moveTo(ox + x * cell, oy); ctx.lineTo(ox + x * cell, oy + rows * cell); ctx.stroke(); }
     for (var y = 0; y <= rows; y++) { ctx.beginPath(); ctx.moveTo(ox, oy + y * cell); ctx.lineTo(ox + COLS * cell, oy + y * cell); ctx.stroke(); }
@@ -119,7 +119,7 @@
     ctx.globalAlpha = 1;
     bikes.forEach(function (b) {
       var cx = ox + (b.x + 0.5) * cell, cy = oy + (b.y + 0.5) * cell;
-      if (b.alive) { ctx.shadowColor = b.col; ctx.shadowBlur = 12; ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(cx, cy, cell * 0.42, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; }
+      if (b.alive) { ctx.shadowColor = b.col; ctx.shadowBlur = 12; ctx.fillStyle = '#FAF7F2'; ctx.beginPath(); ctx.arc(cx, cy, cell * 0.42, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; }
       else if (b.crash > 0) { ctx.strokeStyle = b.col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, cell * (1.8 - b.crash * 2), 0, Math.PI * 2); ctx.stroke(); }
     });
     if (msg) { ctx.globalAlpha = Math.min(1, msg.life * 2); ctx.fillStyle = '#3DF5B0'; ctx.font = '800 26px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(msg.text, W / 2, oy + rows * cell / 2); ctx.globalAlpha = 1; }

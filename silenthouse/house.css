@@ -1,4 +1,4 @@
-.house { background: #151017; --house-amber: #ffd592; }
+.house { background: #171615; --house-amber: #ffd592; }
 .house-play {
   position: absolute;
   inset: max(65px,calc(env(safe-area-inset-top) + 60px)) 0 0;

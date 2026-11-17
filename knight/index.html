@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Ход конём</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Ход конём. Нажимай на подсвеченные клетки"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -45,13 +45,13 @@
   function geo() { var size = Math.min(view.W - 24, view.H - 190), cs = size / N; return { cs: cs, x: (view.W - size) / 2, y: 100 + (view.H - 130 - size) / 2, size: size }; }
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, G = geo();
-    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#33312E'; c.fillRect(0, 0, W, H);
     if (!b.length) return;
     var av = kx >= 0 ? moves(kx, ky) : [];
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
       var px = G.x + x * G.cs, py = G.y + y * G.cs;
-      c.fillStyle = (x + y) % 2 ? '#3B1E8C' : '#5B3FD0'; c.fillRect(px, py, G.cs, G.cs);
-      if (b[y][x]) { c.fillStyle = 'rgba(18,6,48,.45)'; c.fillRect(px, py, G.cs, G.cs); c.fillStyle = 'rgba(244,241,255,.75)'; c.font = '600 ' + Math.round(G.cs * 0.26) + 'px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText(String(b[y][x]), px + G.cs / 2, py + G.cs * 0.6); }
+      c.fillStyle = (x + y) % 2 ? '#45413C' : '#9E7054'; c.fillRect(px, py, G.cs, G.cs);
+      if (b[y][x]) { c.fillStyle = 'rgba(18,6,48,.45)'; c.fillRect(px, py, G.cs, G.cs); c.fillStyle = 'rgba(250,247,242,.75)'; c.font = '600 ' + Math.round(G.cs * 0.26) + 'px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText(String(b[y][x]), px + G.cs / 2, py + G.cs * 0.6); }
     }
     av.forEach(function (p) {
       var px = G.x + (p[0] + 0.5) * G.cs, py = G.y + (p[1] + 0.5) * G.cs, k = moves(p[0], p[1]).length;
@@ -63,7 +63,7 @@
       var cx = G.x + (ax + 0.5) * G.cs, cy = G.y + (ay + 0.5) * G.cs;
       c.fillStyle = 'rgba(18,6,48,.5)'; c.beginPath(); c.arc(cx, cy, G.cs * 0.4, 0, 7); c.fill();
       c.fillStyle = P.gold() ? '#FFD84D' : '#FFD84D'; c.font = Math.round(G.cs * 0.62) + 'px "Segoe UI Symbol", "Noto Sans Symbols2", "DejaVu Sans", serif'; c.textAlign = 'center'; c.fillText('♞', cx, cy + G.cs * 0.22);
-    } else if (shell.running) { c.fillStyle = '#B9A8F0'; c.font = '500 ' + Math.round(14 * S) + 'px Onest, sans-serif'; c.textAlign = 'center'; c.fillText('нажми на клетку, откуда начать', W / 2, G.y - 16); }
+    } else if (shell.running) { c.fillStyle = '#C7C0B7'; c.font = '500 ' + Math.round(14 * S) + 'px Onest, sans-serif'; c.textAlign = 'center'; c.fillText('нажми на клетку, откуда начать', W / 2, G.y - 16); }
   }
   P.gestures(canvas, { tap: function (x, y) {
     if (!shell.running) return;

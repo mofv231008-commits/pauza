@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Солитёр</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Солитёр. Нажми фишку, потом пустую лунку через одну"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -57,15 +57,15 @@
   function undoRect() { var G = geo(); return { x: view.W / 2 - 70, y: G.y + G.size + 24, w: 140, h: 44 }; }
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, G = geo();
-    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#33312E'; c.fillRect(0, 0, W, H);
     if (!b.length) return;
-    c.fillStyle = '#3B1E8C';
+    c.fillStyle = '#45413C';
     for (var y = 0; y < 7; y++) for (var x = 0; x < 7; x++) if (hole(x, y)) { c.beginPath(); if (c.roundRect) c.roundRect(G.x + x * G.cs + 2, G.y + y * G.cs + 2, G.cs - 4, G.cs - 4, G.cs * 0.25); else c.rect(G.x + x * G.cs, G.y + y * G.cs, G.cs, G.cs); c.fill(); }
     var tg = sel ? targets(sel[0], sel[1]) : [];
     for (y = 0; y < 7; y++) for (x = 0; x < 7; x++) {
       if (!hole(x, y)) continue;
       var cx = G.x + (x + 0.5) * G.cs, cy = G.y + (y + 0.5) * G.cs;
-      c.fillStyle = '#140734'; c.beginPath(); c.arc(cx, cy, G.cs * 0.2, 0, 7); c.fill();
+      c.fillStyle = '#22211F'; c.beginPath(); c.arc(cx, cy, G.cs * 0.2, 0, 7); c.fill();
       if (b[y][x] === 1) {
         var r = G.cs * 0.33 * (anim && anim.x === x && anim.y === y ? 0.7 + 0.3 * anim.t : 1), isSel = sel && sel[0] === x && sel[1] === y;
         c.fillStyle = isSel ? '#FFD84D' : P.gold() ? '#FFD84D' : '#FF8AD8'; c.beginPath(); c.arc(cx, cy - (isSel ? 4 : 0), r, 0, 7); c.fill();
@@ -73,8 +73,8 @@
       }
     }
     tg.forEach(function (p) { c.strokeStyle = '#3DF5B0'; c.lineWidth = 3; c.beginPath(); c.arc(G.x + (p[0] + 0.5) * G.cs, G.y + (p[1] + 0.5) * G.cs, G.cs * 0.3, 0, 7); c.stroke(); });
-    var u = undoRect(); c.globalAlpha = hist.length && !done ? 1 : 0.35; c.strokeStyle = '#B9A8F0'; c.lineWidth = 1.5; c.beginPath(); if (c.roundRect) c.roundRect(u.x, u.y, u.w, u.h, 14); else c.rect(u.x, u.y, u.w, u.h); c.stroke();
-    c.fillStyle = '#F4F1FF'; c.font = '600 15px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText('Назад ход', u.x + u.w / 2, u.y + 28); c.globalAlpha = 1;
+    var u = undoRect(); c.globalAlpha = hist.length && !done ? 1 : 0.35; c.strokeStyle = '#C7C0B7'; c.lineWidth = 1.5; c.beginPath(); if (c.roundRect) c.roundRect(u.x, u.y, u.w, u.h, 14); else c.rect(u.x, u.y, u.w, u.h); c.stroke();
+    c.fillStyle = '#FAF7F2'; c.font = '600 15px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText('Назад ход', u.x + u.w / 2, u.y + 28); c.globalAlpha = 1;
   }
   P.gestures(canvas, { tap: function (x, y) {
     if (!shell.running || done) return;

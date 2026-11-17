@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Обжора</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Обжора. Смахивай, чтобы повернуть"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -49,7 +49,7 @@
     fright = 0;
   }
   function reset() { score = 0; lives = LIVES; level = 0; combo = 0; floats = []; phase = 'play'; fillDots(); place(); shell.setScore('0'); side(); }
-  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:3px;background:' + (i < lives ? '#FFD84D' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:3px;background:' + (i < lives ? '#FFD84D' : 'rgba(199,192,183,.3)') + '"></span>'; shell.setSide(s); }
   function can(e, d) { return open(e.x + D[d][0], e.y + D[d][1]); }
   function px(e) { var d = D[e.dir]; return { x: ox + (e.x + d[0] * e.p + 0.5) * cs, y: oy + (e.y + d[1] * e.p + 0.5) * cs }; }
   function eat() {
@@ -127,11 +127,11 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!pac) return;
     for (var y = 0; y < NR; y++) for (var x = 0; x < NC; x++) {
       var c = MAP[y][x], X = ox + x * cs, Y = oy + y * cs;
-      if (c === '#') { ctx.fillStyle = '#2E177A'; ctx.fillRect(X, Y, cs, cs); ctx.fillStyle = '#3B1E8C'; ctx.fillRect(X + 2, Y + 2, cs - 4, cs - 4); }
+      if (c === '#') { ctx.fillStyle = '#3C3833'; ctx.fillRect(X, Y, cs, cs); ctx.fillStyle = '#45413C'; ctx.fillRect(X + 2, Y + 2, cs - 4, cs - 4); }
       else if (c === '-') { ctx.fillStyle = '#FF8AD8'; ctx.fillRect(X, Y + cs * 0.42, cs, cs * 0.16); }
       var v = dots[y] && dots[y][x];
       if (v === 1) { ctx.fillStyle = '#E9E4FF'; ctx.beginPath(); ctx.arc(X + cs / 2, Y + cs / 2, cs * 0.09, 0, Math.PI * 2); ctx.fill(); }
@@ -140,15 +140,15 @@
     ghosts.forEach(function (g) {
       var p = px(g), r = cs * 0.42, blink = g.state === 'fright' && fright < 1.5 && Math.floor(fright * 6) % 2;
       if (g.state !== 'eyes') {
-        ctx.fillStyle = g.state === 'fright' ? (blink ? '#F4F1FF' : '#4F6BFF') : g.col;
+        ctx.fillStyle = g.state === 'fright' ? (blink ? '#FAF7F2' : '#4F6BFF') : g.col;
         ctx.beginPath(); ctx.arc(p.x, p.y - r * 0.1, r, Math.PI, 0); ctx.lineTo(p.x + r, p.y + r * 0.85);
         for (var k = 0; k < 4; k++) ctx.lineTo(p.x + r - (k + 0.5) * r / 2, p.y + r * (k % 2 ? 0.85 : 0.55));
         ctx.lineTo(p.x - r, p.y + r * 0.85); ctx.closePath(); ctx.fill();
       }
       if (g.state !== 'fright') {
         var d = D[g.dir];
-        [-1, 1].forEach(function (s) { ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(p.x + s * r * 0.38, p.y - r * 0.18, r * 0.28, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(p.x + s * r * 0.38 + d[0] * r * 0.12, p.y - r * 0.18 + d[1] * r * 0.12, r * 0.14, 0, Math.PI * 2); ctx.fill(); });
-      } else { ctx.fillStyle = '#F4F1FF'; ctx.fillRect(p.x - r * 0.45, p.y - r * 0.25, r * 0.2, r * 0.2); ctx.fillRect(p.x + r * 0.25, p.y - r * 0.25, r * 0.2, r * 0.2); }
+        [-1, 1].forEach(function (s) { ctx.fillStyle = '#FAF7F2'; ctx.beginPath(); ctx.arc(p.x + s * r * 0.38, p.y - r * 0.18, r * 0.28, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#292724'; ctx.beginPath(); ctx.arc(p.x + s * r * 0.38 + d[0] * r * 0.12, p.y - r * 0.18 + d[1] * r * 0.12, r * 0.14, 0, Math.PI * 2); ctx.fill(); });
+      } else { ctx.fillStyle = '#FAF7F2'; ctx.fillRect(p.x - r * 0.45, p.y - r * 0.25, r * 0.2, r * 0.2); ctx.fillRect(p.x + r * 0.25, p.y - r * 0.25, r * 0.2, r * 0.2); }
     });
     var q = px(pac), m = phase === 'dead' ? Math.min(Math.PI * 0.95, (1.3 - phaseT) * 3) : (Math.abs(Math.sin(mouth)) * 0.7 + 0.05), ang = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[pac.dir];
     ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.arc(q.x, q.y, cs * 0.45, ang + m / 2, ang + Math.PI * 2 - m / 2); ctx.closePath(); ctx.fill();

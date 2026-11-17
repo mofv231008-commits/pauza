@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Ферзи</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,12 +18,12 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Ферзи. Нажимай на клетку: крестик, потом ферзь"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
-  var N = 7, COLS = ['#FFD84D', '#FF8AD8', '#6FD3FF', '#3DF5B0', '#FF9A6B', '#B9A8F0', '#F4F1FF', '#9BE15D'];
+  var N = 7, COLS = ['#FFD84D', '#FF8AD8', '#6FD3FF', '#3DF5B0', '#F5AD7A', '#C7C0B7', '#FAF7F2', '#9BE15D'];
   var stage = document.getElementById('stage'), canvas = document.getElementById('game');
   var reg = [], st = [], t = 0, done = false, S = 1, taps = 0;
   var shell = P.shell({
@@ -85,25 +85,25 @@
   }
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, G = geo();
-    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#33312E'; c.fillRect(0, 0, W, H);
     if (!reg.length) return;
     var cf = conflicts();
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
       var px = G.x + x * G.cs, py = G.y + y * G.cs;
       c.fillStyle = COLS[reg[y][x]]; c.fillRect(px, py, G.cs + 0.5, G.cs + 0.5);
       if (st[y][x] === 1) { c.strokeStyle = 'rgba(18,6,48,.45)'; c.lineWidth = 2.5; var m = G.cs * 0.32; c.beginPath(); c.moveTo(px + m, py + m); c.lineTo(px + G.cs - m, py + G.cs - m); c.moveTo(px + G.cs - m, py + m); c.lineTo(px + m, py + G.cs - m); c.stroke(); }
-      if (st[y][x] === 2) crown(c, px + G.cs / 2, py + G.cs / 2, G.cs * 0.28, cf.bad[[x, y]] ? '#FF3B2A' : '#120630');
+      if (st[y][x] === 2) crown(c, px + G.cs / 2, py + G.cs / 2, G.cs * 0.28, cf.bad[[x, y]] ? '#FF3B2A' : '#292724');
     }
     c.strokeStyle = 'rgba(18,6,48,.18)'; c.lineWidth = 1;
     for (var i = 1; i < N; i++) { c.beginPath(); c.moveTo(G.x + i * G.cs, G.y); c.lineTo(G.x + i * G.cs, G.y + G.size); c.moveTo(G.x, G.y + i * G.cs); c.lineTo(G.x + G.size, G.y + i * G.cs); c.stroke(); }
-    c.strokeStyle = '#120630'; c.lineWidth = 3;
+    c.strokeStyle = '#292724'; c.lineWidth = 3;
     for (y = 0; y < N; y++) for (x = 0; x < N; x++) {
       var px2 = G.x + x * G.cs, py2 = G.y + y * G.cs;
       if (x < N - 1 && reg[y][x] !== reg[y][x + 1]) { c.beginPath(); c.moveTo(px2 + G.cs, py2); c.lineTo(px2 + G.cs, py2 + G.cs); c.stroke(); }
       if (y < N - 1 && reg[y][x] !== reg[y + 1][x]) { c.beginPath(); c.moveTo(px2, py2 + G.cs); c.lineTo(px2 + G.cs, py2 + G.cs); c.stroke(); }
     }
     c.strokeRect(G.x, G.y, G.size, G.size);
-    c.fillStyle = '#B9A8F0'; c.font = '500 ' + Math.round(13 * S) + 'px Onest, sans-serif'; c.textAlign = 'center'; c.fillText('ферзей: ' + cf.qs.length + ' из ' + N, W / 2, G.y + G.size + 26);
+    c.fillStyle = '#C7C0B7'; c.font = '500 ' + Math.round(13 * S) + 'px Onest, sans-serif'; c.textAlign = 'center'; c.fillText('ферзей: ' + cf.qs.length + ' из ' + N, W / 2, G.y + G.size + 26);
   }
   P.gestures(canvas, { tap: function (x, y) {
     if (!shell.running || done) return;

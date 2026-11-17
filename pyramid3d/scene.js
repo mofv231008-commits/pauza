@@ -124,16 +124,16 @@
 
       const light = bg.createRadialGradient(w * .49, h * .38, 8, w * .5, h * .4, Math.max(w, h) * .72);
       light.addColorStop(0, '#50404e');
-      light.addColorStop(.55, '#26202e');
-      light.addColorStop(1, '#15131e');
+      light.addColorStop(.55, '#2E2C29');
+      light.addColorStop(1, '#1E1D1B');
       bg.fillStyle = light;
       bg.fillRect(0, 0, w, h);
 
-      polygon(bg, board(-1.48, -2.48, 1.48, 2.52, -.27), '#2e2535');
+      polygon(bg, board(-1.48, -2.48, 1.48, 2.52, -.27), '#353330');
       for (let x = -10; x <= 10; x += .28) {
         stroke(bg, [x, -.30, -3.8], [x, -.30, 3.8], '#a48c9f17', 1);
       }
-      polygon(bg, board(-1.24, -2.25, 1.25, 2.34, -.25), '#120e19aa');
+      polygon(bg, board(-1.24, -2.25, 1.25, 2.34, -.25), '#191816aa');
       polygon(bg, board(-1.14, -2.14, 1.14, 2.14, -.10), '#32222b');
       const far = project(0, 0, -length), near = project(0, 0, length);
       const felt = bg.createLinearGradient(far.x, far.y, near.x, near.y);
@@ -164,8 +164,8 @@
       for (const { x, z, mouth } of pockets) {
         for (const layer of [bg, fg]) {
           disc(layer, x, z, mouth * 1.17, .011, '#543c3e');
-          disc(layer, x, z, mouth, .013, '#100f19');
-          disc(layer, x, z, mouth * .72, .014, '#08070d');
+          disc(layer, x, z, mouth, .013, '#191816');
+          disc(layer, x, z, mouth * .72, .014, '#0D0C0C');
         }
       }
     }
@@ -243,7 +243,7 @@
       const onCue = offset => [cue.x - direction.x * offset, radius, cue.z - direction.z * offset];
       const gap = .1 + power * .0016;
       ctx.lineCap = 'round';
-      stroke(ctx, onCue(gap), onCue(gap + .8), '#251c26', 5);
+      stroke(ctx, onCue(gap), onCue(gap + .8), '#262422', 5);
       stroke(ctx, onCue(gap + .04), onCue(gap + .79), '#c89768', 3);
       stroke(ctx, onCue(gap + .03), onCue(gap), '#a2dedd', 2);
       ctx.lineCap = 'butt';

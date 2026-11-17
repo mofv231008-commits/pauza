@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Слалом</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#E9E4FF}.stage .score{color:var(--ink);text-shadow:none}.stage .best{color:#3B1E8C}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#E9E4FF}.stage .score{color:var(--ink);text-shadow:none}.stage .best{color:#45413C}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Слалом. Держи палец слева или справа, чтобы поворачивать"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -79,7 +79,7 @@
     draw();
   });
   function flag(ctx, x, y, c, dir) {
-    ctx.fillStyle = '#3B1E8C'; ctx.fillRect(x - 1.5, y - 26, 3, 28);
+    ctx.fillStyle = '#45413C'; ctx.fillRect(x - 1.5, y - 26, 3, 28);
     ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x, y - 26); ctx.lineTo(x + 16 * dir, y - 20); ctx.lineTo(x, y - 14); ctx.fill();
   }
   function draw() {
@@ -100,9 +100,9 @@
     });
     var x = skier.x, y = sy();
     ctx.save(); ctx.translate(x, y); ctx.rotate(-skier.ang * 0.8);
-    ctx.fillStyle = '#120630'; ctx.fillRect(-s * 0.4, -s * 0.2, 3, s * 1.4); ctx.fillRect(s * 0.4 - 3, -s * 0.2, 3, s * 1.4);
+    ctx.fillStyle = '#292724'; ctx.fillRect(-s * 0.4, -s * 0.2, 3, s * 1.4); ctx.fillRect(s * 0.4 - 3, -s * 0.2, 3, s * 1.4);
     ctx.fillStyle = P.gold() ? '#FFD84D' : '#FF6B4A'; ctx.beginPath(); ctx.roundRect(-s * 0.35, -s * 0.5, s * 0.7, s * 0.8, s * 0.25); ctx.fill();
-    ctx.fillStyle = '#3B1E8C'; ctx.beginPath(); ctx.arc(0, -s * 0.65, s * 0.26, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#45413C'; ctx.beginPath(); ctx.arc(0, -s * 0.65, s * 0.26, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
     if (msg) { ctx.globalAlpha = Math.min(1, msg.life * 2); ctx.fillStyle = '#FF6B4A'; ctx.font = '800 20px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(msg.text, W / 2, H * 0.5); ctx.globalAlpha = 1; }
   }

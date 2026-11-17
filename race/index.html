@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Гонка</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .zones{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .zone{border:1px dashed var(--line);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -31,7 +31,7 @@
   <div class="hint" id="hint" hidden><span>← тап</span><span>тап →</span></div>
 </div>
 
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -39,9 +39,9 @@
   var css = getComputedStyle(document.documentElement);
   function tok(n, d) { return css.getPropertyValue(n).trim() || d; }
   var C = {
-    night: tok('--night', '#140734'), shoulder: tok('--shoulder', '#22105A'), road: tok('--road', '#3B1E8C'),
-    mint: tok('--mint', '#3DF5B0'), coral: tok('--coral', '#FF6B4A'), coral2: tok('--coral-2', '#FF9A6B'),
-    sun: tok('--sun', '#FFD84D'), paper: tok('--paper', '#F4F1FF'), ink: tok('--ink', '#120630')
+    night: tok('--night', '#22211F'), shoulder: tok('--shoulder', '#33312E'), road: tok('--road', '#45413C'),
+    mint: tok('--mint', '#3DF5B0'), coral: tok('--coral', '#FF6B4A'), coral2: tok('--coral-2', '#F5AD7A'),
+    sun: tok('--sun', '#FFD84D'), paper: tok('--paper', '#FAF7F2'), ink: tok('--ink', '#292724')
   };
   var POINTS = ['очко', 'очка', 'очков'];
 
@@ -246,12 +246,12 @@
       for (var y = -period + off; y < H; y += period) { rr(x, y, 3, dash, 1.5); ctx.fill(); }
     }
     var pp = H * 0.16, po = (S.scroll * H) % pp;
-    ctx.fillStyle = 'rgba(185,168,240,0.22)';
+    ctx.fillStyle = 'rgba(199,192,183,0.22)';
     var s1 = roadX / 2, s2 = roadX + roadW + roadX / 2;
     for (var yy = -pp + po; yy < H; yy += pp) { rr(s1 - 3, yy, 6, 14, 3); ctx.fill(); rr(s2 - 3, yy, 6, 14, 3); ctx.fill(); }
     if (!P.reduceMotion && shell.running && S.speed > 0.85) {
       var a = Math.min(1, (S.speed - 0.85) * 2);
-      ctx.strokeStyle = 'rgba(244,241,255,' + (a * 0.3).toFixed(3) + ')';
+      ctx.strokeStyle = 'rgba(250,247,242,' + (a * 0.3).toFixed(3) + ')';
       ctx.lineWidth = 2; ctx.lineCap = 'round';
       for (var k = 0; k < 6; k++) {
         var lx = roadX + roadW * ((k * 0.37 + 0.11) % 1);

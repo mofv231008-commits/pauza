@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Дровосек</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Дровосек. Нажимай слева или справа от дерева"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -51,7 +51,7 @@
     if (shell.running && !dead) {
       life -= dt * (0.11 + Math.min(0.3, score * 0.0028));
       if (life <= 0) { life = 0; dead = true; P.haptic('crash'); shell.end({ score: score, delay: 500, eyebrow: 'Время вышло', phrase: 'В «Дровосеке» я нарубил ' + score + ' ' + P.plural(score, U) + '. Нарубишь больше?' }); }
-      shell.setSide('<span style="display:inline-block;width:70px;height:8px;border-radius:4px;background:rgba(185,168,240,.3);overflow:hidden"><i style="display:block;height:100%;width:' + Math.round(life * 100) + '%;background:' + (life < 0.3 ? '#FF6B4A' : '#3DF5B0') + '"></i></span>', life < 0.3);
+      shell.setSide('<span style="display:inline-block;width:70px;height:8px;border-radius:4px;background:rgba(199,192,183,.3);overflow:hidden"><i style="display:block;height:100%;width:' + Math.round(life * 100) + '%;background:' + (life < 0.3 ? '#FF6B4A' : '#3DF5B0') + '"></i></span>', life < 0.3);
     }
     chopT = Math.max(0, chopT - dt);
     flying.forEach(function (f) { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 900 * S * dt; f.rot += f.vx > 0 ? 8 * dt : -8 * dt; }); flying = flying.filter(function (f) { return f.y < view.H + 100; });
@@ -68,7 +68,7 @@
   }
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, b = base(), h = segH(), tw = 70 * S;
-    var sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#5B3FD0'); sky.addColorStop(1, '#6FD3FF'); c.fillStyle = sky; c.fillRect(0, 0, W, H);
+    var sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#9E7054'); sky.addColorStop(1, '#6FD3FF'); c.fillStyle = sky; c.fillRect(0, 0, W, H);
     c.fillStyle = '#1FA67A'; c.fillRect(0, b, W, H - b); c.fillStyle = '#3DF5B0'; c.fillRect(0, b, W, 8 * S);
     c.fillStyle = '#7A4430'; c.fillRect(W / 2 - tw * 0.6, b - 8 * S, tw * 1.2, 12 * S);
     for (var i = 0; i < segs.length; i++) trunk(c, W / 2, b - i * h, tw, h, segs[i]);
@@ -76,11 +76,11 @@
     if (!dead) {
       var px = W / 2 + side * (tw / 2 + 44 * S), py = b;
       c.save(); c.translate(px, py); c.scale(side, 1);
-      c.fillStyle = '#3B1E8C'; c.fillRect(-12 * S, -26 * S, 9 * S, 26 * S); c.fillRect(3 * S, -26 * S, 9 * S, 26 * S);
+      c.fillStyle = '#45413C'; c.fillRect(-12 * S, -26 * S, 9 * S, 26 * S); c.fillRect(3 * S, -26 * S, 9 * S, 26 * S);
       c.fillStyle = P.gold() ? '#FFD84D' : '#FF6B4A'; c.fillRect(-16 * S, -62 * S, 32 * S, 38 * S);
       c.fillStyle = '#FFD3B0'; c.beginPath(); c.arc(0, -74 * S, 13 * S, 0, 7); c.fill();
-      c.fillStyle = '#120630'; c.fillRect(-14 * S, -88 * S, 28 * S, 8 * S);
-      c.save(); c.translate(-14 * S, -48 * S); c.rotate(chopT > 0 ? -1.4 : -0.4); c.fillStyle = '#7A4430'; c.fillRect(-4 * S, -40 * S, 6 * S, 40 * S); c.fillStyle = '#B9A8F0'; c.fillRect(-14 * S, -42 * S, 14 * S, 12 * S); c.restore();
+      c.fillStyle = '#292724'; c.fillRect(-14 * S, -88 * S, 28 * S, 8 * S);
+      c.save(); c.translate(-14 * S, -48 * S); c.rotate(chopT > 0 ? -1.4 : -0.4); c.fillStyle = '#7A4430'; c.fillRect(-4 * S, -40 * S, 6 * S, 40 * S); c.fillStyle = '#C7C0B7'; c.fillRect(-14 * S, -42 * S, 14 * S, 12 * S); c.restore();
       c.restore();
     }
     fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = '#FF6B4A'; c.fillRect(p.x - 3, p.y - 3, 6, 6); }); c.globalAlpha = 1;

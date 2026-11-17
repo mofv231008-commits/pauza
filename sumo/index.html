@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Сумо</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Сумо для двоих. Каждый ведёт пальцем на своей половине"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -70,13 +70,13 @@
     c.fillStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.ellipse(3, 6, r, r * 0.9, 0, 0, 7); c.fill();
     c.fillStyle = p.col; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
     c.fillStyle = '#FFD3B0'; c.beginPath(); c.arc(0, r * 0.15, r * 0.62, 0, 7); c.fill();
-    c.fillStyle = '#120630'; c.beginPath(); c.arc(-r * 0.22, r * 0.05, r * 0.08, 0, 7); c.arc(r * 0.22, r * 0.05, r * 0.08, 0, 7); c.fill();
+    c.fillStyle = '#292724'; c.beginPath(); c.arc(-r * 0.22, r * 0.05, r * 0.08, 0, 7); c.arc(r * 0.22, r * 0.05, r * 0.08, 0, 7); c.fill();
     c.fillRect(-r * 0.2, r * 0.32, r * 0.4, r * 0.06); c.beginPath(); c.arc(0, -r * 0.5, r * 0.22, 0, 7); c.fill();
     c.restore();
   }
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, R = ring();
-    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#33312E'; c.fillRect(0, 0, W, H);
     c.fillStyle = 'rgba(255,107,74,.08)'; c.fillRect(0, 0, W, H / 2); c.fillStyle = 'rgba(111,211,255,.08)'; c.fillRect(0, H / 2, W, H / 2);
     c.fillStyle = '#E8D3A8'; c.beginPath(); c.arc(R.x, R.y, R.r, 0, 7); c.fill();
     c.strokeStyle = '#9C5A3C'; c.lineWidth = 8 * S; c.stroke();
@@ -86,7 +86,7 @@
     c.font = '800 ' + Math.round(26 * S) + 'px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center';
     c.save(); c.translate(W / 2, 110); c.rotate(Math.PI); c.fillStyle = '#FF6B4A'; c.fillText(String(score[1]), 0, 0); c.restore();
     c.fillStyle = '#6FD3FF'; c.fillText(String(score[0]), W / 2, H - 24);
-    if (pause > 0 && msg && shell.running) { c.fillStyle = '#F4F1FF'; c.font = '800 ' + Math.round(22 * S) + 'px Unbounded, Arial Black, sans-serif'; c.fillText(msg, W / 2, H / 2 + 8); }
+    if (pause > 0 && msg && shell.running) { c.fillStyle = '#FAF7F2'; c.font = '800 ' + Math.round(22 * S) + 'px Unbounded, Arial Black, sans-serif'; c.fillText(msg, W / 2, H / 2 + 8); }
   }
   function pt(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
   canvas.addEventListener('pointerdown', function (e) { var p = pt(e); ptrs[e.pointerId] = { who: p.y > view.H / 2 ? 0 : 1, x: p.x, y: p.y }; try { canvas.setPointerCapture(e.pointerId); } catch (er) {} });

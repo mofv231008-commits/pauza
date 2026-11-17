@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Отскок</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .stage{background:var(--night)}
 .heart{display:inline-block;width:12px;height:12px;background:var(--coral);transform:rotate(45deg);border-radius:2px 0 2px 2px;position:relative;margin-right:4px}
@@ -23,14 +23,14 @@
   <canvas id="game" aria-label="Отскок. Веди пальцем, чтобы двигать платформу"></canvas>
 </div>
 
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
   var COLS = 7, ROWS = 6, LIVES = 3;
   var BRICKS = ['кирпич', 'кирпича', 'кирпичей'];
-  var ROW_COLORS = ['#FF6B4A', '#FF9A6B', '#FFD84D', '#3DF5B0', '#6FD3FF', '#B9A8F0'];
+  var ROW_COLORS = ['#FF6B4A', '#F5AD7A', '#FFD84D', '#3DF5B0', '#6FD3FF', '#C7C0B7'];
 
   var stage = document.getElementById('stage'), canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
   var W = 1, H = 1, dpr = 1;
@@ -177,8 +177,8 @@
     ctx.closePath();
   }
   function draw() {
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(185,168,240,0.05)';
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(199,192,183,0.05)';
     for (var gx = 0; gx < W; gx += 28) ctx.fillRect(gx, 0, 1, H);
     for (var i = 0; i < bricks.length; i++) {
       var b = bricks[i];
@@ -191,7 +191,7 @@
     ctx.globalAlpha = 1;
     var pw = paddle.w * W, px = paddle.x * W;
     ctx.fillStyle = '#3DF5B0'; rr(px - pw / 2, padY, pw, 12, 6); ctx.fill();
-    ctx.fillStyle = '#F4F1FF';
+    ctx.fillStyle = '#FAF7F2';
     ctx.beginPath(); ctx.arc(ball.x, ball.y, ballR(), 0, Math.PI * 2); ctx.fill();
     if (flash > 0) { ctx.fillStyle = 'rgba(255,107,74,' + (flash * 0.3).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
   }

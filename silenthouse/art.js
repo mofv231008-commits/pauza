@@ -19,7 +19,7 @@
 
   function render(ctx, w, h, state) {
     const t = Math.max(.05, Math.min((w - 12) / width, (h - 12) / height));
-    ctx.fillStyle = '#151017';
+    ctx.fillStyle = '#171615';
     ctx.fillRect(0, 0, w, h);
     ctx.save();
     ctx.translate((w - t * width) / 2, (h - t * height) / 2);
@@ -29,11 +29,11 @@
       for (let x = 0; x < width; x++) {
         const tile = map[y][x];
         if (tile === '#') {
-          ctx.fillStyle = '#342b36';
+          ctx.fillStyle = '#363431';
           ctx.fillRect(x, y, 1, 1);
-          ctx.fillStyle = '#433846';
+          ctx.fillStyle = '#46433F';
           ctx.fillRect(x, y, .98, .14);
-          ctx.fillStyle = '#231b27';
+          ctx.fillStyle = '#272523';
           ctx.fillRect(x + .85, y + .14, .14, .86);
           continue;
         }
@@ -72,7 +72,7 @@
     const light = ctx.createRadialGradient(player.x + .5, player.y + .5, .7, player.x + .5, player.y + .5, 6.5);
     light.addColorStop(0, '#ffb8703b');
     light.addColorStop(.35, '#2011191c');
-    light.addColorStop(1, '#100c17b0');
+    light.addColorStop(1, '#171615b0');
     ctx.fillStyle = light;
     ctx.fillRect(0, 0, width, height);
 

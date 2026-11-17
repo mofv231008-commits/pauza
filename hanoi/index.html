@@ -3,24 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Ханойская башня</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Ханойская башня. Нажми на стержень, чтобы взять диск, и на другой, чтобы положить"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
   var U = ['башня', 'башни', 'башен'], TOP = 70;
-  var DC = ['#FF6B4A', '#FF9A6B', '#FFD84D', '#3DF5B0', '#6FD3FF', '#B9A8F0', '#FF8AD8'];
+  var DC = ['#FF6B4A', '#F5AD7A', '#FFD84D', '#3DF5B0', '#6FD3FF', '#C7C0B7', '#FF8AD8'];
   var stage = document.getElementById('stage'), canvas = document.getElementById('game');
   var pegs = [[], [], []], n = 3, held = -1, moves = 0, solved = 0, total = 0, optimal = 0, phase = 'play', phaseT = 0, shake = 0, lift = 0;
 
@@ -58,8 +58,8 @@
   }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H, g = geo();
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#3B1E8C'; ctx.beginPath(); ctx.roundRect(8, g.base, W - 16, 14, 7); ctx.fill();
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#45413C'; ctx.beginPath(); ctx.roundRect(8, g.base, W - 16, 14, 7); ctx.fill();
     var poleH = g.dh * (n + 1.5);
     for (var k = 0; k < 3; k++) {
       var cx = g.colW * (k + 0.5) + (shake > 0 && held === -1 ? Math.sin(shake * 60) * 3 : 0);
@@ -68,11 +68,11 @@
         var isHeld = held === k && j === pegs[k].length - 1, w = g.maxW * (0.3 + 0.7 * d / n), y = g.base - (j + 1) * g.dh;
         if (isHeld) y = y + (g.base - poleH - g.dh * 1.6 - y) * lift;
         ctx.fillStyle = DC[(d - 1) % DC.length]; ctx.beginPath(); ctx.roundRect(cx - w / 2, y + 1, w, g.dh - 2, (g.dh - 2) / 2); ctx.fill();
-        if (isHeld) { ctx.strokeStyle = '#F4F1FF'; ctx.lineWidth = 2; ctx.stroke(); }
+        if (isHeld) { ctx.strokeStyle = '#FAF7F2'; ctx.lineWidth = 2; ctx.stroke(); }
       });
-      ctx.fillStyle = 'rgba(244,241,255,.5)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(String(k + 1), cx, g.base + 34);
+      ctx.fillStyle = 'rgba(250,247,242,.5)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(String(k + 1), cx, g.base + 34);
     }
-    ctx.fillStyle = 'rgba(244,241,255,.75)'; ctx.font = '600 14px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(250,247,242,.75)'; ctx.font = '600 14px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(phase === 'won' ? 'Башня перенесена!' : 'Дисков: ' + n + ' · ходов ' + moves + ' · минимум ' + optimal, W / 2, TOP + 28);
   }
   canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var r = canvas.getBoundingClientRect(); pick(P.clamp(Math.floor((e.clientX - r.left) / (r.width / 3)), 0, 2)); });

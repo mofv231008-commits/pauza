@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Зигзаг</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#22105A}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#33312E}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Зигзаг. Тап меняет направление шарика"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -89,15 +89,15 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#33312E'; ctx.fillRect(0, 0, W, H);
     if (!pts) return;
     ctx.save(); ctx.translate(0, -cam);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.strokeStyle = '#140734'; ctx.lineWidth = halfW() * 2 + 8;
+    ctx.strokeStyle = '#22211F'; ctx.lineWidth = halfW() * 2 + 8;
     ctx.beginPath(); pts.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y + 8); else ctx.moveTo(p.x, p.y + 8); }); ctx.stroke();
     ctx.strokeStyle = '#6FD3FF'; ctx.lineWidth = halfW() * 2;
     ctx.beginPath(); pts.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke();
-    ctx.strokeStyle = 'rgba(244,241,255,0.35)'; ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(250,247,242,0.35)'; ctx.lineWidth = 2;
     ctx.beginPath(); pts.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke();
     gems.forEach(function (g) { ctx.fillStyle = '#FF8AD8'; ctx.beginPath(); ctx.moveTo(g.x, g.y - 9); ctx.lineTo(g.x + 7, g.y); ctx.lineTo(g.x, g.y + 9); ctx.lineTo(g.x - 7, g.y); ctx.fill(); });
     var r = halfW() * 0.5 * (dead ? Math.max(0.1, fallT / 0.6) : 1);

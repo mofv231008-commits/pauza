@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Спираль</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,12 +18,12 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Спираль. Веди пальцем влево и вправо"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
-  var U = ['кольцо', 'кольца', 'колец'], N = 8, COLS = ['#3DF5B0', '#6FD3FF', '#FF8AD8', '#FFD84D', '#B9A8F0'];
+  var U = ['кольцо', 'кольца', 'колец'], N = 8, COLS = ['#3DF5B0', '#6FD3FF', '#FF8AD8', '#FFD84D', '#C7C0B7'];
   var stage = document.getElementById('stage'), canvas = document.getElementById('game');
   var rings = [], rot = 0, ball = null, cam = 0, score = 0, combo = 0, S = 1, drag = null, keys = {}, fx = [], dead = false;
   var shell = P.shell({
@@ -87,7 +87,7 @@
   });
   function draw() {
     var c = view.ctx, W = view.W, H = view.H;
-    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1A0C44'); g.addColorStop(1, '#2A1170'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#44413D'); g.addColorStop(1, '#706C65'); c.fillStyle = g; c.fillRect(0, 0, W, H);
     c.fillStyle = 'rgba(59,30,140,.8)'; c.fillRect(W / 2 - 16 * S, 0, 32 * S, H);
     if (!ball) return;
     var L = lw(), left = 18 * S, sw = L / N, th = 16 * S;

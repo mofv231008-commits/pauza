@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Спички</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .stage{background:var(--shoulder)}
 .take{position:absolute;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);min-width:200px;min-height:54px;border:0;border-radius:18px;background:var(--mint);color:var(--ink);font-family:var(--font-display);font-weight:600;font-size:15px;cursor:pointer;touch-action:manipulation;z-index:1}
@@ -19,7 +19,7 @@
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Спички. Нажми на спичку, чтобы выбрать её и все справа от неё"></canvas><button class="take" type="button" id="take" disabled>Выбери спички</button></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -91,18 +91,18 @@
   }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#33312E'; ctx.fillRect(0, 0, W, H);
     if (!heaps.length) return;
     geo();
     var top = TOP + 60;
     heaps.forEach(function (h, r) {
       var y = top + r * rowH, sh = rowH * 0.62, x0 = W / 2 - 3.5 * mw;
-      ctx.fillStyle = 'rgba(244,241,255,.05)'; ctx.beginPath(); ctx.roundRect(x0 - mw * 0.6, y - 8, mw * 8.2, sh + 16, 12); ctx.fill();
+      ctx.fillStyle = 'rgba(250,247,242,.05)'; ctx.beginPath(); ctx.roundRect(x0 - mw * 0.6, y - 8, mw * 8.2, sh + 16, 12); ctx.fill();
       for (var j = 0; j < h; j++) { var sel = pick && pick.r === r && j >= pick.j; stick(ctx, x0 + j * mw, y + (sel ? -8 : 0), sh, 1, sel ? '#FFD84D' : null); }
-      burn.filter(function (b) { return b.r === r; }).forEach(function (b) { stick(ctx, x0 + b.j * mw, y - (0.45 - b.life) * 60, sh, b.life / 0.45, b.who === 2 ? '#FF9A6B' : '#3DF5B0'); });
-      ctx.fillStyle = 'rgba(244,241,255,.45)'; ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.fillText(String(h), x0 + mw * 7.4, y + sh / 2 + 4);
+      burn.filter(function (b) { return b.r === r; }).forEach(function (b) { stick(ctx, x0 + b.j * mw, y - (0.45 - b.life) * 60, sh, b.life / 0.45, b.who === 2 ? '#F5AD7A' : '#3DF5B0'); });
+      ctx.fillStyle = 'rgba(250,247,242,.45)'; ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.fillText(String(h), x0 + mw * 7.4, y + sh / 2 + 4);
     });
-    ctx.fillStyle = 'rgba(244,241,255,.85)'; ctx.font = '600 15px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(note, W / 2, TOP + 30);
+    ctx.fillStyle = 'rgba(250,247,242,.85)'; ctx.font = '600 15px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(note, W / 2, TOP + 30);
   }
   canvas.addEventListener('pointerdown', function (e) {
     if (!shell.running || busy) return;

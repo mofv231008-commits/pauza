@@ -3,24 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Лук</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Лук. Потяни назад и отпусти, чтобы выстрелить"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
   var U = ['очко', 'очка', 'очков'], TOP = 70, ARROWS = 10, RINGS = [10, 8, 6, 4, 2];
-  var RCOL = ['#FFD84D', '#FF6B4A', '#6FD3FF', '#120630', '#F4F1FF'];
+  var RCOL = ['#FFD84D', '#FF6B4A', '#6FD3FF', '#292724', '#FAF7F2'];
   var stage = document.getElementById('stage'), canvas = document.getElementById('game');
   var bow = { x: 0, y: 0 }, tgt = { x: 0, y: 0, base: 0, h: 80, move: 0, ph: 0 }, gy = 0, arrow = null, stuck = [], aim = null, shot = 0, total = 0, wind = 0, msg = null, t = 0, log = [];
 
@@ -88,32 +88,32 @@
   function drawArrow(ctx, x, y, a, len) {
     ctx.save(); ctx.translate(x, y); ctx.rotate(a);
     ctx.strokeStyle = '#E9C38A'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-len, 0); ctx.lineTo(0, 0); ctx.stroke();
-    ctx.fillStyle = '#B9A8F0'; ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(-4, -3.5); ctx.lineTo(-4, 3.5); ctx.fill();
+    ctx.fillStyle = '#C7C0B7'; ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(-4, -3.5); ctx.lineTo(-4, 3.5); ctx.fill();
     ctx.fillStyle = P.gold() ? '#FFD84D' : '#FF6B4A'; ctx.beginPath(); ctx.moveTo(-len, 0); ctx.lineTo(-len - 6, -5); ctx.lineTo(-len + 6, 0); ctx.lineTo(-len - 6, 5); ctx.fill();
     ctx.restore();
   }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!tgt.h) return;
     ctx.fillStyle = '#1FB97F'; ctx.fillRect(0, gy, W, H - gy);
     ctx.fillStyle = '#5A2E1A'; ctx.fillRect(tgt.x - 3, tgt.y, 6, gy - tgt.y);
     for (var i = RINGS.length - 1; i >= 0; i--) { ctx.fillStyle = RCOL[i]; ctx.beginPath(); ctx.ellipse(tgt.x, tgt.y, tgt.h * 0.12 * (i + 1) / 5 + 3, tgt.h / 2 * (i + 1) / 5, 0, 0, Math.PI * 2); ctx.fill(); }
     stuck.forEach(function (s) { drawArrow(ctx, tgt.x, tgt.y + s.dy, s.a, 34); });
     var len = aim ? Math.min(Math.hypot(aim.sx - aim.x, aim.sy - aim.y), maxPull()) : 0, a = aim ? Math.atan2(aim.sy - aim.y, aim.sx - aim.x) : -0.4;
-    ctx.strokeStyle = '#F4F1FF'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.strokeStyle = '#FAF7F2'; ctx.lineWidth = 4; ctx.lineCap = 'round';
     var bx = bow.x - 26, by = bow.y;
     ctx.beginPath(); ctx.arc(bx, by - 26, 9, 0, Math.PI * 2); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(bx, by - 16); ctx.lineTo(bx, by + 22); ctx.lineTo(bx - 10, gy - 2); ctx.moveTo(bx, by + 22); ctx.lineTo(bx + 10, gy - 2); ctx.moveTo(bx, by - 6); ctx.lineTo(bow.x, bow.y); ctx.stroke();
     ctx.save(); ctx.translate(bow.x, bow.y); ctx.rotate(a);
     var pull = len / maxPull() * 22;
     ctx.strokeStyle = '#E9C38A'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(-6, 0, 30, -1.2, 1.2); ctx.stroke();
-    ctx.strokeStyle = 'rgba(244,241,255,.8)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-6 + 30 * Math.cos(-1.2), 30 * Math.sin(-1.2)); ctx.lineTo(-pull, 0); ctx.lineTo(-6 + 30 * Math.cos(1.2), 30 * Math.sin(1.2)); ctx.stroke();
+    ctx.strokeStyle = 'rgba(250,247,242,.8)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-6 + 30 * Math.cos(-1.2), 30 * Math.sin(-1.2)); ctx.lineTo(-pull, 0); ctx.lineTo(-6 + 30 * Math.cos(1.2), 30 * Math.sin(1.2)); ctx.stroke();
     ctx.restore();
     if (!arrow && shell.running && shot < ARROWS) drawArrow(ctx, bow.x + Math.cos(a) * (28 - pull), bow.y + Math.sin(a) * (28 - pull), a, 40);
     if (aim && len > 12) { ctx.strokeStyle = 'rgba(255,216,77,.6)'; ctx.setLineDash([4, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bow.x, bow.y); ctx.lineTo(bow.x + Math.cos(a) * (40 + len * 0.5), bow.y + Math.sin(a) * (40 + len * 0.5)); ctx.stroke(); ctx.setLineDash([]); }
     if (arrow) drawArrow(ctx, arrow.x, arrow.y, Math.atan2(arrow.vy, arrow.vx), 40);
-    ctx.fillStyle = 'rgba(244,241,255,.8)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(250,247,242,.8)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(wind === 0 ? 'ветра нет' : 'ветер ' + Math.abs(wind * 10).toFixed(0), W / 2, TOP + 18);
     if (wind !== 0) {
       var wl = Math.abs(wind) * 60, dir = wind > 0 ? 1 : -1;

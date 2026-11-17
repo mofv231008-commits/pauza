@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Уголки</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>.stage{background:var(--shoulder)}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Уголки. Нажми на свою фишку, потом на клетку"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -103,11 +103,11 @@
   P.loop(function (dt) { if (lastAi) { lastAi.life -= dt; if (lastAi.life <= 0) lastAi = null; } draw(); });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#33312E'; ctx.fillRect(0, 0, W, H);
     if (!b.length) return;
     for (var i = 0; i < 64; i++) {
       var r = i >> 3, c = i & 7;
-      ctx.fillStyle = inMe(i) ? ((r + c) % 2 ? '#1F7A5A' : '#1A6A4E') : inAi(i) ? ((r + c) % 2 ? '#8A3A2A' : '#7A3224') : ((r + c) % 2 ? '#3B1E8C' : '#2E177A');
+      ctx.fillStyle = inMe(i) ? ((r + c) % 2 ? '#1F7A5A' : '#1A6A4E') : inAi(i) ? ((r + c) % 2 ? '#8A3A2A' : '#7A3224') : ((r + c) % 2 ? '#45413C' : '#3C3833');
       ctx.fillRect(ox + c * cs, oy + r * cs, cs, cs);
     }
     if (lastAi) { ctx.globalAlpha = Math.min(1, lastAi.life * 2) * 0.6; ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 3; [lastAi.a, lastAi.b].forEach(function (q) { ctx.strokeRect(ox + (q & 7) * cs + 3, oy + (q >> 3) * cs + 3, cs - 6, cs - 6); }); ctx.globalAlpha = 1; }
@@ -117,11 +117,11 @@
       var x = ox + ((i & 7) + 0.5) * cs, y = oy + ((i >> 3) + 0.5) * cs;
       ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.roundRect(x - cs * 0.33 + 2, y - cs * 0.33 + 3, cs * 0.66, cs * 0.66, cs * 0.16); ctx.fill();
       ctx.fillStyle = b[i] === 1 ? (P.gold() ? '#FFD84D' : '#3DF5B0') : '#FF6B4A'; ctx.beginPath(); ctx.roundRect(x - cs * 0.33, y - cs * 0.33, cs * 0.66, cs * 0.66, cs * 0.16); ctx.fill();
-      if (i === sel) { ctx.strokeStyle = '#F4F1FF'; ctx.lineWidth = 3; ctx.stroke(); }
+      if (i === sel) { ctx.strokeStyle = '#FAF7F2'; ctx.lineWidth = 3; ctx.stroke(); }
     }
-    ctx.fillStyle = 'rgba(244,241,255,.85)'; ctx.font = '600 14px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(250,247,242,.85)'; ctx.font = '600 14px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(note, W / 2, oy - 14);
-    ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.fillStyle = 'rgba(244,241,255,.6)';
+    ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.fillStyle = 'rgba(250,247,242,.6)';
     ctx.fillText('в чужом углу: ты ' + home(1) + '/9 · компьютер ' + home(-1) + '/9', W / 2, oy + cs * 8 + 22);
   }
   canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var rc = canvas.getBoundingClientRect(); tap(e.clientX - rc.left, e.clientY - rc.top); });

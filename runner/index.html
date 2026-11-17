@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Бегун</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#22105A}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#33312E}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Бегун. Тап — прыжок, второй тап в воздухе — ещё прыжок"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -103,12 +103,12 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H, g = ground(), u = U();
-    var sky = ctx.createLinearGradient(0, 0, 0, g); sky.addColorStop(0, '#140734'); sky.addColorStop(1, '#3B1E8C');
+    var sky = ctx.createLinearGradient(0, 0, 0, g); sky.addColorStop(0, '#22211F'); sky.addColorStop(1, '#45413C');
     ctx.fillStyle = sky; ctx.fillRect(0, 0, W, g);
     ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(W * 0.78, g * 0.32, u * 1.4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#2A1470';
+    ctx.fillStyle = '#706C65';
     hills.forEach(function (h) { ctx.beginPath(); ctx.ellipse(h.x * W, g, W * 0.22, H * h.h * 1.6, 0, Math.PI, 0); ctx.fill(); });
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, g, W, H - g);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, g, W, H - g);
     ctx.fillStyle = '#FF6B4A'; ctx.fillRect(0, g, W, 3);
     if (!hero) return;
     obs.forEach(function (o) {
@@ -124,9 +124,9 @@
       var gold = P.gold();
       ctx.fillStyle = gold ? '#FFD84D' : '#3DF5B0';
       ctx.beginPath(); ctx.roundRect(hero.x - w / 2, hero.y - h, w, h, w * 0.4); ctx.fill();
-      ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(hero.x + w * 0.18, hero.y - h * 0.68, u * 0.1, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#292724'; ctx.beginPath(); ctx.arc(hero.x + w * 0.18, hero.y - h * 0.68, u * 0.1, 0, Math.PI * 2); ctx.fill();
       var run = hero.air ? 0 : Math.sin(t * 22) * u * 0.18;
-      ctx.fillStyle = gold ? '#FF9A6B' : '#2FD99B';
+      ctx.fillStyle = gold ? '#F5AD7A' : '#2FD99B';
       ctx.fillRect(hero.x - w * 0.3 + run, hero.y - 2, w * 0.22, 5); ctx.fillRect(hero.x + w * 0.1 - run, hero.y - 2, w * 0.22, 5);
     }
     sparks.forEach(function (s) { ctx.globalAlpha = Math.min(1, s.life * 2); ctx.fillStyle = s.gold ? '#FFD84D' : '#3DF5B0'; ctx.fillRect(s.x - 3, s.y - 3, 6, 6); });

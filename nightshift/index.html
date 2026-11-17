@@ -1,21 +1,21 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#140734"><meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#22211F"><meta name="color-scheme" content="dark">
 <title>Пауза · Ночная смена</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<link rel="stylesheet" href="../shared/horror.css?v=1">
-<style>.cameras{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;max-width:360px}.camera{position:relative;min-height:96px;border:1px solid #5e4964;border-radius:16px;padding:12px;background:linear-gradient(110deg,#1c1829,#08060e);text-align:left;cursor:pointer;overflow:hidden}.camera.active{border-color:var(--mint);box-shadow:0 0 0 1px var(--mint)}.camera .name{position:relative;z-index:2;font-size:11px;color:var(--lilac)}.camera .shadow{position:absolute;left:50%;top:45%;width:25px;height:40px;border-radius:50% 50% 0 0;background:#050308;box-shadow:0 0 16px #ff8a7b66;transform-origin:50% 100%}.camera .shadow:before,.camera .shadow:after{content:"";position:absolute;top:10px;width:4px;height:3px;background:var(--coral-2)}.camera .shadow:before{left:6px}.camera .shadow:after{right:6px}.camera .meter{position:absolute;bottom:9px;left:10px;right:10px}.camera .closed{position:absolute;inset:34px 0 20px;display:grid;place-items:center;color:var(--mint);font-size:11px;background:#131020}.power{display:flex;align-items:center;gap:12px;font-size:12px}.power .meter{flex:1}.power .meter i{background:var(--mint)}</style></head><body>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<link rel="stylesheet" href="../shared/horror.css?v=7">
+<style>.cameras{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;max-width:360px}.camera{position:relative;min-height:96px;border:1px solid #64605A;border-radius:16px;padding:12px;background:linear-gradient(110deg,#292725,#0E0D0D);text-align:left;cursor:pointer;overflow:hidden}.camera.active{border-color:var(--mint);box-shadow:0 0 0 1px var(--mint)}.camera .name{position:relative;z-index:2;font-size:11px;color:var(--lilac)}.camera .shadow{position:absolute;left:50%;top:45%;width:25px;height:40px;border-radius:50% 50% 0 0;background:#080807;box-shadow:0 0 16px #ff8a7b66;transform-origin:50% 100%}.camera .shadow:before,.camera .shadow:after{content:"";position:absolute;top:10px;width:4px;height:3px;background:var(--coral-2)}.camera .shadow:before{left:6px}.camera .shadow:after{right:6px}.camera .meter{position:absolute;bottom:9px;left:10px;right:10px}.camera .closed{position:absolute;inset:34px 0 20px;display:grid;place-items:center;color:var(--mint);font-size:11px;background:#201F1D}.power{display:flex;align-items:center;gap:12px;font-size:12px}.power .meter{flex:1}.power .meter i{background:var(--mint)}</style></head><body>
 <div class="stage horror" id="stage"><div class="play">
 <div class="timebar" id="timebar"><i></i></div>
 <p class="case">Объект 04 / пост охраны</p><p class="instruction">Выбери камеру. Запри дверь, когда тень приблизится к красной полосе.</p><div class="cameras" id="cameras"></div><div class="monitor power">Энергия <span id="energy">100%</span><div class="meter"><i id="power"></i></div></div><button class="control" id="door">Запереть выбранную дверь · 25%</button>
 <p class="readout" id="message" role="status" aria-live="polite">Продержись до конца минуты.</p>
 </div></div>
-<script src="../shared/pauza.js?v=6"></script>
-<script src="../shared/horror.js?v=1"></script>
+<script src="../shared/pauza.js?v=7"></script>
+<script src="../shared/horror.js?v=7"></script>
 <script>(function(){'use strict'; var P=window.Pauza;
 var names=['Холл','Архив','Подвал','Лестница'], rooms=[],selected=0,energy=100,passed=0;
 var cams=document.getElementById('cameras'),door=document.getElementById('door');

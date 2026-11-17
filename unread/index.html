@@ -3,24 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Непрочитанные</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
-.stage{background:#140734}
+.stage{background:#22211F}
 .ur{position:absolute;inset:0;display:flex;flex-direction:column;padding:80px 0 8px}
 .ur .timebar{margin:0 14px 8px}
 .ur-list{flex:1;overflow:hidden;display:flex;flex-direction:column}
-.ur-row{display:flex;align-items:center;gap:12px;padding:0 14px;flex:1;max-height:72px;min-height:48px;border:0;border-bottom:1px solid rgba(185,168,240,.12);background:transparent;color:var(--paper);text-align:left;cursor:pointer;font:inherit;touch-action:manipulation;position:relative}
-.ur-row:active{background:rgba(185,168,240,.08)}
+.ur-row{display:flex;align-items:center;gap:12px;padding:0 14px;flex:1;max-height:72px;min-height:48px;border:0;border-bottom:1px solid rgba(199,192,183,.12);background:transparent;color:var(--paper);text-align:left;cursor:pointer;font:inherit;touch-action:manipulation;position:relative}
+.ur-row:active{background:rgba(199,192,183,.08)}
 .ur-ava{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:22px;flex:none}
 .ur-body{flex:1;min-width:0}
 .ur-name{font-weight:600;font-size:15px;display:flex;gap:6px;align-items:center}
-.ur-name em{font-style:normal;font-size:10px;font-weight:700;color:#120630;background:var(--coral);border-radius:6px;padding:1px 5px}
+.ur-name em{font-style:normal;font-size:10px;font-weight:700;color:#292724;background:var(--coral);border-radius:6px;padding:1px 5px}
 .ur-prev{font-size:13px;color:var(--lilac);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ur-badge{min-width:24px;height:24px;border-radius:12px;padding:0 7px;background:var(--mint);color:var(--ink);font-family:var(--font-display);font-weight:800;font-size:12px;display:grid;place-items:center;flex:none}
 .ur-badge.hot{background:var(--sun)}.ur-badge.fire{background:var(--coral);color:#fff}
@@ -35,7 +35,7 @@
 <div class="stage" id="stage">
 <div class="ur"><div class="timebar" id="timebar"><i></i></div><div class="ur-list" id="list"></div></div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -44,11 +44,11 @@
   var CH = [
     { n: 'Мама', a: '👩', bg: '#FF8AD8', m: ['Ты поел?', 'Позвони!', 'Ты где?', 'Шапку надел?', '❤️❤️❤️'] },
     { n: 'Одногруппники', a: '🎓', bg: '#6FD3FF', m: ['Кто сделал дз?', 'Скиньте ответы', 'Пары не будет!!', 'Голосовое 3:42', 'Стикер'] },
-    { n: 'Катя', a: '🌸', bg: '#FF9A6B', m: ['ау', 'ну ты где', 'ответь уже', 'щас, 5 сек', 'идём?'] },
+    { n: 'Катя', a: '🌸', bg: '#F5AD7A', m: ['ау', 'ну ты где', 'ответь уже', 'щас, 5 сек', 'идём?'] },
     { n: 'Работа', a: '💼', bg: '#3DF5B0', m: ['Срочно!', 'Где отчёт?', 'Созвон в 10', 'Глянь табличку', 'Ок, спасибо'] },
     { n: 'Бабушка', a: '👵', bg: '#FFD84D', m: ['Доброе утро! 🌷', 'С праздником!', 'Приезжай на пирожки', 'Как дела?', '🌷🌷🌷'] },
-    { n: 'Друзья', a: '🍕', bg: '#B9A8F0', m: ['Го гулять', 'Мемы', 'Кто в кино?', 'ахахах', 'Стикер'] },
-    { n: 'Начальник', a: '🧔', bg: '#5B3FD0', m: ['Зайди ко мне', 'Есть минутка?', 'Ты где?', 'Жду', '👍'] }
+    { n: 'Друзья', a: '🍕', bg: '#C7C0B7', m: ['Го гулять', 'Мемы', 'Кто в кино?', 'ахахах', 'Стикер'] },
+    { n: 'Начальник', a: '🧔', bg: '#9E7054', m: ['Зайди ко мне', 'Есть минутка?', 'Ты где?', 'Жду', '👍'] }
   ];
   var SPAM = [{ n: 'Казино «Удача»', a: '🎰', m: 'Вы выиграли 1 000 000! Заберите приз' }, { n: 'Служба безопасности', a: '🏦', m: 'Ваша карта заблокирована, назовите код' }, { n: 'Новый номер мамы', a: '📱', m: 'Мама, это я, скинь денег на новый номер' }, { n: 'Крипта x100', a: '💸', m: 'Удвой деньги за час!' }];
   var $ = function (id) { return document.getElementById(id); };

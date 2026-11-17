@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Полёт</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .stage{background:var(--night)}
 </style>
@@ -19,7 +19,7 @@
   <canvas id="game" aria-label="Полёт. Тапай, чтобы самолётик поднимался"></canvas>
 </div>
 
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -139,15 +139,15 @@
   }
   function draw() {
     var grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#140734'); grad.addColorStop(1, '#3B1E8C');
+    grad.addColorStop(0, '#22211F'); grad.addColorStop(1, '#45413C');
     ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#F4F1FF';
+    ctx.fillStyle = '#FAF7F2';
     for (var i = 0; i < stars.length; i++) {
       var st = stars[i], sx = ((st.x * W - scroll * 0.08) % W + W) % W;
       ctx.globalAlpha = st.a; ctx.beginPath(); ctx.arc(sx, st.y * ground, st.r, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalAlpha = 1;
-    ctx.fillStyle = '#2A1470';
+    ctx.fillStyle = '#706C65';
     for (var hI = 0; hI < hills.length; hI++) {
       var hx = ((hills[hI].x * W * 1.4 - scroll * 0.25) % (W * 1.4) + W * 1.4) % (W * 1.4) - W * 0.2;
       ctx.beginPath(); ctx.arc(hx, ground, hills[hI].r * H, Math.PI, 0); ctx.fill();
@@ -164,9 +164,9 @@
       rr(gt.x - 4, gt.bottom, w + 8, cap, 4); ctx.fill();
     }
 
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, ground, W, H - ground);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, ground, W, H - ground);
     ctx.fillStyle = '#FF6B4A'; ctx.fillRect(0, ground, W, 3);
-    ctx.fillStyle = 'rgba(244,241,255,0.12)';
+    ctx.fillStyle = 'rgba(250,247,242,0.12)';
     var dash = 28, off = scroll % (dash * 2);
     for (var d = -off; d < W; d += dash * 2) ctx.fillRect(d, ground + 14, dash, 3);
 
@@ -175,14 +175,14 @@
     ctx.translate(plane.x, plane.y);
     ctx.rotate(ang);
     var gold = P.gold();
-    ctx.fillStyle = gold ? '#FFD84D' : '#F4F1FF';
+    ctx.fillStyle = gold ? '#FFD84D' : '#FAF7F2';
     ctx.beginPath();
     ctx.moveTo(s * 0.75, 0);
     ctx.lineTo(-s * 0.6, -s * 0.5);
     ctx.lineTo(-s * 0.32, 0);
     ctx.lineTo(-s * 0.6, s * 0.5);
     ctx.closePath(); ctx.fill();
-    ctx.fillStyle = gold ? '#FF9A6B' : '#B9A8F0';
+    ctx.fillStyle = gold ? '#F5AD7A' : '#C7C0B7';
     ctx.beginPath();
     ctx.moveTo(s * 0.75, 0);
     ctx.lineTo(-s * 0.32, 0);

@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Покраска</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -19,12 +19,12 @@
 <canvas id="game" aria-label="Покраска. Свайпай, чтобы катить шарик"></canvas>
 <div class="timebar" id="timebar" style="position:absolute;left:16px;right:16px;top:72px"><i></i></div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
-  var U = ['уровень', 'уровня', 'уровней'], COLS = ['#FF8AD8', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF9A6B'];
+  var U = ['уровень', 'уровня', 'уровней'], COLS = ['#FF8AD8', '#3DF5B0', '#FFD84D', '#6FD3FF', '#F5AD7A'];
   var stage = document.getElementById('stage'), canvas = document.getElementById('game');
   var N = 7, g = [], paint = [], ball = null, anim = null, solved = 0, moves = 0, col = COLS[0], fx = [];
   var DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
@@ -88,17 +88,17 @@
   function burst() { for (var i = 0; i < 40; i++) { var a = Math.random() * 6.28, s = 80 + Math.random() * 240; fx.push({ x: view.W / 2, y: view.H / 2, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.6 + Math.random() * 0.4, col: P.pick(COLS) }); } }
   function draw() {
     var c = view.ctx, W = view.W, H = view.H;
-    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#33312E'; c.fillRect(0, 0, W, H);
     if (!ball) return;
     var size = Math.min(W - 32, H - 150), cs = size / N, ox = (W - size) / 2, oy = 96 + (H - 96 - size) / 2;
-    c.fillStyle = '#140734'; c.fillRect(ox - 6, oy - 6, size + 12, size + 12);
+    c.fillStyle = '#22211F'; c.fillRect(ox - 6, oy - 6, size + 12, size + 12);
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
-      if (g[y][x]) { c.fillStyle = '#3B1E8C'; c.fillRect(ox + x * cs, oy + y * cs, cs + 0.5, cs + 0.5); continue; }
-      c.fillStyle = paint[y][x] ? col : '#F4F1FF'; c.fillRect(ox + x * cs + 1, oy + y * cs + 1, cs - 2, cs - 2);
+      if (g[y][x]) { c.fillStyle = '#45413C'; c.fillRect(ox + x * cs, oy + y * cs, cs + 0.5, cs + 0.5); continue; }
+      c.fillStyle = paint[y][x] ? col : '#FAF7F2'; c.fillRect(ox + x * cs + 1, oy + y * cs + 1, cs - 2, cs - 2);
     }
     var bx = ball.x, by = ball.y;
     if (anim && anim.path.length) { var n = anim.path[0]; bx += (n[0] - ball.x) * anim.t; by += (n[1] - ball.y) * anim.t; }
-    c.fillStyle = '#120630'; c.beginPath(); c.arc(ox + (bx + 0.5) * cs, oy + (by + 0.5) * cs, cs * 0.34, 0, 7); c.fill();
+    c.fillStyle = '#292724'; c.beginPath(); c.arc(ox + (bx + 0.5) * cs, oy + (by + 0.5) * cs, cs * 0.34, 0, 7); c.fill();
     c.fillStyle = '#fff'; c.beginPath(); c.arc(ox + (bx + 0.4) * cs, oy + (by + 0.4) * cs, cs * 0.1, 0, 7); c.fill();
     fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = p.col; c.fillRect(p.x - 3, p.y - 3, 6, 6); }); c.globalAlpha = 1;
   }

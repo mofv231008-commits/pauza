@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Прыгун</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Прыгун. Держи палец слева или справа, чтобы смещаться"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -106,8 +106,8 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H, u = U();
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#F4F1FF';
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#FAF7F2';
     stars.forEach(function (s) { var y = ((s.y * H + (cam || 0) * 0.2 * s.r) % H + H) % H; ctx.globalAlpha = 0.25 + s.r * 0.3; ctx.fillRect(s.x * W, y, s.r, s.r); });
     ctx.globalAlpha = 1;
     if (!hero) return;
@@ -116,7 +116,7 @@
       ctx.globalAlpha = p.broken ? 0.4 : 1;
       ctx.fillStyle = COL[p.kind];
       ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, u * 0.55, u * 0.27); ctx.fill();
-      if (p.kind === 'b') { ctx.fillStyle = '#140734'; ctx.fillRect(p.x + p.w * 0.48, p.y, 3, u * 0.55); }
+      if (p.kind === 'b') { ctx.fillStyle = '#22211F'; ctx.fillRect(p.x + p.w * 0.48, p.y, 3, u * 0.55); }
       if (p.kind === 's') { ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.roundRect(p.x + p.w / 2 - u * 0.5, p.y - u * 0.45, u, u * 0.5, 4); ctx.fill(); }
     });
     ctx.globalAlpha = 1;
@@ -125,7 +125,7 @@
       ctx.save(); ctx.translate(hero.x, hero.y);
       ctx.fillStyle = gold ? '#FFD84D' : '#FF8AD8';
       ctx.beginPath(); ctx.ellipse(0, -s * 0.55, s * 0.5 * (1 - stretch * 0.5), s * 0.55 * (1 + stretch), 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#120630';
+      ctx.fillStyle = '#292724';
       var look = P.clamp(hero.vx / view.W, -0.5, 0.5) * s * 0.3;
       ctx.beginPath(); ctx.arc(-s * 0.16 + look, -s * 0.7, s * 0.08, 0, Math.PI * 2); ctx.arc(s * 0.16 + look, -s * 0.7, s * 0.08, 0, Math.PI * 2); ctx.fill();
       ctx.restore();

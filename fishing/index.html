@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Рыбалка</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Рыбалка. Нажми — крючок опускается, нажми ещё — поднимается. Веди пальцем — лодка плывёт"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -32,7 +32,7 @@
     { n: 'щука', col: '#6FD3FF', len: 52, pts: 25, sp: 120, d: [0.45, 0.85] },
     { n: 'сом', col: '#FF8AD8', len: 64, pts: 45, sp: 65, d: [0.7, 0.95] },
     { n: 'сапог', col: '#9C5A3C', len: 28, pts: 0, sp: 30, d: [0.3, 0.95], junk: true },
-    { n: 'медуза', col: '#B9A8F0', len: 26, pts: -10, sp: 25, d: [0.2, 0.9], jelly: true }
+    { n: 'медуза', col: '#C7C0B7', len: 26, pts: -10, sp: 25, d: [0.2, 0.9], jelly: true }
   ];
   var shell = P.shell({
     id: 'fishing', title: 'Рыбалка', tagline: 'Минута у воды. Крупная рыба — глубже.',
@@ -74,7 +74,7 @@
       }
       if (hook.fish) { hook.fish.x = boatX; hook.fish.y = hook.y + 10 * S; }
       if (hook.y <= surf()) {
-        if (hook.fish) { var F = hook.fish; score += F.k.pts; if (!F.k.junk) caught++; shell.setScore(String(score)); pop(boatX, surf() - 30 * S, F.k.junk ? 'сапог…' : '+' + F.k.pts, F.k.junk ? '#B9A8F0' : '#3DF5B0'); P.haptic(F.k.junk ? null : 'coin'); fish.splice(fish.indexOf(F), 1); }
+        if (hook.fish) { var F = hook.fish; score += F.k.pts; if (!F.k.junk) caught++; shell.setScore(String(score)); pop(boatX, surf() - 30 * S, F.k.junk ? 'сапог…' : '+' + F.k.pts, F.k.junk ? '#C7C0B7' : '#3DF5B0'); P.haptic(F.k.junk ? null : 'coin'); fish.splice(fish.indexOf(F), 1); }
         hook = null;
       }
     }
@@ -90,19 +90,19 @@
     if (f.k.jelly) { c.globalAlpha = 0.8; c.beginPath(); c.arc(0, 0, L * 0.5, Math.PI, 0); c.fill(); c.strokeStyle = f.k.col; c.lineWidth = 2; for (var i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(i * L * 0.18, 0); c.quadraticCurveTo(i * L * 0.18 + Math.sin(t * 4 + i) * 4, L * 0.4, i * L * 0.18, L * 0.7); c.stroke(); } c.globalAlpha = 1; c.restore(); return; }
     c.beginPath(); c.ellipse(0, 0, L * 0.5, L * 0.24, 0, 0, 7); c.fill();
     c.beginPath(); c.moveTo(-L * 0.42, 0); c.lineTo(-L * 0.72, -L * 0.22); c.lineTo(-L * 0.72, L * 0.22); c.fill();
-    c.fillStyle = '#120630'; c.beginPath(); c.arc(L * 0.28, -L * 0.05, Math.max(1.5, L * 0.05), 0, 7); c.fill();
+    c.fillStyle = '#292724'; c.beginPath(); c.arc(L * 0.28, -L * 0.05, Math.max(1.5, L * 0.05), 0, 7); c.fill();
     c.restore();
   }
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, sy = surf();
-    var sky = c.createLinearGradient(0, 0, 0, sy); sky.addColorStop(0, '#5B3FD0'); sky.addColorStop(1, '#6FD3FF'); c.fillStyle = sky; c.fillRect(0, 0, W, sy);
+    var sky = c.createLinearGradient(0, 0, 0, sy); sky.addColorStop(0, '#9E7054'); sky.addColorStop(1, '#6FD3FF'); c.fillStyle = sky; c.fillRect(0, 0, W, sy);
     var sea = c.createLinearGradient(0, sy, 0, H); sea.addColorStop(0, '#1F6FB5'); sea.addColorStop(1, '#0B1A4A'); c.fillStyle = sea; c.fillRect(0, sy, W, H - sy);
     c.fillStyle = 'rgba(255,255,255,.12)'; for (var x = 0; x < W; x += 40) c.fillRect(x + (t * 20) % 40, sy + 4, 20, 2);
     fish.forEach(function (f) { if (!f.on) drawFish(c, f); });
-    if (hook) { c.strokeStyle = '#F4F1FF'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(boatX, sy - 10 * S); c.lineTo(boatX, hook.y); c.stroke(); c.strokeStyle = '#F4F1FF'; c.lineWidth = 2.5; c.beginPath(); c.arc(boatX - 4 * S, hook.y, 5 * S, 0, Math.PI); c.stroke(); if (hook.fish) drawFish(c, hook.fish); }
+    if (hook) { c.strokeStyle = '#FAF7F2'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(boatX, sy - 10 * S); c.lineTo(boatX, hook.y); c.stroke(); c.strokeStyle = '#FAF7F2'; c.lineWidth = 2.5; c.beginPath(); c.arc(boatX - 4 * S, hook.y, 5 * S, 0, Math.PI); c.stroke(); if (hook.fish) drawFish(c, hook.fish); }
     c.fillStyle = '#FF6B4A'; c.beginPath(); c.moveTo(boatX - 50 * S, sy - 16 * S); c.lineTo(boatX + 50 * S, sy - 16 * S); c.lineTo(boatX + 36 * S, sy + 4 * S); c.lineTo(boatX - 36 * S, sy + 4 * S); c.fill();
     c.fillStyle = '#FFD3B0'; c.beginPath(); c.arc(boatX - 12 * S, sy - 34 * S, 9 * S, 0, 7); c.fill(); c.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; c.fillRect(boatX - 20 * S, sy - 26 * S, 16 * S, 12 * S);
-    c.strokeStyle = '#9C5A3C'; c.lineWidth = 3 * S; c.beginPath(); c.moveTo(boatX - 8 * S, sy - 22 * S); c.lineTo(boatX, sy - 52 * S); c.stroke(); c.strokeStyle = '#F4F1FF'; c.lineWidth = 1; c.beginPath(); c.moveTo(boatX, sy - 52 * S); c.lineTo(boatX, sy - 10 * S); c.stroke();
+    c.strokeStyle = '#9C5A3C'; c.lineWidth = 3 * S; c.beginPath(); c.moveTo(boatX - 8 * S, sy - 22 * S); c.lineTo(boatX, sy - 52 * S); c.stroke(); c.strokeStyle = '#FAF7F2'; c.lineWidth = 1; c.beginPath(); c.moveTo(boatX, sy - 52 * S); c.lineTo(boatX, sy - 10 * S); c.stroke();
     pops.forEach(function (p) { c.globalAlpha = 1 - p.t; c.fillStyle = p.col; c.font = '800 20px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText(p.s, p.x, p.y); }); c.globalAlpha = 1;
   }
   canvas.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, bx: boatX, moved: false }; });

@@ -3,24 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Соедини</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Соедини. Веди линии между точками одного цвета"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
   var U = ['поле', 'поля', 'полей'], TOP = 70;
-  var COL = ['#FF6B4A', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8', '#B9A8F0', '#FF9A6B', '#F4F1FF'];
+  var COL = ['#FF6B4A', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8', '#C7C0B7', '#F5AD7A', '#FAF7F2'];
   var stage = document.getElementById('stage'), canvas = document.getElementById('game');
   var n = 5, dots = [], ends = [], paths = [], active = -1, solved = 0, phase = 'play', phaseT = 0, cs = 60, ox = 0, oy = 0;
 
@@ -106,18 +106,18 @@
   function center(c) { var x = c % n, y = (c - x) / n; return { x: ox + (x + 0.5) * cs, y: oy + (y + 0.5) * cs }; }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!dots.length) return;
-    ctx.fillStyle = '#1B0A48'; ctx.fillRect(ox, oy, cs * n, cs * n);
+    ctx.fillStyle = '#484541'; ctx.fillRect(ox, oy, cs * n, cs * n);
     paths.forEach(function (p, k) { ctx.fillStyle = COL[k]; ctx.globalAlpha = 0.16; p.forEach(function (c) { var x = c % n, y = (c - x) / n; ctx.fillRect(ox + x * cs, oy + y * cs, cs, cs); }); });
     ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#3B1E8C'; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#45413C'; ctx.lineWidth = 1.5;
     for (var i = 0; i <= n; i++) { ctx.beginPath(); ctx.moveTo(ox + i * cs, oy); ctx.lineTo(ox + i * cs, oy + n * cs); ctx.stroke(); ctx.beginPath(); ctx.moveTo(ox, oy + i * cs); ctx.lineTo(ox + n * cs, oy + i * cs); ctx.stroke(); }
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     paths.forEach(function (p, k) { if (p.length < 2) return; ctx.strokeStyle = COL[k]; ctx.lineWidth = cs * 0.3; ctx.beginPath(); p.forEach(function (c, j) { var q = center(c); ctx[j ? 'lineTo' : 'moveTo'](q.x, q.y); }); ctx.stroke(); });
     for (i = 0; i < dots.length; i++) if (dots[i] !== -1) { var q = center(i); ctx.fillStyle = COL[dots[i]]; ctx.beginPath(); ctx.arc(q.x, q.y, cs * 0.34, 0, Math.PI * 2); ctx.fill(); if (complete(dots[i])) { ctx.fillStyle = 'rgba(18,6,48,.35)'; ctx.beginPath(); ctx.arc(q.x, q.y, cs * 0.12, 0, Math.PI * 2); ctx.fill(); } }
     var done = paths.filter(function (p, k) { return complete(k); }).length, cov = 0; paths.forEach(function (p) { cov += p.length; });
-    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(250,247,242,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(phase === 'won' ? 'Готово!' : 'Линий: ' + done + '/' + paths.length + ' · поле ' + Math.round(cov / (n * n) * 100) + '%', W / 2, oy - 12);
   }
   function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }

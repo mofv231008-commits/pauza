@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Ритм</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -19,7 +19,7 @@
 <canvas id="game" aria-label="Ритм. Нажимай на дорожку, когда нота на линии"></canvas>
 <div class="timebar" id="timebar" style="position:absolute;left:16px;right:16px;top:72px"><i></i></div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -72,12 +72,12 @@
   });
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, lw = Math.min(110 * S, (W - 40) / 3), x0 = (W - lw * 3) / 2, ly = lineY(), top = 90;
-    c.fillStyle = '#140734'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#22211F'; c.fillRect(0, 0, W, H);
     for (var l = 0; l < 3; l++) {
-      c.fillStyle = l % 2 ? '#1E0D4E' : '#22105A'; c.fillRect(x0 + l * lw + 2, top, lw - 4, H - top);
-      if (flashL[l] > 0) { c.fillStyle = 'rgba(244,241,255,' + flashL[l] * 2 + ')'; c.fillRect(x0 + l * lw + 2, ly - 60 * S, lw - 4, 80 * S); }
+      c.fillStyle = l % 2 ? '#4E4B46' : '#33312E'; c.fillRect(x0 + l * lw + 2, top, lw - 4, H - top);
+      if (flashL[l] > 0) { c.fillStyle = 'rgba(250,247,242,' + flashL[l] * 2 + ')'; c.fillRect(x0 + l * lw + 2, ly - 60 * S, lw - 4, 80 * S); }
     }
-    c.fillStyle = '#F4F1FF'; c.fillRect(x0 - 6, ly - 2, lw * 3 + 12, 4);
+    c.fillStyle = '#FAF7F2'; c.fillRect(x0 - 6, ly - 2, lw * 3 + 12, 4);
     notes.forEach(function (n) {
       var y = ly - (n.at - t) / TRAVEL * (ly - top); if (y < top - 20) return;
       c.globalAlpha = n.missed ? 0.3 : 1; c.fillStyle = LC[n.lane];
@@ -88,7 +88,7 @@
     c.globalAlpha = 1;
     for (l = 0; l < 3; l++) { c.strokeStyle = LC[l]; c.lineWidth = 3; c.beginPath(); c.arc(x0 + (l + 0.5) * lw, ly + 50 * S, 22 * S, 0, 7); c.stroke(); }
     if (judge) { c.globalAlpha = Math.min(1, judge.t * 3); c.fillStyle = judge.col; c.font = '800 ' + Math.round(20 * S) + 'px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText(judge.s, x0 + (judge.lane + 0.5) * lw, ly - 70 * S); c.globalAlpha = 1; }
-    if (combo >= 3) { c.fillStyle = combo >= 10 ? '#FFD84D' : '#B9A8F0'; c.font = '600 ' + Math.round(14 * S) + 'px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText('серия ' + combo + (combo >= 10 ? ' · ×2' : ''), W / 2, top + 26); }
+    if (combo >= 3) { c.fillStyle = combo >= 10 ? '#FFD84D' : '#C7C0B7'; c.font = '600 ' + Math.round(14 * S) + 'px Unbounded, Arial Black, sans-serif'; c.textAlign = 'center'; c.fillText('серия ' + combo + (combo >= 10 ? ' · ×2' : ''), W / 2, top + 26); }
   }
   canvas.addEventListener('pointerdown', function (e) { var r = canvas.getBoundingClientRect(), W = view.W, lw = Math.min(110 * S, (W - 40) / 3), x0 = (W - lw * 3) / 2; var l = Math.floor((e.clientX - r.left - x0) / lw); hit(P.clamp(l, 0, 2)); });
   var KL = { ArrowLeft: 0, KeyA: 0, ArrowDown: 1, KeyS: 1, ArrowRight: 2, KeyD: 2 };

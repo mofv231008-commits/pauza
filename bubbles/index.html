@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Пузыри</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Пузыри. Прицелься пальцем и отпусти, чтобы выстрелить"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -132,9 +132,9 @@
   }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!grid || !R) return;
-    ctx.fillStyle = '#22105A'; ctx.fillRect(ox(), top0, R * NC * 2, shooterY() - top0 + R * 2);
+    ctx.fillStyle = '#33312E'; ctx.fillRect(ox(), top0, R * NC * 2, shooterY() - top0 + R * 2);
     ctx.fillStyle = 'rgba(255,107,74,0.5)'; ctx.fillRect(ox(), shooterY() - R * 2.2, R * NC * 2, 2);
     grid.forEach(function (row, r) { row.forEach(function (c, i) { if (c >= 0) bubble(ctx, cx(r, i), cy(r), COLS[c], R * 0.94); }); });
     pops.forEach(function (p) { ctx.globalAlpha = p.life / 0.35; bubble(ctx, p.x, p.y, p.c, R * (1.4 - p.life)); }); ctx.globalAlpha = 1;
@@ -142,7 +142,7 @@
     var sx = W / 2, sy = shooterY();
     if (aim && !shot && shell.running) {
       var a = P.clamp(Math.atan2(aim.y - sy, aim.x - sx), -Math.PI + 0.18, -0.18);
-      ctx.strokeStyle = 'rgba(244,241,255,0.5)'; ctx.setLineDash([4, 8]); ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(250,247,242,0.5)'; ctx.setLineDash([4, 8]); ctx.lineWidth = 2;
       var x = sx, y = sy, vx = Math.cos(a), vy = Math.sin(a), lx = ox() + R, rx = ox() + R * (NC * 2 - 1);
       ctx.beginPath(); ctx.moveTo(x, y);
       for (var k = 0; k < 2; k++) {
@@ -154,7 +154,7 @@
     }
     if (shot) bubble(ctx, shot.x, shot.y, COLS[shot.c], R * 0.94);
     bubble(ctx, sx, sy, COLS[cur], R * 0.94);
-    ctx.strokeStyle = P.gold() ? '#FFD84D' : '#B9A8F0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(sx, sy, R * 1.35, Math.PI * 0.15, Math.PI * 0.85); ctx.stroke();
+    ctx.strokeStyle = P.gold() ? '#FFD84D' : '#C7C0B7'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(sx, sy, R * 1.35, Math.PI * 0.15, Math.PI * 0.85); ctx.stroke();
   }
   function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: Math.min(e.clientY - r.top, shooterY() - 10) }; }
   canvas.addEventListener('pointerdown', function (e) { if (shell.running) aim = pos(e); });

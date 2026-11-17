@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Броски</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#22105A}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#33312E}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Броски. Смахни мяч вверх в сторону кольца"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -84,18 +84,18 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H, br = BR();
-    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#2A1470'; ctx.fillRect(0, H * 0.62, W, H * 0.38);
-    ctx.strokeStyle = 'rgba(185,168,240,0.18)'; ctx.lineWidth = 2;
+    ctx.fillStyle = '#33312E'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#706C65'; ctx.fillRect(0, H * 0.62, W, H * 0.38);
+    ctx.strokeStyle = 'rgba(199,192,183,0.18)'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.ellipse(W / 2, H * 0.62, W * 0.42, H * 0.06, 0, 0, Math.PI); ctx.stroke();
     if (!hoop || !ball) return;
     var bx = hoop.x, by = hoop.y, hw = hoop.w;
-    ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.roundRect(bx - hw * 0.95, by - hw * 1.05, hw * 1.9, hw * 1.15, 8); ctx.fill();
+    ctx.fillStyle = '#FAF7F2'; ctx.beginPath(); ctx.roundRect(bx - hw * 0.95, by - hw * 1.05, hw * 1.9, hw * 1.15, 8); ctx.fill();
     ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 3; ctx.strokeRect(bx - hw * 0.38, by - hw * 0.62, hw * 0.76, hw * 0.55);
-    ctx.fillStyle = '#B9A8F0'; ctx.fillRect(bx - 3, by + 4, 6, H);
+    ctx.fillStyle = '#C7C0B7'; ctx.fillRect(bx - 3, by + 4, 6, H);
     var behind = ball.flying && ball.peak && ball.y < by + br;
     function netDraw() {
-      ctx.strokeStyle = 'rgba(244,241,255,0.75)'; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(250,247,242,0.75)'; ctx.lineWidth = 1.5;
       var sway = net > 0 ? Math.sin(net * 30) * 3 : 0;
       for (var k = 0; k <= 6; k++) { var x0 = bx - hw / 2 + hw * k / 6; ctx.beginPath(); ctx.moveTo(x0, by); ctx.lineTo(bx - hw * 0.3 + hw * 0.6 * k / 6 + sway, by + hw * 0.6); ctx.stroke(); }
       ctx.beginPath(); ctx.moveTo(bx - hw * 0.42, by + hw * 0.3); ctx.lineTo(bx + hw * 0.42, by + hw * 0.3); ctx.stroke();
@@ -103,14 +103,14 @@
     function rim() { ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(bx - hw / 2, by); ctx.lineTo(bx + hw / 2, by); ctx.stroke(); }
     function ballDraw() {
       var r = br * ball.s;
-      ctx.fillStyle = P.gold() ? '#FFD84D' : '#FF9A6B'; ctx.beginPath(); ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = P.gold() ? '#FFD84D' : '#F5AD7A'; ctx.beginPath(); ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = 'rgba(18,6,48,0.55)'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(ball.x - r, ball.y); ctx.lineTo(ball.x + r, ball.y); ctx.stroke();
       ctx.beginPath(); ctx.arc(ball.x, ball.y, r, -Math.PI / 2, Math.PI / 2); ctx.moveTo(ball.x, ball.y - r); ctx.lineTo(ball.x, ball.y + r); ctx.stroke();
     }
     if (behind) { ballDraw(); netDraw(); rim(); } else { netDraw(); rim(); ballDraw(); }
     if (!ball.flying && shell.running) {
-      ctx.fillStyle = 'rgba(244,241,255,0.5)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(250,247,242,0.5)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
       ctx.fillText('смахни вверх', ball.x, ball.y + br + 22);
     }
     floats.forEach(function (f) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.fillStyle = '#FFD84D'; ctx.font = '800 20px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f.text, f.x, f.y); });

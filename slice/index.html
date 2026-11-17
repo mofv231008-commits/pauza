@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Нарезка</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#22105A}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#33312E}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Нарезка. Проводи пальцем по фруктам, бомбы не трогай"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -22,7 +22,7 @@
   var U = ['фрукт', 'фрукта', 'фруктов'];
   var FRUITS = [
     { c: '#FF6B4A', in: '#FFD0C4', r: 1 }, { c: '#3DF5B0', in: '#DFFFF2', r: 0.9 }, { c: '#FFD84D', in: '#FFF5CC', r: 1.05 },
-    { c: '#FF8AD8', in: '#FFE1F5', r: 0.85 }, { c: '#B9A8F0', in: '#EEE9FF', r: 0.95 }, { c: '#FF9A6B', in: '#FFE4D6', r: 1.15 }
+    { c: '#FF8AD8', in: '#FFE1F5', r: 0.85 }, { c: '#C7C0B7', in: '#EEE9FF', r: 0.95 }, { c: '#F5AD7A', in: '#FFE4D6', r: 1.15 }
   ];
   var stage = document.getElementById('stage'), canvas = document.getElementById('game');
   var items = [], halves = [], drops = [], trail = [], score, lives, spawnT, t, best, dead, comboT, combo, floats = [];
@@ -37,7 +37,7 @@
   var view = P.canvas(canvas, stage, function () { draw(); });
   function R() { return Math.max(22, Math.min(view.W, 460) * 0.075); }
   function reset() { items = []; halves = []; drops = []; trail = []; floats = []; score = 0; lives = 3; spawnT = 0.6; t = 0; dead = false; combo = 0; comboT = 0; shell.setScore('0'); side(); }
-  function side() { var s = ''; for (var i = 0; i < 3; i++) s += '<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:' + (i < lives ? '#3DF5B0' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function side() { var s = ''; for (var i = 0; i < 3; i++) s += '<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:' + (i < lives ? '#3DF5B0' : 'rgba(199,192,183,.3)') + '"></span>'; shell.setSide(s); }
   function launch() {
     var W = view.W, H = view.H, n = 1 + (Math.random() < Math.min(0.6, t * 0.012) ? 1 + P.rand(2) : 0);
     for (var k = 0; k < n; k++) {
@@ -101,7 +101,7 @@
   function fruit(ctx, it) {
     ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot);
     if (it.bomb) {
-      ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(0, 0, it.r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#292724'; ctx.beginPath(); ctx.arc(0, 0, it.r, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, it.r - 1.5, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = '#FF6B4A'; ctx.fillRect(-2, -it.r - 8, 4, 9);
       ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(0, -it.r - 9, 3 + Math.random() * 2, 0, Math.PI * 2); ctx.fill();
@@ -114,8 +114,8 @@
   }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(185,168,240,0.05)';
+    ctx.fillStyle = '#33312E'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(199,192,183,0.05)';
     for (var y = 0; y < H; y += 46) ctx.fillRect(0, y, W, 22);
     halves.forEach(function (h) {
       ctx.save(); ctx.translate(h.x, h.y); ctx.rotate(h.ang + h.rot); ctx.globalAlpha = Math.min(1, h.life * 2);
@@ -129,7 +129,7 @@
     drops.forEach(function (d) { ctx.globalAlpha = Math.min(1, d.life * 2); ctx.fillStyle = d.c; ctx.beginPath(); ctx.arc(d.x, d.y, 3, 0, Math.PI * 2); ctx.fill(); });
     ctx.globalAlpha = 1;
     if (trail.length > 1) {
-      ctx.strokeStyle = P.gold() ? '#FFD84D' : '#F4F1FF'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = P.gold() ? '#FFD84D' : '#FAF7F2'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       for (var i = 1; i < trail.length; i++) { ctx.lineWidth = 2 + i / trail.length * 6; ctx.beginPath(); ctx.moveTo(trail[i - 1].x, trail[i - 1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke(); }
     }
     floats.forEach(function (f) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.fillStyle = '#FFD84D'; ctx.font = '800 22px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f.text, W / 2, H * 0.3 - (1 - f.life) * 30); });

@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Путь</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Путь. Запомни дорожку и повтори"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -59,15 +59,15 @@
   function geo() { var size = Math.min(view.W - 40, view.H - 220), cs = size / N; return { cs: cs, x: (view.W - size) / 2, y: 110 + (view.H - 170 - size) / 2, size: size }; }
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, G = geo();
-    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#33312E'; c.fillRect(0, 0, W, H);
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
-      var col = '#3B1E8C', px = G.x + x * G.cs, py = G.y + y * G.cs;
+      var col = '#45413C', px = G.x + x * G.cs, py = G.y + y * G.cs;
       if (phase === 'show' && showI >= 0) { for (var k = 0; k <= showI && k < path.length; k++) if (path[k][0] === x && path[k][1] === y) col = k === showI ? '#3DF5B0' : 'rgba(61,245,176,.35)'; }
       if (phase === 'input') for (var j = 0; j < step; j++) if (path[j][0] === x && path[j][1] === y) col = '#3DF5B0';
       if (flash && flash.x === x && flash.y === y) col = flash.ok ? '#3DF5B0' : '#FF6B4A';
       c.fillStyle = col; c.beginPath(); if (c.roundRect) c.roundRect(px + 4, py + 4, G.cs - 8, G.cs - 8, 10); else c.rect(px + 4, py + 4, G.cs - 8, G.cs - 8); c.fill();
     }
-    c.fillStyle = '#B9A8F0'; c.font = '500 ' + Math.round(15 * S) + 'px Onest, sans-serif'; c.textAlign = 'center';
+    c.fillStyle = '#C7C0B7'; c.font = '500 ' + Math.round(15 * S) + 'px Onest, sans-serif'; c.textAlign = 'center';
     c.fillText(phase === 'show' ? 'Запоминай…' : 'Повтори дорожку: ' + step + ' из ' + path.length, W / 2, G.y - 18);
   }
   P.gestures(canvas, { tap: function (x, y) {

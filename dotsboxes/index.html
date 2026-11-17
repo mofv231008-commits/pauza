@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Точки и квадраты</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>.stage{background:var(--shoulder)}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Точки и квадраты. Нажимай между двумя точками, чтобы провести линию"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -105,7 +105,7 @@
   P.loop(function (dt) { pops.forEach(function (p) { p.life -= dt; }); pops = pops.filter(function (p) { return p.life > 0; }); draw(); });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#33312E'; ctx.fillRect(0, 0, W, H);
     if (!edges.length) return;
     boxes.forEach(function (bx, i) {
       if (!bx.by) return; var p = pops.filter(function (q) { return q.i === i; })[0], m = p ? p.life * cs * 0.6 : 6;
@@ -116,13 +116,13 @@
     ctx.lineCap = 'round';
     edges.forEach(function (e, i) {
       var x1 = ox + e.c * cs, y1 = oy + e.r * cs, x2 = e.h ? x1 + cs : x1, y2 = e.h ? y1 : y1 + cs;
-      ctx.strokeStyle = e.by === 1 ? (P.gold() ? '#FFD84D' : '#3DF5B0') : e.by === 2 ? '#FF6B4A' : 'rgba(185,168,240,.14)';
+      ctx.strokeStyle = e.by === 1 ? (P.gold() ? '#FFD84D' : '#3DF5B0') : e.by === 2 ? '#FF6B4A' : 'rgba(199,192,183,.14)';
       ctx.lineWidth = e.by ? (i === last ? 8 : 6) : 4; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     });
-    ctx.fillStyle = '#F4F1FF';
+    ctx.fillStyle = '#FAF7F2';
     for (var r = 0; r <= N; r++) for (var c = 0; c <= N; c++) { ctx.beginPath(); ctx.arc(ox + c * cs, oy + r * cs, 6, 0, Math.PI * 2); ctx.fill(); }
     ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(244,241,255,.85)'; ctx.font = '600 15px Unbounded, "Arial Black", sans-serif'; ctx.fillText(note, W / 2, oy - 30);
+    ctx.fillStyle = 'rgba(250,247,242,.85)'; ctx.font = '600 15px Unbounded, "Arial Black", sans-serif'; ctx.fillText(note, W / 2, oy - 30);
     ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.fillStyle = '#3DF5B0'; ctx.fillText('ты: ' + tally(1), W / 2 - 50, oy + cs * N + 34);
     ctx.fillStyle = '#FF6B4A'; ctx.fillText('компьютер: ' + tally(2), W / 2 + 50, oy + cs * N + 34);
   }

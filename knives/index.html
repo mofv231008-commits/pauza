@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Ножи</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Ножи. Тап — бросить нож в бревно"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -97,20 +97,20 @@
   function knife(ctx, x, y, ang, len) {
     ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
     var gold = P.gold();
-    ctx.fillStyle = gold ? '#FFD84D' : '#F4F1FF';
+    ctx.fillStyle = gold ? '#FFD84D' : '#FAF7F2';
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(len * 0.09, len * 0.12); ctx.lineTo(len * 0.07, len * 0.6); ctx.lineTo(-len * 0.07, len * 0.6); ctx.lineTo(-len * 0.09, len * 0.12); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.roundRect(-len * 0.07, len * 0.6, len * 0.14, len * 0.4, 4); ctx.fill();
     ctx.restore();
   }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H, r = R(), x = W / 2, y = cy(), len = r * 0.95;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (rot == null) return;
     ctx.save();
     if (shake > 0) ctx.translate((Math.random() - 0.5) * 10 * shake, (Math.random() - 0.5) * 10 * shake);
     if (clearT <= 0) {
       stuck.forEach(function (a) { var ang = a + rot; knife(ctx, x + Math.cos(ang) * r * 0.86, y + Math.sin(ang) * r * 0.86, ang - Math.PI / 2, len); });
-      ctx.fillStyle = '#FF9A6B'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#F5AD7A'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = 'rgba(18,6,48,0.25)'; ctx.lineWidth = 3;
       [0.75, 0.5, 0.25].forEach(function (k) { ctx.beginPath(); ctx.arc(x, y, r * k, 0, Math.PI * 2); ctx.stroke(); });
       ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.arc(x, y, r * 0.12, 0, Math.PI * 2); ctx.fill();
@@ -120,14 +120,14 @@
     bits.forEach(function (b) {
       ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.r); ctx.globalAlpha = Math.min(1, b.life * 2);
       if (b.knife) knife(ctx, 0, 0, 0, len);
-      else { ctx.fillStyle = b.apple ? '#3DF5B0' : '#FF9A6B'; ctx.fillRect(-r * 0.15, -r * 0.08, r * 0.3, r * 0.16); }
+      else { ctx.fillStyle = b.apple ? '#3DF5B0' : '#F5AD7A'; ctx.fillRect(-r * 0.15, -r * 0.08, r * 0.3, r * 0.16); }
       ctx.restore();
     });
     ctx.globalAlpha = 1;
     if (flying) knife(ctx, x, flying.y, 0, len);
     else if (!dead && left > 0 && clearT <= 0) knife(ctx, x, H * 0.82, 0, len);
     for (var i = 0; i < need; i++) {
-      ctx.fillStyle = i < left ? '#F4F1FF' : 'rgba(244,241,255,0.2)';
+      ctx.fillStyle = i < left ? '#FAF7F2' : 'rgba(250,247,242,0.2)';
       ctx.fillRect(18, H - 30 - i * 16, 5, 11);
     }
   }

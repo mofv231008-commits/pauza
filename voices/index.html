@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Голосовые</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
-.stage{background:#17093F}
+.stage{background:#3F3C39}
 .play{gap:16px}
 .rule{margin:0;color:var(--lilac);font-size:14px;text-align:center;line-height:1.4}
 .rule b{color:var(--paper)}
-.card{width:min(100%,340px);padding:16px;border-radius:22px;background:#2E177A;display:flex;flex-direction:column;gap:12px;transition:transform .18s,opacity .18s;touch-action:pan-y}
+.card{width:min(100%,340px);padding:16px;border-radius:22px;background:#3C3833;display:flex;flex-direction:column;gap:12px;transition:transform .18s,opacity .18s;touch-action:pan-y}
 .card.go-l{transform:translateX(-120%) rotate(-12deg);opacity:0}
 .card.go-r{transform:translateX(120%) rotate(12deg);opacity:0}
 .from{display:flex;align-items:center;gap:10px}
@@ -29,7 +29,7 @@
 .wave i{flex:1;border-radius:2px;background:var(--lilac)}
 .dur{font-family:var(--font-display);font-weight:800;font-size:22px;font-variant-numeric:tabular-nums}
 .dur.long{color:var(--coral)}
-.timer{height:5px;border-radius:3px;background:rgba(244,241,255,.1);overflow:hidden}
+.timer{height:5px;border-radius:3px;background:rgba(250,247,242,.1);overflow:hidden}
 .timer i{display:block;height:100%;background:var(--sun);transform-origin:left}
 .say{margin:0;min-height:2.6em;color:var(--sun);font-size:14px;text-align:center;line-height:1.35}
 .btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(100%,340px)}
@@ -48,13 +48,13 @@
     <div class="btns"><button class="skip" type="button" id="skip">← Потом</button><button class="listen" type="button" id="listen">Послушать →</button></div>
   </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
   var U = ['голосовое', 'голосовых', 'голосовых'], LIVES = 3;
-  var FROM = [['Мама', '#FFD84D'], ['Лёха', '#6FD3FF'], ['Тётя Люба', '#FF8AD8'], ['Староста', '#3DF5B0'], ['Начальник', '#FF9A6B'], ['Сосед', '#B9A8F0'], ['Бабушка', '#FF6B4A'], ['Димон', '#6FD3FF'], ['Чат дома', '#FFD84D'], ['Курьер', '#3DF5B0']];
+  var FROM = [['Мама', '#FFD84D'], ['Лёха', '#6FD3FF'], ['Тётя Люба', '#FF8AD8'], ['Староста', '#3DF5B0'], ['Начальник', '#F5AD7A'], ['Сосед', '#C7C0B7'], ['Бабушка', '#FF6B4A'], ['Димон', '#6FD3FF'], ['Чат дома', '#FFD84D'], ['Курьер', '#3DF5B0']];
   var LONG = ['Пять минут про то, как прошёл день у кота', 'Двенадцать минут, из них одиннадцать — «эээ»', 'Тётя Люба пересказала весь сериал', 'Это был рецепт борща. С историей семьи', 'Начальник думал вслух. Долго', 'В конце было «короче, неважно»', 'Семь минут шума ветра и одно «пока»', 'Это можно было написать словом «ок»'];
   var SHORT = ['Пропущено важное: «я у подъезда»', 'А там было «выходи, я внизу»', 'Это было «купи хлеба». Хлеба нет', 'Там было «ты где?». Ты в игнор-листе', 'Там было «спасибо». Неловко вышло'];
   var cardEl = document.getElementById('card'), say = document.getElementById('say');
@@ -95,7 +95,7 @@
     lives--; side(); P.haptic('crash'); say.textContent = text;
     if (lives <= 0) shell.end({ score: score, delay: 700, stats: 'разобрано голосовых: ' + score, phrase: 'В «Голосовых» я разгребаю ' + score + ' ' + P.plural(score, U) + ' подряд. А ты?' });
   }
-  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (i < lives ? '#3DF5B0' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (i < lives ? '#3DF5B0' : 'rgba(199,192,183,.3)') + '"></span>'; shell.setSide(s); }
   function reset() { lives = LIVES; score = 0; shell.setScore('0'); side(); say.textContent = ''; newVoice(); }
   P.loop(function (dt) {
     if (!shell.running || busy || !cur) return;

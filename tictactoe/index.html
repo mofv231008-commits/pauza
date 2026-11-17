@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Крестики-нолики</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .stage{background:var(--shoulder)}
 .play{gap:16px}
-.modes{display:flex;gap:6px;padding:4px;border-radius:16px;background:rgba(244,241,255,.06)}
+.modes{display:flex;gap:6px;padding:4px;border-radius:16px;background:rgba(250,247,242,.06)}
 .modes button{min-height:40px;padding:0 16px;border:0;border-radius:12px;background:none;color:var(--lilac);font-family:var(--font-display);font-weight:600;font-size:13px;cursor:pointer;touch-action:manipulation}
 .modes button.on{background:var(--road);color:var(--paper)}
 .turn{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac);min-height:1.4em}
 .board{--size:300px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:var(--size);height:var(--size)}
-.c{border:0;border-radius:18px;background:#3B1E8C;display:grid;place-items:center;cursor:pointer;touch-action:manipulation;padding:0}
+.c{border:0;border-radius:18px;background:#45413C;display:grid;place-items:center;cursor:pointer;touch-action:manipulation;padding:0}
 .c svg{width:62%;height:62%}
 .c.win{background:#5A3FB0;box-shadow:0 0 0 3px var(--sun) inset}
 .c.new svg{animation:pop .2s ease-out}
@@ -35,7 +35,7 @@
     <p class="tally" id="tally"></p>
   </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';

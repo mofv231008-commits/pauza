@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Астероиды</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#0E0526}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#1D1C1A}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Астероиды. Нажимай, куда стрелять"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -49,7 +49,7 @@
     shell.setScore('0'); side();
     for (var i = 0; i < 3; i++) spawn(3);
   }
-  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:3px;background:' + (i < lives ? '#3DF5B0' : 'rgba(185,168,240,.3)') + '"></span>'; shell.setSide(s); }
+  function side() { var s = ''; for (var i = 0; i < LIVES; i++) s += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:3px;background:' + (i < lives ? '#3DF5B0' : 'rgba(199,192,183,.3)') + '"></span>'; shell.setSide(s); }
   function spawn(size, x, y, vx0, vy0) {
     var R = B() * [0, 0.032, 0.052, 0.082][size], vx, vy;
     if (x === undefined) {
@@ -69,7 +69,7 @@
   }
   function smash(i) {
     var r = rocks[i]; rocks.splice(i, 1);
-    boom(r.x, r.y, '#B9A8F0', 6 + r.size * 4);
+    boom(r.x, r.y, '#C7C0B7', 6 + r.size * 4);
     if (r.size > 1) { spawn(r.size - 1, r.x, r.y, r.vx, r.vy); spawn(r.size - 1, r.x, r.y, r.vx, r.vy); }
   }
   function shipR() { return B() * 0.04; }
@@ -121,14 +121,14 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H, sr = shipR();
-    ctx.fillStyle = '#0E0526'; ctx.fillRect(0, 0, W, H);
-    stars.forEach(function (s) { ctx.globalAlpha = s.a; ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); });
+    ctx.fillStyle = '#1D1C1A'; ctx.fillRect(0, 0, W, H);
+    stars.forEach(function (s) { ctx.globalAlpha = s.a; ctx.fillStyle = '#FAF7F2'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); });
     ctx.globalAlpha = 1;
     rocks.forEach(function (r) {
       ctx.save(); ctx.translate(r.x, r.y); ctx.rotate(r.rot);
       ctx.beginPath();
       r.pts.forEach(function (k, i) { var a = i / r.pts.length * Math.PI * 2; ctx[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r.r * k, Math.sin(a) * r.r * k); });
-      ctx.closePath(); ctx.fillStyle = '#3B1E8C'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#B9A8F0'; ctx.stroke();
+      ctx.closePath(); ctx.fillStyle = '#45413C'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#C7C0B7'; ctx.stroke();
       ctx.fillStyle = 'rgba(18,6,48,.35)'; ctx.beginPath(); ctx.arc(r.r * 0.25, -r.r * 0.2, r.r * 0.2, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     });
@@ -139,7 +139,7 @@
     if (!ship || (inv > 0 && Math.floor(inv * 10) % 2)) return;
     ctx.save(); ctx.translate(ship.x, ship.y); ctx.rotate(ship.a);
     if ((firing || keys.fire) && shell.running) { ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.moveTo(-sr * 0.45, -sr * 0.25); ctx.lineTo(-sr * (0.9 + Math.random() * 0.3), 0); ctx.lineTo(-sr * 0.45, sr * 0.25); ctx.fill(); }
-    ctx.fillStyle = P.gold() ? '#FFD84D' : '#F4F1FF';
+    ctx.fillStyle = P.gold() ? '#FFD84D' : '#FAF7F2';
     ctx.beginPath(); ctx.moveTo(sr, 0); ctx.lineTo(-sr * 0.7, sr * 0.62); ctx.lineTo(-sr * 0.4, 0); ctx.lineTo(-sr * 0.7, -sr * 0.62); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#6FD3FF'; ctx.beginPath(); ctx.arc(sr * 0.15, 0, sr * 0.18, 0, Math.PI * 2); ctx.fill();
     ctx.restore();

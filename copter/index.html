@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Вертолёт</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Вертолёт. Держи палец, чтобы подниматься"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -91,19 +91,19 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     function wall(key, edge) {
       ctx.beginPath(); ctx.moveTo(-off - segW, edge);
       cols.forEach(function (c, i) { ctx.lineTo(i * segW - off + segW / 2, c[key]); });
       ctx.lineTo(W + segW, cols.length ? cols[cols.length - 1][key] : edge); ctx.lineTo(W + segW, edge); ctx.closePath();
-      ctx.fillStyle = '#3B1E8C'; ctx.fill();
+      ctx.fillStyle = '#45413C'; ctx.fill();
       ctx.beginPath(); cols.forEach(function (c, i) { ctx[i ? 'lineTo' : 'moveTo'](i * segW - off + segW / 2, c[key]); });
-      ctx.strokeStyle = '#B9A8F0'; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.strokeStyle = '#C7C0B7'; ctx.lineWidth = 2.5; ctx.stroke();
     }
     if (cols.length) { wall('top', 0); wall('bot', H); }
     ctx.fillStyle = '#FF6B4A';
     blocks.forEach(function (b) { ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 4); ctx.fill(); });
-    smoke.forEach(function (p) { ctx.globalAlpha = p.life * 0.5; ctx.fillStyle = '#B9A8F0'; ctx.beginPath(); ctx.arc(p.x, p.y, 3 + (0.6 - p.life) * 10, 0, Math.PI * 2); ctx.fill(); });
+    smoke.forEach(function (p) { ctx.globalAlpha = p.life * 0.5; ctx.fillStyle = '#C7C0B7'; ctx.beginPath(); ctx.arc(p.x, p.y, 3 + (0.6 - p.life) * 10, 0, Math.PI * 2); ctx.fill(); });
     ctx.globalAlpha = 1;
     if (!heli) return;
     var s = size(), x = hx(), y = heli.y, tilt = P.clamp(heli.vy / (PH() * 3), -0.2, 0.2);
@@ -113,7 +113,7 @@
     ctx.fillRect(-s.w * 0.98, -s.h * 0.42, s.w * 0.1, s.h * 0.5);
     ctx.beginPath(); ctx.ellipse(s.w * 0.08, 0, s.w * 0.42, s.h * 0.5, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#6FD3FF'; ctx.beginPath(); ctx.ellipse(s.w * 0.26, -s.h * 0.08, s.w * 0.16, s.h * 0.26, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#F4F1FF'; ctx.fillRect(-s.w * 0.02, -s.h * 0.72, s.w * 0.06, s.h * 0.24);
+    ctx.fillStyle = '#FAF7F2'; ctx.fillRect(-s.w * 0.02, -s.h * 0.72, s.w * 0.06, s.h * 0.24);
     var rw = s.w * 0.75 * Math.abs(Math.cos(rotor));
     ctx.fillRect(s.w * 0.01 - rw, -s.h * 0.76, rw * 2, s.h * 0.08);
     ctx.fillRect(-s.w * 0.2, s.h * 0.5, s.w * 0.55, s.h * 0.08);

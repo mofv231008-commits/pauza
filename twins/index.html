@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Близнецы</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .stage{background:var(--shoulder)}
 .play{gap:16px}
 .sub{margin:0;color:var(--lilac);font-size:15px}
 .grid{--w:340px;--c:3;display:grid;grid-template-columns:repeat(var(--c),1fr);gap:10px;width:var(--w)}
-.grid button{aspect-ratio:1;border:0;border-radius:18px;background:#2E177A;padding:6px;cursor:pointer;touch-action:manipulation;transition:transform .1s}
+.grid button{aspect-ratio:1;border:0;border-radius:18px;background:#3C3833;padding:6px;cursor:pointer;touch-action:manipulation;transition:transform .1s}
 .grid button svg{width:100%;height:100%;display:block}
 .grid button.sel{background:#5A3FB0;box-shadow:0 0 0 3px var(--sun) inset}
 .grid button.ok{background:var(--mint)}
@@ -31,7 +31,7 @@
     <div class="grid" id="grid"></div>
   </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -53,17 +53,17 @@
   if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
   function svg(m) {
     var c = COL[m[0]], s = '<svg viewBox="0 0 100 100" aria-hidden="true">';
-    if (m[4] === 1) s += '<path d="M30 30 L24 8 L42 24z M70 30 L76 8 L58 24z" fill="#F4F1FF"/>';
-    if (m[4] === 2) s += '<path d="M50 24 V8" stroke="#F4F1FF" stroke-width="4"/><circle cx="50" cy="8" r="6" fill="#FFD84D"/>';
-    if (m[4] === 3) s += '<circle cx="26" cy="26" r="11" fill="' + c + '"/><circle cx="74" cy="26" r="11" fill="' + c + '"/><circle cx="26" cy="26" r="5" fill="#120630" opacity=".3"/><circle cx="74" cy="26" r="5" fill="#120630" opacity=".3"/>';
+    if (m[4] === 1) s += '<path d="M30 30 L24 8 L42 24z M70 30 L76 8 L58 24z" fill="#FAF7F2"/>';
+    if (m[4] === 2) s += '<path d="M50 24 V8" stroke="#FAF7F2" stroke-width="4"/><circle cx="50" cy="8" r="6" fill="#FFD84D"/>';
+    if (m[4] === 3) s += '<circle cx="26" cy="26" r="11" fill="' + c + '"/><circle cx="74" cy="26" r="11" fill="' + c + '"/><circle cx="26" cy="26" r="5" fill="#292724" opacity=".3"/><circle cx="74" cy="26" r="5" fill="#292724" opacity=".3"/>';
     if (m[1] === 0) s += '<circle cx="50" cy="58" r="36" fill="' + c + '"/>';
     else if (m[1] === 1) s += '<rect x="16" y="22" width="68" height="70" rx="16" fill="' + c + '"/>';
     else s += '<path d="M14 92 V56 A36 36 0 0 1 86 56 V92 L74 82 L62 92 L50 82 L38 92 L26 82z" fill="' + c + '"/>';
     var eyes = m[2] === 0 ? [50] : m[2] === 1 ? [37, 63] : [32, 50, 68], er = m[2] === 0 ? 11 : 8;
-    eyes.forEach(function (x) { s += '<circle cx="' + x + '" cy="50" r="' + er + '" fill="#F4F1FF"/><circle cx="' + (x + 2) + '" cy="51" r="' + er * 0.45 + '" fill="#120630"/>'; });
-    if (m[3] === 0) s += '<path d="M36 70 Q50 82 64 70" stroke="#120630" stroke-width="4" fill="none" stroke-linecap="round"/>';
-    else if (m[3] === 1) s += '<ellipse cx="50" cy="73" rx="8" ry="7" fill="#120630"/>';
-    else s += '<rect x="36" y="68" width="28" height="9" rx="2" fill="#120630"/><path d="M42 68 v5 M50 68 v5 M58 68 v5" stroke="#F4F1FF" stroke-width="2.5"/>';
+    eyes.forEach(function (x) { s += '<circle cx="' + x + '" cy="50" r="' + er + '" fill="#FAF7F2"/><circle cx="' + (x + 2) + '" cy="51" r="' + er * 0.45 + '" fill="#292724"/>'; });
+    if (m[3] === 0) s += '<path d="M36 70 Q50 82 64 70" stroke="#292724" stroke-width="4" fill="none" stroke-linecap="round"/>';
+    else if (m[3] === 1) s += '<ellipse cx="50" cy="73" rx="8" ry="7" fill="#292724"/>';
+    else s += '<rect x="36" y="68" width="28" height="9" rx="2" fill="#292724"/><path d="M42 68 v5 M50 68 v5 M58 68 v5" stroke="#FAF7F2" stroke-width="2.5"/>';
     return s + '</svg>';
   }
   function key(m) { return m.join(''); }

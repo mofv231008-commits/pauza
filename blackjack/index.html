@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Двадцать одно</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .stage{background:radial-gradient(circle at 50% 45%,#22744F,#14432F)}
 .bj{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-around;align-items:center;padding:80px 12px 20px;gap:10px}
@@ -20,12 +20,12 @@
 .bj-cards .card{margin-left:-18px;animation:deal .25s ease}
 .bj-cards .card:first-child{margin-left:0}
 @keyframes deal{from{transform:translateY(-30px);opacity:0}}
-.card{width:62px;height:90px;border-radius:9px;background:#F4F1FF;box-shadow:0 3px 8px rgba(0,0,0,.35);position:relative;flex:none;color:#120630;user-select:none}
+.card{width:62px;height:90px;border-radius:9px;background:#FAF7F2;box-shadow:0 3px 8px rgba(0,0,0,.35);position:relative;flex:none;color:#292724;user-select:none}
 .card.red{color:#E0314F}
 .card b{position:absolute;left:6px;top:5px;font-size:18px;font-weight:700;line-height:1}
 .card i{position:absolute;left:7px;top:24px;font-style:normal;font-size:14px}
 .card u{position:absolute;right:7px;bottom:5px;text-decoration:none;font-size:30px;line-height:1}
-.card.back{background:linear-gradient(135deg,#5B3FD0,#3B1E8C);border:3px solid #F4F1FF}
+.card.back{background:linear-gradient(135deg,#9E7054,#45413C);border:3px solid #FAF7F2}
 .bj-msg{font-family:var(--font-display);font-weight:800;font-size:22px;min-height:30px;text-align:center}
 .bj-btns{display:flex;gap:10px;width:min(100%,380px)}
 .bj-btns button{flex:1;min-height:56px;border:0;border-radius:16px;font-family:var(--font-display);font-weight:600;font-size:16px;cursor:pointer}
@@ -43,7 +43,7 @@
   <div class="bj-btns"><button class="hit" id="hit" type="button">Ещё</button><button class="stand" id="stand" type="button">Хватит</button><button class="nxt" id="nxt" type="button" hidden>Следующая раздача</button></div>
 </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';

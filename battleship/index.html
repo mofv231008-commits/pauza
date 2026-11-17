@@ -3,26 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Морской бой</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
-.stage{background:#140734}
+.stage{background:#22211F}
 .play{gap:10px;justify-content:flex-start;padding-top:80px}
 .turn{margin:0;font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--lilac);min-height:1.4em;text-align:center}
 .turn.me{color:var(--mint)}.turn.ai{color:var(--coral)}
-.sea{--size:320px;display:grid;grid-template-columns:repeat(10,1fr);gap:2px;width:var(--size);height:var(--size);flex:none;background:#140734}
+.sea{--size:320px;display:grid;grid-template-columns:repeat(10,1fr);gap:2px;width:var(--size);height:var(--size);flex:none;background:#22211F}
 .sea i,.sea button{display:block;border:0;padding:0;border-radius:3px;background:#1F3E9E;position:relative}
 .sea button{cursor:pointer;touch-action:manipulation}
-.sea .ship{background:#B9A8F0}
-.sea .miss::after{content:"";position:absolute;inset:38%;border-radius:50%;background:rgba(244,241,255,.55)}
+.sea .ship{background:#C7C0B7}
+.sea .miss::after{content:"";position:absolute;inset:38%;border-radius:50%;background:rgba(250,247,242,.55)}
 .sea .hit{background:var(--coral)}
 .sea .sunk{background:#7A2A1C}
-.sea .hit::after,.sea .sunk::after{content:"";position:absolute;inset:25%;background:linear-gradient(45deg,transparent 42%,#120630 42% 58%,transparent 58%),linear-gradient(-45deg,transparent 42%,#120630 42% 58%,transparent 58%)}
+.sea .hit::after,.sea .sunk::after{content:"";position:absolute;inset:25%;background:linear-gradient(45deg,transparent 42%,#292724 42% 58%,transparent 58%),linear-gradient(-45deg,transparent 42%,#292724 42% 58%,transparent 58%)}
 .mine{--size:150px}
 .lbl{margin:0;font-size:12px;color:var(--lilac);text-transform:uppercase;letter-spacing:.12em}
 </style>
@@ -37,7 +37,7 @@
     <div class="sea mine" id="mine"></div>
   </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';

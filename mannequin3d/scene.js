@@ -22,7 +22,7 @@
     for (let y = 0; y < 64; y++) {
       for (let x = 0; x < 64; x++) {
         noise = (noise * 16807) % 2147483647;
-        ctx.fillStyle = noise % 2 ? '#e2d6b31d' : '#10101728';
+        ctx.fillStyle = noise % 2 ? '#e2d6b31d' : '#17161528';
         ctx.fillRect(x, y, 1, 1);
       }
     }
@@ -50,10 +50,10 @@
     const picture = surface(96, 190);
     const ctx = picture.getContext('2d');
     const finish = ctx.createLinearGradient(25, 0, 73, 0);
-    finish.addColorStop(0, '#44414a');
+    finish.addColorStop(0, '#4A4743');
     finish.addColorStop(.48, '#b8ac9d');
     finish.addColorStop(.68, '#8c817e');
-    finish.addColorStop(1, '#302d39');
+    finish.addColorStop(1, '#393733');
     const oval = (x, y, a, b, rotation) => {
       ctx.beginPath();
       ctx.ellipse(x, y, a, b, rotation, 0, Math.PI * 2);
@@ -163,14 +163,14 @@
       const cos = Math.cos(player.angle), sin = Math.sin(player.angle);
       const horizon = h * .49 + bob;
       const ceiling = ctx.createLinearGradient(0, 0, 0, h);
-      ceiling.addColorStop(0, '#242329');
+      ceiling.addColorStop(0, '#292725');
       ceiling.addColorStop(.48, '#0c111b');
       ceiling.addColorStop(1, '#252631');
       ctx.fillStyle = ceiling;
       ctx.fillRect(0, 0, w, h);
       for (let n = 1; n <= 12; n++) {
         const y = horizon + h / (n * 2);
-        ctx.fillStyle = n % 2 ? '#c7b99c16' : '#14141c55';
+        ctx.fillStyle = n % 2 ? '#c7b99c16' : '#1C1B1955';
         ctx.fillRect(0, y, w, Math.max(.6, 3 / n));
       }
 
@@ -205,8 +205,8 @@
 
       const glow = ctx.createRadialGradient(w / 2, horizon, w * .07, w / 2, horizon, Math.max(w, h) * .61);
       glow.addColorStop(0, light ? '#ffdb8918' : '#0c122326');
-      glow.addColorStop(.42, '#11101808');
-      glow.addColorStop(1, '#07070ce6');
+      glow.addColorStop(.42, '#18171608');
+      glow.addColorStop(1, '#0C0C0Be6');
       ctx.fillStyle = glow;
       ctx.fillRect(0, 0, w, h);
       if (state.near < 2.4 && !frozen) {

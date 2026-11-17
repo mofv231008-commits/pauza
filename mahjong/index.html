@@ -3,24 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Маджонг</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Маджонг. Убирай пары одинаковых свободных фишек"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
   var U = ['пара', 'пары', 'пар'], TOP = 70, KINDS = 14;
-  var CA = ['#FF6B4A', '#E0402A', '#FF8AD8', '#C0392B', '#FF9A6B', '#D4508F', '#B8864E'], CB = ['#1FB97F', '#3B6FE0', '#14A0C8', '#6A3FD0', '#2E9E5B', '#3B1E8C', '#0E8A8A'];
+  var CA = ['#FF6B4A', '#E0402A', '#FF8AD8', '#C0392B', '#F5AD7A', '#D4508F', '#B8864E'], CB = ['#1FB97F', '#3B6FE0', '#14A0C8', '#6A3FD0', '#2E9E5B', '#45413C', '#0E8A8A'];
   var stage = document.getElementById('stage'), canvas = document.getElementById('game');
   var tiles = [], sel = -1, pairs = 0, boards = 0, phase = 'play', phaseT = 0, msg = null, tw = 50, th = 64, ox = 0, oy = 0, fades = [];
 
@@ -105,20 +105,20 @@
   }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!tiles || !tiles.length) return;
     var list = tiles.map(function (t, i) { return i; }).filter(function (i) { return !tiles[i].gone; }).sort(function (a, b) { var A = tiles[a], B = tiles[b]; return A.l - B.l || A.y - B.y || A.x - B.x; });
     list.forEach(function (i) {
       var t = tiles[i], p = pos(t), fr = free(tiles, t), d = Math.max(3, tw * 0.08);
       ctx.fillStyle = '#B8A88A'; ctx.beginPath(); ctx.roundRect(p.x + d * 0.6, p.y + d * 0.6, tw - 2, th - 2, 6); ctx.fill();
-      ctx.fillStyle = i === sel ? '#FFF3C4' : fr ? '#F4F1FF' : '#CFC8E6'; ctx.beginPath(); ctx.roundRect(p.x, p.y, tw - 2, th - 2, 6); ctx.fill();
+      ctx.fillStyle = i === sel ? '#FFF3C4' : fr ? '#FAF7F2' : '#CFC8E6'; ctx.beginPath(); ctx.roundRect(p.x, p.y, tw - 2, th - 2, 6); ctx.fill();
       if (i === sel) { ctx.strokeStyle = '#FFD84D'; ctx.lineWidth = 3; ctx.stroke(); }
       ctx.globalAlpha = fr ? 1 : 0.55; glyph(ctx, t.k, p.x + tw / 2 - 1, p.y + th / 2 + 2, tw * 0.24); ctx.globalAlpha = 1;
     });
     fades.forEach(function (f) { ctx.globalAlpha = f.life / 0.3; [f.a, f.b].forEach(function (p) { ctx.fillStyle = '#3DF5B0'; ctx.beginPath(); ctx.roundRect(p.x, p.y, tw - 2, th - 2, 6); ctx.fill(); }); });
     ctx.globalAlpha = 1; ctx.textBaseline = 'alphabetic';
     var left = tiles.filter(function (t) { return !t.gone; }).length;
-    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(250,247,242,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('Фишек осталось: ' + left, W / 2, TOP + 22);
     if (msg) { ctx.globalAlpha = Math.min(1, msg.life * 2); ctx.fillStyle = '#FFD84D'; ctx.font = '800 16px Unbounded, "Arial Black", sans-serif'; ctx.fillText(msg.text, W / 2, H - 22); ctx.globalAlpha = 1; }
   }

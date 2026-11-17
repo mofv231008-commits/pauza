@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Дурак</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .stage{background:radial-gradient(circle at 50% 45%,#22744F,#14432F)}
 .dk{position:absolute;inset:0;display:flex;flex-direction:column;padding:76px 10px 12px;gap:8px}
@@ -27,13 +27,13 @@
 .dk-act button{min-width:150px;min-height:46px;border:0;border-radius:14px;font-family:var(--font-display);font-weight:600;font-size:15px;background:var(--sun);color:var(--ink);cursor:pointer}
 .dk-act button[hidden]{display:none}
 .dk-me{display:flex;justify-content:center;align-items:flex-end;height:104px;padding:0 4px}
-.card{width:58px;height:84px;border-radius:9px;background:#F4F1FF;box-shadow:0 3px 8px rgba(0,0,0,.35);position:relative;flex:none;color:#120630;font-family:var(--font-body);user-select:none}
+.card{width:58px;height:84px;border-radius:9px;background:#FAF7F2;box-shadow:0 3px 8px rgba(0,0,0,.35);position:relative;flex:none;color:#292724;font-family:var(--font-body);user-select:none}
 .card.red{color:#E0314F}
 .card b{position:absolute;left:6px;top:4px;font-size:17px;font-weight:700;line-height:1}
 .card i{position:absolute;left:6px;top:22px;font-style:normal;font-size:14px}
 .card u{position:absolute;right:6px;bottom:4px;text-decoration:none;font-size:28px;line-height:1}
-.card.back{background:linear-gradient(135deg,#5B3FD0,#3B1E8C);border:3px solid #F4F1FF}
-.card.back::after{content:'';position:absolute;inset:6px;border-radius:5px;border:2px solid rgba(185,168,240,.6)}
+.card.back{background:linear-gradient(135deg,#9E7054,#45413C);border:3px solid #FAF7F2}
+.card.back::after{content:'';position:absolute;inset:6px;border-radius:5px;border:2px solid rgba(199,192,183,.6)}
 .dk-me .card{cursor:pointer;transition:transform .12s}
 .dk-me .card.ok{transform:translateY(-12px);box-shadow:0 0 0 3px var(--mint),0 6px 14px rgba(0,0,0,.4)}
 .dk-me .card.no{filter:brightness(.8)}
@@ -51,7 +51,7 @@
   <div class="dk-me" id="me"></div>
 </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';

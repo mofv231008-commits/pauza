@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Пятнашки</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 /* Поле 4×4, фишки ездят через transform, размер клетки задаёт скрипт */
 .board{
@@ -21,7 +21,7 @@
 .tile{
   position:absolute;left:0;top:0;width:var(--cell);height:var(--cell);padding:0;border:0;border-radius:14px;cursor:pointer;
   transform:translate(calc(var(--c) * var(--step)),calc(var(--r) * var(--step)));transition:transform .1s ease-out;
-  display:grid;place-items:center;background:#4B2FB8;color:var(--paper);
+  display:grid;place-items:center;background:#8A6750;color:var(--paper);
   font-family:var(--font-display);font-weight:800;font-size:calc(var(--cell) * .4);font-variant-numeric:tabular-nums;
 }
 .tile.home{background:var(--mint);color:var(--ink)}
@@ -38,7 +38,7 @@
   </div>
 </div>
 
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';

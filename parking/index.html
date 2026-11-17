@@ -3,24 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Парковка</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Парковка. Двигай машины пальцем и выведи красную"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
   var U = ['парковка', 'парковки', 'парковок'], TOP = 70, N = 6, ROW = 2;
-  var CC = ['#3DF5B0', '#6FD3FF', '#FFD84D', '#FF8AD8', '#B9A8F0', '#14A0C8', '#E9C38A', '#1FB97F', '#4F6BFF', '#F4F1FF', '#C08CFF', '#9BE36B'];
+  var CC = ['#3DF5B0', '#6FD3FF', '#FFD84D', '#FF8AD8', '#C7C0B7', '#14A0C8', '#E9C38A', '#1FB97F', '#4F6BFF', '#FAF7F2', '#C08CFF', '#9BE36B'];
   var stage = document.getElementById('stage'), canvas = document.getElementById('game');
   var cars = [], solved = 0, moves = 0, best = 0, drag = null, phase = 'play', phaseT = 0, cs = 50, ox = 0, oy = 0, exitX = 0;
 
@@ -98,13 +98,13 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!cars.length) return;
-    ctx.fillStyle = '#3B1E8C'; ctx.beginPath(); ctx.roundRect(ox - 10, oy - 10, cs * N + 20, cs * N + 20, 14); ctx.fill();
-    ctx.fillStyle = '#22105A'; ctx.fillRect(ox, oy, cs * N, cs * N);
-    ctx.fillStyle = '#22105A'; ctx.fillRect(ox + cs * N, oy + ROW * cs + 4, 14, cs - 8);
+    ctx.fillStyle = '#45413C'; ctx.beginPath(); ctx.roundRect(ox - 10, oy - 10, cs * N + 20, cs * N + 20, 14); ctx.fill();
+    ctx.fillStyle = '#33312E'; ctx.fillRect(ox, oy, cs * N, cs * N);
+    ctx.fillStyle = '#33312E'; ctx.fillRect(ox + cs * N, oy + ROW * cs + 4, 14, cs - 8);
     ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.moveTo(ox + cs * N + 16, oy + ROW * cs + cs * 0.3); ctx.lineTo(ox + cs * N + 28, oy + ROW * cs + cs / 2); ctx.lineTo(ox + cs * N + 16, oy + ROW * cs + cs * 0.7); ctx.fill();
-    ctx.strokeStyle = 'rgba(185,168,240,.12)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(199,192,183,.12)'; ctx.lineWidth = 1;
     for (var i = 1; i < N; i++) { ctx.beginPath(); ctx.moveTo(ox + i * cs, oy); ctx.lineTo(ox + i * cs, oy + N * cs); ctx.stroke(); ctx.beginPath(); ctx.moveTo(ox, oy + i * cs); ctx.lineTo(ox + N * cs, oy + i * cs); ctx.stroke(); }
     cars.forEach(function (c, i) {
       var off = drag && drag.i === i ? drag.pos - (c.h ? c.x : c.y) : 0;
@@ -115,7 +115,7 @@
       if (c.h) { ctx.fillRect(x + w * 0.62, y + h * 0.15, w * 0.14, h * 0.7); ctx.fillRect(x + w * 0.12, y + h * 0.15, w * 0.1, h * 0.7); }
       else { ctx.fillRect(x + w * 0.15, y + h * 0.12, w * 0.7, h * 0.12); ctx.fillRect(x + w * 0.15, y + h * 0.7, w * 0.7, h * 0.1); }
     });
-    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(250,247,242,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(phase === 'play' ? 'Задача ' + (solved + 1) + ' · ходов ' + moves + ' · лучшее решение ' + best : 'Выехала!', W / 2, oy - 22);
   }
   function cellPt(e) { var r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left - ox) / cs, y: (e.clientY - r.top - oy) / cs }; }

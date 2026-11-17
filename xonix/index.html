@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Территория</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Территория. Свайпай, чтобы вести курсор"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -96,18 +96,18 @@
   });
   function draw() {
     var c = view.ctx, W = view.W, H = view.H;
-    c.fillStyle = '#0E0526'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#1D1C1A'; c.fillRect(0, 0, W, H);
     if (!pl) return;
     c.save(); c.translate(0, top);
-    c.fillStyle = '#140734'; c.fillRect(0, 0, COLS * cs, R * cs);
+    c.fillStyle = '#22211F'; c.fillRect(0, 0, COLS * cs, R * cs);
     for (var y = 0; y < R; y++) for (var x = 0; x < COLS; x++) {
       var v = g[y][x];
-      if (v === 1) { c.fillStyle = (x + y) % 2 ? '#3B1E8C' : '#40228F'; c.fillRect(x * cs, y * cs, cs + 0.5, cs + 0.5); }
+      if (v === 1) { c.fillStyle = (x + y) % 2 ? '#45413C' : '#8F8981'; c.fillRect(x * cs, y * cs, cs + 0.5, cs + 0.5); }
       else if (v === 2) { c.fillStyle = '#FFD84D'; c.fillRect(x * cs + cs * 0.2, y * cs + cs * 0.2, cs * 0.6, cs * 0.6); }
     }
     balls.forEach(function (b, i) { c.fillStyle = i % 2 ? '#FF8AD8' : '#FF6B4A'; c.beginPath(); c.arc(b.x, b.y, cs * 0.5, 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.5)'; c.beginPath(); c.arc(b.x - cs * 0.15, b.y - cs * 0.15, cs * 0.15, 0, 7); c.fill(); });
     c.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; c.fillRect(pl.x * cs - 1, pl.y * cs - 1, cs + 2, cs + 2);
-    c.fillStyle = '#120630'; c.fillRect(pl.x * cs + cs * 0.3, pl.y * cs + cs * 0.3, cs * 0.4, cs * 0.4);
+    c.fillStyle = '#292724'; c.fillRect(pl.x * cs + cs * 0.3, pl.y * cs + cs * 0.3, cs * 0.4, cs * 0.4);
     fx.forEach(function (p) { c.globalAlpha = p.life * 2; c.fillStyle = '#FF6B4A'; c.fillRect(p.x - 3, p.y - 3, 6, 6); }); c.globalAlpha = 1;
     c.restore();
   }

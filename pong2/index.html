@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Пинг-понг вдвоём</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Пинг-понг вдвоём. Каждый водит своей ракеткой"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -79,11 +79,11 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#22105A'; ctx.fillRect(10, 60, W - 20, H - 80);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#33312E'; ctx.fillRect(10, 60, W - 20, H - 80);
     ctx.fillStyle = 'rgba(255,107,74,.05)'; ctx.fillRect(10, 60, W - 20, H / 2 - 50);
     ctx.fillStyle = 'rgba(61,245,176,.05)'; ctx.fillRect(10, H / 2 + 10, W - 20, H / 2 - 30);
-    ctx.fillStyle = 'rgba(185,168,240,0.25)'; for (var x = 16; x < W - 16; x += 22) ctx.fillRect(x, H / 2 + 10, 12, 3);
+    ctx.fillStyle = 'rgba(199,192,183,0.25)'; for (var x = 16; x < W - 16; x += 22) ctx.fillRect(x, H / 2 + 10, 12, 3);
     if (flash > 0) { ctx.fillStyle = flashSide < 0 ? 'rgba(61,245,176,' + (flash * 0.5).toFixed(2) + ')' : 'rgba(255,107,74,' + (flash * 0.5).toFixed(2) + ')'; ctx.fillRect(0, flashSide < 0 ? 0 : H - 60, W, 60); }
     ctx.font = '800 40px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = 'rgba(61,245,176,.18)'; ctx.fillText(String(sa), W / 2, H * 0.7);
@@ -93,8 +93,8 @@
     ctx.fillStyle = '#FF6B4A'; ctx.beginPath(); ctx.roundRect(B.x - PW() / 2, bY() - 6, PW(), 12, 6); ctx.fill();
     ctx.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; ctx.beginPath(); ctx.roundRect(A.x - PW() / 2, aY(), PW(), 12, 6); ctx.fill();
     if (ball) {
-      ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(ball.x, ball.y, BR(), 0, Math.PI * 2); ctx.fill();
-      if (serveT > 0) { ctx.strokeStyle = 'rgba(244,241,255,0.4)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(ball.x, ball.y, BR() + 6 + serveT * 20, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.fillStyle = '#FAF7F2'; ctx.beginPath(); ctx.arc(ball.x, ball.y, BR(), 0, Math.PI * 2); ctx.fill();
+      if (serveT > 0) { ctx.strokeStyle = 'rgba(250,247,242,0.4)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(ball.x, ball.y, BR() + 6 + serveT * 20, 0, Math.PI * 2); ctx.stroke(); }
     }
   }
   function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }

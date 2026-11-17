@@ -1,21 +1,21 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#140734"><meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#22211F"><meta name="color-scheme" content="dark">
 <title>Пауза · Мёртвая частота</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<link rel="stylesheet" href="../shared/horror.css?v=1">
-<style>.radio{padding:18px}.waves{width:100%;height:110px;background:#080b13;border-radius:12px;border:1px solid #38404a}.waves path{fill:none;stroke-width:2}.dial{display:flex;justify-content:space-between;color:var(--mint);font-family:var(--font-display);font-size:22px;margin:10px 0}.lock{height:10px;background:#09060f;border-radius:8px;overflow:hidden;margin-top:12px}.lock i{display:block;height:100%;background:var(--mint);width:0}.radio label{display:block;margin-top:10px}.signal{color:var(--coral-2);font-size:12px;margin:6px 0 0}.radio output{font-variant-numeric:tabular-nums}</style></head><body>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<link rel="stylesheet" href="../shared/horror.css?v=7">
+<style>.radio{padding:18px}.waves{width:100%;height:110px;background:#080b13;border-radius:12px;border:1px solid #38404a}.waves path{fill:none;stroke-width:2}.dial{display:flex;justify-content:space-between;color:var(--mint);font-family:var(--font-display);font-size:22px;margin:10px 0}.lock{height:10px;background:#0F0E0E;border-radius:8px;overflow:hidden;margin-top:12px}.lock i{display:block;height:100%;background:var(--mint);width:0}.radio label{display:block;margin-top:10px}.signal{color:var(--coral-2);font-size:12px;margin:6px 0 0}.radio output{font-variant-numeric:tabular-nums}</style></head><body>
 <div class="stage horror" id="stage"><div class="play">
 <div class="timebar" id="timebar"><i></i></div>
-<p class="case">Эфир 00:59 / неизвестный абонент</p><p class="instruction">Совмести зелёную волну с бледной. Удержи чистый сигнал 1,5 секунды.</p><div class="monitor radio"><svg class="waves" viewBox="0 0 300 100" aria-hidden="true"><path id="targetwave" stroke="#756783"/><path id="mywave" stroke="#3DF5B0"/></svg><div class="dial"><span>FM</span><output id="mhz">96.0</output></div><label for="frequency">Частота</label><input id="frequency" type="range" min="0" max="100" value="50" step="0.5"><label for="phase">Фаза</label><input id="phase" type="range" min="0" max="100" value="50" step="0.5"><p class="signal" id="signal">ПОИСК СИГНАЛА</p><div class="lock"><i id="lock"></i></div></div>
+<p class="case">Эфир 00:59 / неизвестный абонент</p><p class="instruction">Совмести зелёную волну с бледной. Удержи чистый сигнал 1,5 секунды.</p><div class="monitor radio"><svg class="waves" viewBox="0 0 300 100" aria-hidden="true"><path id="targetwave" stroke="#837E76"/><path id="mywave" stroke="#3DF5B0"/></svg><div class="dial"><span>FM</span><output id="mhz">96.0</output></div><label for="frequency">Частота</label><input id="frequency" type="range" min="0" max="100" value="50" step="0.5"><label for="phase">Фаза</label><input id="phase" type="range" min="0" max="100" value="50" step="0.5"><p class="signal" id="signal">ПОИСК СИГНАЛА</p><div class="lock"><i id="lock"></i></div></div>
 <p class="readout" id="message" role="status" aria-live="polite">Продержись до конца минуты.</p>
 </div></div>
-<script src="../shared/pauza.js?v=6"></script>
-<script src="../shared/horror.js?v=1"></script>
+<script src="../shared/pauza.js?v=7"></script>
+<script src="../shared/horror.js?v=7"></script>
 <script>(function(){'use strict'; var P=window.Pauza;
 var f=document.getElementById('frequency'),ph=document.getElementById('phase'),tf=0,tp=0,hold=0,deadline=0,round=0,cooldown=0;
 var g=PauzaHorror({id:'deadfrequency',title:'Мёртвая частота',tagline:'В помехах кто-то зовёт по имени.',rules:'Двигай два ползунка: частота меняет число колебаний, фаза сдвигает волну. Совмести зелёную волну с бледной и удержи совпадение 1,5 секунды. На каждый сигнал 12 секунд; пропущенный сигнал считается ошибкой. За всю минуту поймай как можно больше сообщений. Звук не нужен.',reset:reset,tick:tick});

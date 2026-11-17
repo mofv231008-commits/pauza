@@ -1,20 +1,20 @@
-/* «Пауза»: общий стиль всех игр. Ночная аркада в цветах аватарки бота.
+/* «Пауза»: общий стиль всех игр. Тёплый серый, графит и оранжевый.
    Каждая игра занимает одну колонку шириной до 460px, поверх неё лежат счёт и экраны меню. */
 :root{
-  --night:#140734;
-  --shoulder:#22105A;
-  --road:#3B1E8C;
+  --night:#22211F;
+  --shoulder:#33312E;
+  --road:#45413C;
   --mint:#3DF5B0;
   --coral:#FF6B4A;
-  --coral-2:#FF9A6B;
+  --coral-2:#F5AD7A;
   --sun:#FFD84D;
-  --lilac:#B9A8F0;
+  --lilac:#C7C0B7;
   --sky:#6FD3FF;
   --pink:#FF8AD8;
-  --paper:#F4F1FF;
-  --ink:#120630;
-  --panel:rgba(20,7,52,.88);
-  --line:rgba(185,168,240,.24);
+  --paper:#FAF7F2;
+  --ink:#292724;
+  --panel:rgba(34,33,31,.88);
+  --line:rgba(199,192,183,.24);
   --font-display:"Unbounded","Arial Black",system-ui,sans-serif;
   --font-body:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   color-scheme:dark;
@@ -48,21 +48,21 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--sun);outline-offset
   padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   pointer-events:none;
 }
-.score{font-family:var(--font-display);font-weight:800;font-size:30px;line-height:1.05;font-variant-numeric:tabular-nums;text-shadow:0 2px 12px rgba(20,7,52,.6)}
+.score{font-family:var(--font-display);font-weight:800;font-size:30px;line-height:1.05;font-variant-numeric:tabular-nums;text-shadow:0 2px 12px rgba(34,33,31,.6)}
 .best{font-size:12px;letter-spacing:.04em;color:var(--lilac);font-variant-numeric:tabular-nums}
 .hud-right{display:flex;align-items:center;gap:10px}
-.side{display:flex;align-items:center;gap:6px;font-family:var(--font-display);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums;padding:0 12px;height:46px;border-radius:14px;background:rgba(20,7,52,.55);border:1px solid var(--line)}
+.side{display:flex;align-items:center;gap:6px;font-family:var(--font-display);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums;padding:0 12px;height:46px;border-radius:14px;background:rgba(34,33,31,.55);border:1px solid var(--line)}
 .side.warn{color:var(--coral);border-color:var(--coral)}
-.icon-btn{pointer-events:auto;width:46px;height:46px;border-radius:14px;border:1px solid var(--line);background:rgba(20,7,52,.55);display:grid;place-items:center;cursor:pointer;padding:0}
+.icon-btn{pointer-events:auto;width:46px;height:46px;border-radius:14px;border:1px solid var(--line);background:rgba(34,33,31,.55);display:grid;place-items:center;cursor:pointer;padding:0}
 .bars{display:flex;gap:5px;align-items:flex-end}
-.bars i{display:block;width:5px;height:18px;border-radius:3px;background:var(--mint)}
+.bars i{display:block;width:5px;height:18px;border-radius:3px;background:#F28A45}
 .bars i:last-child{transform:rotate(9deg);transform-origin:50% 100%}
 
 /* Экраны меню */
 .overlay{
   position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
   padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  background:linear-gradient(180deg,rgba(20,7,52,.36),rgba(20,7,52,.84));overflow-y:auto;
+  background:linear-gradient(180deg,rgba(34,33,31,.36),rgba(34,33,31,.84));overflow-y:auto;
 }
 .panel{
   width:100%;max-width:360px;margin:auto;display:flex;flex-direction:column;gap:14px;
@@ -99,13 +99,13 @@ h2{font-size:32px}
 .pause-text{margin:-2px 0 0;font-size:16px;color:var(--lilac)}
 
 /* Отсчёт и подсказки */
-.countdown{position:absolute;inset:0;z-index:8;display:grid;place-items:center;pointer-events:none;font-family:var(--font-display);font-weight:800;font-size:96px;color:var(--paper);text-shadow:0 6px 30px rgba(20,7,52,.75)}
+.countdown{position:absolute;inset:0;z-index:8;display:grid;place-items:center;pointer-events:none;font-family:var(--font-display);font-weight:800;font-size:96px;color:var(--paper);text-shadow:0 6px 30px rgba(34,33,31,.75)}
 .toast{
   position:absolute;left:50%;bottom:24px;z-index:20;transform:translateX(-50%);width:min(calc(100% - 32px),360px);
   padding:12px 16px;border-radius:14px;background:var(--paper);color:var(--ink);font-size:14px;font-weight:500;
   -webkit-user-select:text;user-select:text;box-shadow:0 10px 30px rgba(0,0,0,.35);
 }
-.timebar{width:100%;max-width:400px;height:8px;border-radius:4px;background:rgba(20,7,52,.55);overflow:hidden;flex:none}
+.timebar{width:100%;max-width:400px;height:8px;border-radius:4px;background:rgba(34,33,31,.55);overflow:hidden;flex:none}
 .timebar i{display:block;height:100%;width:100%;border-radius:4px;background:var(--mint);transform-origin:0 50%}
 .timebar.warn i{background:var(--coral)}
 
@@ -115,6 +115,30 @@ h2{font-size:32px}
 }
 
 /* Рекламная строка на экране итога */
-.ad-line{display:flex;flex-direction:column;gap:3px;width:100%;margin:2px 0 0;padding:10px 12px;border:1px solid rgba(185,168,240,.2);border-radius:14px;background:rgba(244,241,255,.05);color:var(--paper);font:inherit;font-size:13px;line-height:1.35;text-align:left;cursor:pointer}
+.ad-line{display:flex;flex-direction:column;gap:3px;width:100%;margin:2px 0 0;padding:10px 12px;border:1px solid rgba(199,192,183,.2);border-radius:14px;background:rgba(250,247,242,.05);color:var(--paper);font:inherit;font-size:13px;line-height:1.35;text-align:left;cursor:pointer}
 .ad-line .ad-label{font-size:11px;letter-spacing:.04em;color:var(--lilac)}
 .ad-line[hidden]{display:none}
+
+/* Светлые поверхности интерфейса, тёмные игровые сцены. */
+body.hub,body.doc,.panel{
+  --night:#F1F0EC;--shoulder:#FAF9F6;--road:#E7E3DC;
+  --paper:#2D2D2B;--ink:#2D2D2B;--lilac:#66615B;
+  --mint:#B65316;--coral:#AD3C27;--coral-2:#A14D20;
+  --panel:#FAF9F6;--line:rgba(45,45,43,.15);
+  color:var(--paper);color-scheme:light;
+}
+body.hub,body.doc{background:#F1F0EC}
+.overlay .panel{background:#FAF9F6;border-color:rgba(45,45,43,.15);box-shadow:0 12px 36px rgba(34,33,31,.16)}
+.panel .btn-primary{background:#F28A45;color:#2D2D2B}
+.panel .mark i,body.hub .mark i{background:#F28A45}
+.panel .btn,.panel h1,.panel h2,body.hub h1,body.hub h2,body.doc h1,body.doc h2{font-family:var(--font-body);font-weight:700;letter-spacing:-.025em;line-height:1.15}
+.panel .btn{padding:12px 18px;font-size:16px}
+.panel h1{font-size:34px}.panel h2{font-size:28px}
+.panel .eyebrow{letter-spacing:.03em;text-transform:none;font-family:var(--font-body);font-size:14px}
+.panel .ad-line{background:#F1F0EC;border-color:var(--line)}
+body.hub .hub-head h1{font-size:36px}
+body.hub .group-title{text-transform:none;letter-spacing:0;font-family:var(--font-body);font-size:18px;font-weight:600;color:var(--paper)}
+body.hub .card-title,body.hub .chip,body.hub .hub-nav a,body.hub .offer-title,body.hub .stats-name{font-family:var(--font-body);font-weight:600;letter-spacing:0}
+body.hub .card{box-shadow:0 2px 5px rgba(45,45,43,.035)}
+body.hub .chip svg{color:#B65316}
+body.hub .offer-buy{background:#F28A45;color:#2D2D2B;font-family:var(--font-body);font-weight:600}

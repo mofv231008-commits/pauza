@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Светофор</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Светофор. Нажимай на дорогу, чтобы переключить её свет"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -26,7 +26,7 @@
   var U = ['машина', 'машины', 'машин'];
   var stage = document.getElementById('stage'), canvas = document.getElementById('game');
   var cars = [], green = { h: true, v: false }, passed = 0, t = 0, spawnT = { h: 1, v: 1.6 }, S = 1, crash = null, fx = [];
-  var COLS = ['#FF6B4A', '#FFD84D', '#FF8AD8', '#6FD3FF', '#F4F1FF', '#FF9A6B', '#B9A8F0'];
+  var COLS = ['#FF6B4A', '#FFD84D', '#FF8AD8', '#6FD3FF', '#FAF7F2', '#F5AD7A', '#C7C0B7'];
   var shell = P.shell({
     id: 'traffic', title: 'Светофор', tagline: 'Ты регулируешь перекрёсток.',
     rulesHtml: '<p>Нажми на дорогу — её светофор переключится. Две дороги с зелёным — машины могут столкнуться. Красный стоит долго — растёт пробка. Восемь машин в очереди или авария — конец.</p>',
@@ -97,11 +97,11 @@
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, g = geo();
     c.fillStyle = '#1E3A2A'; c.fillRect(0, 0, W, H);
-    c.fillStyle = '#3B3550'; c.fillRect(0, g.cy - g.rw / 2, W, g.rw); c.fillRect(g.cx - g.rw / 2, 0, g.rw, H);
-    c.fillStyle = 'rgba(244,241,255,.45)';
+    c.fillStyle = '#504D48'; c.fillRect(0, g.cy - g.rw / 2, W, g.rw); c.fillRect(g.cx - g.rw / 2, 0, g.rw, H);
+    c.fillStyle = 'rgba(250,247,242,.45)';
     for (var x = 0; x < W; x += 34 * S) if (Math.abs(x - g.cx) > g.rw / 2 + 4) c.fillRect(x, g.cy - 1.5, 16 * S, 3);
     for (var y = 0; y < H; y += 34 * S) if (Math.abs(y - g.cy) > g.rw / 2 + 4) c.fillRect(g.cx - 1.5, y, 3, 16 * S);
-    c.fillStyle = 'rgba(244,241,255,.8)'; c.fillRect(stopLine('h') + 4 * S, g.cy, 4 * S, g.rw / 2); c.fillRect(g.cx, g.cy + g.rw / 2 + 2 * S, g.rw / 2, 4 * S);
+    c.fillStyle = 'rgba(250,247,242,.8)'; c.fillRect(stopLine('h') + 4 * S, g.cy, 4 * S, g.rw / 2); c.fillRect(g.cx, g.cy + g.rw / 2 + 2 * S, g.rw / 2, 4 * S);
     cars.forEach(function (car) {
       var b = box(car); c.fillStyle = car.col; c.beginPath(); if (c.roundRect) c.roundRect(b.x, b.y, b.w, b.h, 6 * S); else c.rect(b.x, b.y, b.w, b.h); c.fill();
       c.fillStyle = 'rgba(18,6,48,.55)'; if (car.axis === 'h') c.fillRect(b.x + b.w * 0.55, b.y + 3 * S, b.w * 0.22, b.h - 6 * S); else c.fillRect(b.x + 3 * S, b.y + b.h * 0.22, b.w - 6 * S, b.h * 0.22);
@@ -109,14 +109,14 @@
     light(c, g.cx - g.rw / 2 - 30 * S, g.cy + g.rw / 2 + 10 * S, green.h, 'h');
     light(c, g.cx + g.rw / 2 + 10 * S, g.cy + g.rw / 2 + 30 * S, green.v, 'v');
     fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = p.col; c.fillRect(p.x - 3, p.y - 3, 6, 6); }); c.globalAlpha = 1;
-    c.font = '600 12px Onest, sans-serif'; c.fillStyle = 'rgba(244,241,255,.6)'; c.textAlign = 'center';
+    c.font = '600 12px Onest, sans-serif'; c.fillStyle = 'rgba(250,247,242,.6)'; c.textAlign = 'center';
     if (shell.running && t < 6) { c.fillText('нажми на дорогу — переключишь её свет', W / 2, 96); }
   }
   function light(c, x, y, on, ax) {
-    c.fillStyle = '#120630'; c.beginPath(); if (c.roundRect) c.roundRect(x, y, 20 * S, 40 * S, 6 * S); else c.rect(x, y, 20 * S, 40 * S); c.fill();
+    c.fillStyle = '#292724'; c.beginPath(); if (c.roundRect) c.roundRect(x, y, 20 * S, 40 * S, 6 * S); else c.rect(x, y, 20 * S, 40 * S); c.fill();
     c.fillStyle = on ? 'rgba(255,107,74,.25)' : '#FF6B4A'; c.beginPath(); c.arc(x + 10 * S, y + 11 * S, 6 * S, 0, 7); c.fill();
     c.fillStyle = on ? '#3DF5B0' : 'rgba(61,245,176,.2)'; c.beginPath(); c.arc(x + 10 * S, y + 29 * S, 6 * S, 0, 7); c.fill();
-    c.fillStyle = '#F4F1FF'; c.font = '700 10px Onest, sans-serif'; c.textAlign = 'center'; c.fillText(ax === 'h' ? '→' : '↑', x + 10 * S, y + 52 * S);
+    c.fillStyle = '#FAF7F2'; c.font = '700 10px Onest, sans-serif'; c.textAlign = 'center'; c.fillText(ax === 'h' ? '→' : '↑', x + 10 * S, y + 52 * S);
   }
   P.gestures(canvas, { tap: function (x, y) {
     if (!shell.running) return;

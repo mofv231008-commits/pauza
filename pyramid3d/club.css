@@ -1,7 +1,7 @@
 .club {
   --club-gold: #f4c789;
   --club-paper: #f7efdc;
-  background: #16141e;
+  background: #1E1D1B;
   color: var(--club-paper);
 }
 .club-layout {
@@ -16,7 +16,7 @@
   display: grid;
   gap: 8px;
   padding: 9px 14px max(12px, env(safe-area-inset-bottom));
-  background: #211d29;
+  background: #292725;
   border-top: 1px solid #f4c78938;
 }
 .club-console p {
@@ -42,7 +42,7 @@
   min-height: 44px;
   padding: 0 8px;
   color: var(--club-paper);
-  background: #352a38;
+  background: #383632;
   border: 1px solid #f4c78944;
   border-radius: 10px;
   font: 600 clamp(10px, 3vw, 12px) var(--font-display);
@@ -52,7 +52,7 @@
 .club-console button:disabled { opacity: .46; }
 .club #shoot {
   min-width: 84px;
-  color: #241523;
+  color: #242320;
   background: var(--club-gold);
 }
 .club input[type="range"] {

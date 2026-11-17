@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Снап</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
-.stage{background:#22105A}
+.stage{background:#33312E}
 .sn{position:absolute;inset:0;display:flex;flex-direction:column}
 .sn-zone{flex:1;border:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:22px;color:var(--paper);cursor:pointer;touch-action:manipulation;position:relative}
 .sn-top{background:rgba(255,107,74,.16);transform:rotate(180deg)}.sn-bot{background:rgba(111,211,255,.16)}
 .sn-zone small{position:absolute;bottom:16px;font-size:13px;color:var(--lilac);font-weight:600}
 .sn-zone.win{background:rgba(61,245,176,.35)}.sn-zone.lose{background:rgba(255,107,74,.45)}
 .sn-mid{height:150px;display:flex;align-items:center;justify-content:center;gap:16px}
-.sn-card{width:86px;height:118px;border-radius:14px;background:#F4F1FF;display:grid;place-items:center;font-size:52px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.sn-card{width:86px;height:118px;border-radius:14px;background:#FAF7F2;display:grid;place-items:center;font-size:52px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
 .sn-card.prev{opacity:.45;transform:scale(.8) rotate(-8deg)}
 .sn-card.flip{animation:fl .2s}
 @keyframes fl{from{transform:rotateY(90deg)}}
@@ -31,7 +31,7 @@
 <div class="sn-mid"><div class="sn-card prev" id="prev"></div><div class="sn-card" id="cur"></div></div>
 <button class="sn-zone sn-bot" id="z0" type="button"><span id="s0">0</span><small>жми здесь, когда совпадёт</small></button></div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';

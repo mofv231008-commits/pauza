@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Бинарио</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Бинарио. Нажимай на клетку, чтобы поставить солнце или луну"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -92,23 +92,23 @@
   function geo() { var size = Math.min(view.W - 72, view.H - 210), cs = size / N; return { cs: cs, x: (view.W - size) / 2 - 12, y: 100 + (view.H - 150 - size) / 2, size: size }; }
   function icon(c, x, y, r, v) {
     if (v === 0) { c.fillStyle = '#FFD84D'; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.strokeStyle = '#FFD84D'; c.lineWidth = r * 0.18; for (var k = 0; k < 8; k++) { var a = k * Math.PI / 4; c.beginPath(); c.moveTo(x + Math.cos(a) * r * 1.2, y + Math.sin(a) * r * 1.2); c.lineTo(x + Math.cos(a) * r * 1.45, y + Math.sin(a) * r * 1.45); c.stroke(); } }
-    else { c.fillStyle = '#6FD3FF'; c.beginPath(); c.arc(x, y, r * 1.1, 0, 7); c.fill(); c.fillStyle = '#3B1E8C'; c.beginPath(); c.arc(x + r * 0.45, y - r * 0.3, r * 0.95, 0, 7); c.fill(); }
+    else { c.fillStyle = '#6FD3FF'; c.beginPath(); c.arc(x, y, r * 1.1, 0, 7); c.fill(); c.fillStyle = '#45413C'; c.beginPath(); c.arc(x + r * 0.45, y - r * 0.3, r * 0.95, 0, 7); c.fill(); }
   }
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, G = geo(), b = cur.length ? bad() : null;
-    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#33312E'; c.fillRect(0, 0, W, H);
     if (!cur.length) return;
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
       var px = G.x + x * G.cs, py = G.y + y * G.cs;
-      c.fillStyle = fixed[y][x] ? '#140734' : '#3B1E8C'; c.beginPath(); if (c.roundRect) c.roundRect(px + 3, py + 3, G.cs - 6, G.cs - 6, 10); else c.rect(px + 3, py + 3, G.cs - 6, G.cs - 6); c.fill();
+      c.fillStyle = fixed[y][x] ? '#22211F' : '#45413C'; c.beginPath(); if (c.roundRect) c.roundRect(px + 3, py + 3, G.cs - 6, G.cs - 6, 10); else c.rect(px + 3, py + 3, G.cs - 6, G.cs - 6); c.fill();
       if (b[y][x]) { c.strokeStyle = '#FF6B4A'; c.lineWidth = 3; c.stroke(); }
       if (cur[y][x] !== null) icon(c, px + G.cs / 2, py + G.cs / 2, G.cs * 0.22, cur[y][x]);
     }
     c.font = '600 ' + Math.round(11 * S) + 'px Onest, sans-serif'; c.textAlign = 'center';
     for (var i = 0; i < N; i++) {
       var rc = counts(cur[i]), cc = counts(cur.map(function (r) { return r[i]; }));
-      c.fillStyle = rc[0] > H2 || rc[1] > H2 ? '#FF6B4A' : 'rgba(185,168,240,.7)'; c.fillText(rc[0] + '·' + rc[1], G.x + G.size + 14, G.y + (i + 0.55) * G.cs);
-      c.fillStyle = cc[0] > H2 || cc[1] > H2 ? '#FF6B4A' : 'rgba(185,168,240,.7)'; c.fillText(cc[0] + '·' + cc[1], G.x + (i + 0.5) * G.cs, G.y + G.size + 18);
+      c.fillStyle = rc[0] > H2 || rc[1] > H2 ? '#FF6B4A' : 'rgba(199,192,183,.7)'; c.fillText(rc[0] + '·' + rc[1], G.x + G.size + 14, G.y + (i + 0.55) * G.cs);
+      c.fillStyle = cc[0] > H2 || cc[1] > H2 ? '#FF6B4A' : 'rgba(199,192,183,.7)'; c.fillText(cc[0] + '·' + cc[1], G.x + (i + 0.5) * G.cs, G.y + G.size + 18);
     }
   }
   P.gestures(canvas, { tap: function (x, y) {

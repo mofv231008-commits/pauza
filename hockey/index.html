@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Хоккей</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Аэрохоккей. Води битой по нижней половине поля"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -110,9 +110,9 @@
   }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!F) return;
-    ctx.fillStyle = '#22105A'; ctx.beginPath(); ctx.roundRect(F.x, F.y, F.w, F.h, 24); ctx.fill();
+    ctx.fillStyle = '#33312E'; ctx.beginPath(); ctx.roundRect(F.x, F.y, F.w, F.h, 24); ctx.fill();
     ctx.strokeStyle = 'rgba(111,211,255,0.35)'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(F.x, F.y + F.h / 2); ctx.lineTo(F.x + F.w, F.y + F.h / 2); ctx.stroke();
     ctx.beginPath(); ctx.arc(F.x + F.w / 2, F.y + F.h / 2, F.w * 0.16, 0, Math.PI * 2); ctx.stroke();
@@ -122,7 +122,7 @@
     if (!me) return;
     mallet(ctx, ai, '#FF6B4A');
     mallet(ctx, me, P.gold() ? '#FFD84D' : '#3DF5B0');
-    ctx.fillStyle = '#F4F1FF'; ctx.beginPath(); ctx.arc(puck.x, puck.y, F.pr, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#FAF7F2'; ctx.beginPath(); ctx.arc(puck.x, puck.y, F.pr, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = 'rgba(18,6,48,0.2)'; ctx.beginPath(); ctx.arc(puck.x, puck.y, F.pr * 0.6, 0, Math.PI * 2); ctx.fill();
   }
   function aim(e) { var r = canvas.getBoundingClientRect(); aimX = e.clientX - r.left; aimY = e.clientY - r.top - 30; }

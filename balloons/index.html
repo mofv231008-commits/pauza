@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Шарики</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
-.stage{background:#22105A}
-.goal{position:absolute;left:50%;top:76px;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:999px;background:rgba(20,7,52,.7);border:1px solid var(--line);font-family:var(--font-display);font-weight:600;font-size:15px;white-space:nowrap;pointer-events:none}
+.stage{background:#33312E}
+.goal{position:absolute;left:50%;top:76px;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:999px;background:rgba(34,33,31,.7);border:1px solid var(--line);font-family:var(--font-display);font-weight:600;font-size:15px;white-space:nowrap;pointer-events:none}
 .goal i{display:block;width:20px;height:24px;border-radius:50% 50% 45% 45%}
 .goal.swap{animation:swap .5s ease-out}
 @keyframes swap{0%{transform:translateX(-50%) scale(1.25)}100%{transform:translateX(-50%) scale(1)}}
@@ -24,7 +24,7 @@
   <canvas id="game" aria-label="Шарики. Лопай шарики нужного цвета"></canvas>
   <div class="goal" id="goal" aria-live="polite"><span>Лопай</span><i id="goalDot"></i><b id="goalName"></b></div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -78,10 +78,10 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    var g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#3B1E8C'); g.addColorStop(1, '#22105A');
+    var g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#45413C'); g.addColorStop(1, '#33312E');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     balls.forEach(function (b) {
-      ctx.strokeStyle = 'rgba(244,241,255,0.35)'; ctx.lineWidth = 1.2;
+      ctx.strokeStyle = 'rgba(250,247,242,0.35)'; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(b.x, b.y + b.r * 1.15); ctx.quadraticCurveTo(b.x + Math.sin(b.ph) * 8, b.y + b.r * 1.8, b.x, b.y + b.r * 2.4); ctx.stroke();
       ctx.fillStyle = b.col.c; ctx.beginPath(); ctx.ellipse(b.x, b.y, b.r * 0.88, b.r, 0, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.moveTo(b.x - 5, b.y + b.r + 5); ctx.lineTo(b.x + 5, b.y + b.r + 5); ctx.lineTo(b.x, b.y + b.r - 2); ctx.fill();

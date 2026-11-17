@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Тир</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#22105A}.stage canvas{cursor:crosshair}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#33312E}.stage canvas{cursor:crosshair}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Тир. Попадай по мишеням ближе к центру"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -63,13 +63,13 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#22105A'; ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = 'rgba(185,168,240,0.07)'; ctx.lineWidth = 1;
+    ctx.fillStyle = '#33312E'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(199,192,183,0.07)'; ctx.lineWidth = 1;
     for (var x = 0; x < W; x += 32) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
     for (var y = 0; y < H; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
     targets.forEach(function (o) {
       var s = o.r * Math.min(1, (o.max - o.life) * 6) * (0.35 + 0.65 * o.life / o.max);
-      [[1, '#F4F1FF'], [0.75, '#FF6B4A'], [0.5, '#F4F1FF'], [0.25, '#FF6B4A']].forEach(function (ring) {
+      [[1, '#FAF7F2'], [0.75, '#FF6B4A'], [0.5, '#FAF7F2'], [0.25, '#FF6B4A']].forEach(function (ring) {
         ctx.fillStyle = ring[1]; ctx.beginPath(); ctx.arc(o.x, o.y, s * ring[0], 0, Math.PI * 2); ctx.fill();
       });
       o.cur = s;
@@ -78,7 +78,7 @@
       ctx.globalAlpha = Math.min(1, m.life * 2);
       ctx.fillStyle = m.c; ctx.font = '800 18px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center';
       ctx.fillText(m.text, m.x, m.y - 18 - (0.8 - m.life) * 30);
-      ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(m.x, m.y, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#292724'; ctx.beginPath(); ctx.arc(m.x, m.y, 3, 0, Math.PI * 2); ctx.fill();
     });
     ctx.globalAlpha = 1;
   }

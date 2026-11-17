@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Косынка</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>.stage{background:#0F5E43}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Косынка. Нажимай на карту, и она сама перейдёт на подходящее место"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -95,19 +95,19 @@
   });
   function card(ctx, c, x, y) {
     if (!c.up) {
-      ctx.fillStyle = '#3B1E8C'; ctx.beginPath(); ctx.roundRect(x, y, cw, ch, 6); ctx.fill();
+      ctx.fillStyle = '#45413C'; ctx.beginPath(); ctx.roundRect(x, y, cw, ch, 6); ctx.fill();
       ctx.strokeStyle = '#7B5CD6'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(x + 4, y + 4, cw - 8, ch - 8, 4); ctx.stroke();
       return;
     }
     ctx.fillStyle = '#FBF9FF'; ctx.beginPath(); ctx.roundRect(x, y, cw, ch, 6); ctx.fill();
     ctx.strokeStyle = 'rgba(18,6,48,.25)'; ctx.lineWidth = 1; ctx.stroke();
-    var col = red(c) ? '#D62E2E' : '#120630';
+    var col = red(c) ? '#D62E2E' : '#292724';
     ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.font = '700 ' + Math.round(cw * 0.32) + 'px Onest, system-ui, sans-serif'; ctx.fillText(RANK[c.r], x + 4, y + 3);
     ctx.font = Math.round(cw * 0.3) + 'px system-ui, sans-serif'; ctx.fillText(SUIT[c.s], x + cw - Math.round(cw * 0.34), y + 3);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = Math.round(cw * 0.62) + 'px system-ui, sans-serif'; ctx.fillText(SUIT[c.s], x + cw / 2, y + ch * 0.62);
   }
-  function slot(ctx, x, y, label) { ctx.strokeStyle = 'rgba(244,241,255,.3)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(x + 1, y + 1, cw - 2, ch - 2, 6); ctx.stroke(); if (label) { ctx.fillStyle = 'rgba(244,241,255,.3)'; ctx.font = Math.round(cw * 0.5) + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x + cw / 2, y + ch / 2); } }
+  function slot(ctx, x, y, label) { ctx.strokeStyle = 'rgba(250,247,242,.3)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(x + 1, y + 1, cw - 2, ch - 2, 6); ctx.stroke(); if (label) { ctx.fillStyle = 'rgba(250,247,242,.3)'; ctx.font = Math.round(cw * 0.5) + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x + cw / 2, y + ch / 2); } }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
     ctx.fillStyle = '#0F5E43'; ctx.fillRect(0, 0, W, H);
@@ -121,7 +121,7 @@
       if (!col.length) slot(ctx, X(c), y1, 'К');
       col.forEach(function (cd, j) { card(ctx, cd, X(c), ys[j]); });
     }
-    ctx.fillStyle = 'rgba(244,241,255,.75)'; ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(250,247,242,.75)'; ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left'; ctx.fillText('в колоде ' + stock.length, X(0), y0 + ch + 13); ctx.textAlign = 'center';
     ctx.fillText('в доме ' + home() + '/52', X(4) + cw, y0 + ch + 12);
   }

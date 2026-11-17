@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Отличия</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .stage{background:var(--shoulder)}
 .play{gap:10px}
 .info{margin:0;font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--lilac)}
-.pic{--w:300px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:var(--w);height:calc(var(--w) * .8);padding:6px;border-radius:14px;background:#22105A;flex:none}
+.pic{--w:300px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:var(--w);height:calc(var(--w) * .8);padding:6px;border-radius:14px;background:#33312E;flex:none}
 .pic button{border:0;padding:0;border-radius:8px;background:transparent;cursor:pointer;touch-action:manipulation;position:relative}
 .pic svg{display:block;width:100%;height:100%}
 .pic button.found{box-shadow:inset 0 0 0 3px var(--mint);background:rgba(61,245,176,.12)}
@@ -32,13 +32,13 @@
     <div class="pic" id="b"></div>
   </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
   var CELLS = 20, U = ['отличие', 'отличия', 'отличий'];
-  var COLS = ['#FF6B4A', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8', '#B9A8F0'];
+  var COLS = ['#FF6B4A', '#3DF5B0', '#FFD84D', '#6FD3FF', '#FF8AD8', '#C7C0B7'];
   var SHAPES = {
     circle: '<circle cx="20" cy="20" r="13"/>',
     square: '<rect x="8" y="8" width="24" height="24" rx="5"/>',

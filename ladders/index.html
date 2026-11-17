@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Змеи и лестницы</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Змеи и лестницы. Нажми, чтобы бросить кубик"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -80,11 +80,11 @@
   });
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, G = geo();
-    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#33312E'; c.fillRect(0, 0, W, H);
     if (!pl.length) return;
     for (var n = 1; n <= 100; n++) {
-      var p = xy(n); c.fillStyle = (Math.floor((n - 1) / 10) + n) % 2 ? '#3B1E8C' : '#2F1675'; c.fillRect(p.x - G.cs / 2, p.y - G.cs / 2, G.cs + 0.5, G.cs + 0.5);
-      c.fillStyle = 'rgba(185,168,240,.55)'; c.font = '600 ' + Math.round(G.cs * 0.24) + 'px Onest, sans-serif'; c.textAlign = 'left'; c.fillText(String(n), p.x - G.cs * 0.44, p.y - G.cs * 0.22);
+      var p = xy(n); c.fillStyle = (Math.floor((n - 1) / 10) + n) % 2 ? '#45413C' : '#757069'; c.fillRect(p.x - G.cs / 2, p.y - G.cs / 2, G.cs + 0.5, G.cs + 0.5);
+      c.fillStyle = 'rgba(199,192,183,.55)'; c.font = '600 ' + Math.round(G.cs * 0.24) + 'px Onest, sans-serif'; c.textAlign = 'left'; c.fillText(String(n), p.x - G.cs * 0.44, p.y - G.cs * 0.22);
     }
     c.lineCap = 'round';
     Object.keys(LAD).forEach(function (a) {
@@ -95,10 +95,10 @@
     });
     Object.keys(SNK).forEach(function (a, i) {
       var A = xy(+a), B = xy(SNK[a]), dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy), nx = -dy / L, ny = dx / L;
-      var col = ['#3DF5B0', '#FF8AD8', '#FF9A6B', '#6FD3FF'][i % 4];
+      var col = ['#3DF5B0', '#FF8AD8', '#F5AD7A', '#6FD3FF'][i % 4];
       c.strokeStyle = col; c.lineWidth = G.cs * 0.22; c.beginPath(); c.moveTo(A.x, A.y);
       for (var k = 1; k <= 20; k++) { var t = k / 20, w = Math.sin(t * Math.PI * 3) * G.cs * 0.35 * (1 - t * 0.5); c.lineTo(A.x + dx * t + nx * w, A.y + dy * t + ny * w); }
-      c.stroke(); c.fillStyle = col; c.beginPath(); c.arc(A.x, A.y, G.cs * 0.2, 0, 7); c.fill(); c.fillStyle = '#120630'; c.beginPath(); c.arc(A.x - G.cs * 0.07, A.y - G.cs * 0.05, G.cs * 0.04, 0, 7); c.arc(A.x + G.cs * 0.07, A.y - G.cs * 0.05, G.cs * 0.04, 0, 7); c.fill();
+      c.stroke(); c.fillStyle = col; c.beginPath(); c.arc(A.x, A.y, G.cs * 0.2, 0, 7); c.fill(); c.fillStyle = '#292724'; c.beginPath(); c.arc(A.x - G.cs * 0.07, A.y - G.cs * 0.05, G.cs * 0.04, 0, 7); c.arc(A.x + G.cs * 0.07, A.y - G.cs * 0.05, G.cs * 0.04, 0, 7); c.fill();
     });
     pl.forEach(function (p, i) {
       var q = xy(p.n);
@@ -108,10 +108,10 @@
       c.fillStyle = p.col; c.beginPath(); c.arc(q.x + ox, q.y, G.cs * 0.2, 0, 7); c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke();
     });
     var by = G.y + G.size + 20, ds = 64;
-    c.fillStyle = '#F4F1FF'; c.beginPath(); if (c.roundRect) c.roundRect(W / 2 - ds / 2, by, ds, ds, 14); else c.rect(W / 2 - ds / 2, by, ds, ds); c.fill();
+    c.fillStyle = '#FAF7F2'; c.beginPath(); if (c.roundRect) c.roundRect(W / 2 - ds / 2, by, ds, ds, 14); else c.rect(W / 2 - ds / 2, by, ds, ds); c.fill();
     var PP = [[], [4], [0, 8], [0, 4, 8], [0, 2, 6, 8], [0, 2, 4, 6, 8], [0, 2, 3, 5, 6, 8]];
-    c.fillStyle = '#120630'; PP[die].forEach(function (k) { c.beginPath(); c.arc(W / 2 - ds / 2 + 14 + (k % 3) * 18, by + 14 + Math.floor(k / 3) * 18, 5, 0, 7); c.fill(); });
-    c.fillStyle = cur === 0 && !over ? '#3DF5B0' : '#B9A8F0'; c.font = '600 14px Onest, sans-serif'; c.textAlign = 'center'; c.fillText(msg, W / 2, by + ds + 24);
+    c.fillStyle = '#292724'; PP[die].forEach(function (k) { c.beginPath(); c.arc(W / 2 - ds / 2 + 14 + (k % 3) * 18, by + 14 + Math.floor(k / 3) * 18, 5, 0, 7); c.fill(); });
+    c.fillStyle = cur === 0 && !over ? '#3DF5B0' : '#C7C0B7'; c.font = '600 14px Onest, sans-serif'; c.textAlign = 'center'; c.fillText(msg, W / 2, by + ds + 24);
   }
   canvas.addEventListener('pointerdown', roll);
   window.addEventListener('keydown', function (e) { if (e.code === 'Enter' || e.code === 'ArrowDown') { e.preventDefault(); roll(); } });

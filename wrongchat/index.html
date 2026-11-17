@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Не тот чат</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
-.stage{background:#17093F}
+.stage{background:#3F3C39}
 .play{gap:16px}
-.card{width:min(100%,340px);border-radius:22px;background:#22105A;overflow:hidden;transition:transform .2s,opacity .2s}
+.card{width:min(100%,340px);border-radius:22px;background:#33312E;overflow:hidden;transition:transform .2s,opacity .2s}
 .card.sent{transform:translateY(-60px) scale(.9);opacity:0}
 .card.del{transform:scale(.6) rotate(-6deg);opacity:0}
-.chat{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(244,241,255,.06)}
+.chat{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(250,247,242,.06)}
 .ava{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-weight:800;color:var(--ink);flex:none}
 .chat b{font-size:16px}
 .chat span{display:block;font-size:12px;color:var(--lilac)}
@@ -40,13 +40,13 @@
     <div class="btns"><button class="b-del" type="button" id="del">Удалить</button><button class="b-send" type="button" id="send">Отправить</button></div>
   </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
   var P = window.Pauza;
   var U = ['сообщение', 'сообщения', 'сообщений'];
-  var CHATS = { 'Начальник': '#FF9A6B', 'Мама': '#FFD84D', 'Чат группы': '#6FD3FF', 'Преподаватель': '#B9A8F0', 'Бабушка': '#FF8AD8', 'Курьер': '#3DF5B0', 'Чат дома': '#FFD84D', 'Лучший друг': '#6FD3FF', 'Староста': '#3DF5B0' };
+  var CHATS = { 'Начальник': '#F5AD7A', 'Мама': '#FFD84D', 'Чат группы': '#6FD3FF', 'Преподаватель': '#C7C0B7', 'Бабушка': '#FF8AD8', 'Курьер': '#3DF5B0', 'Чат дома': '#FFD84D', 'Лучший друг': '#6FD3FF', 'Староста': '#3DF5B0' };
   /* чат, сообщение, можно ли отправлять */
   var DATA = [
     ['Начальник', 'Отчёт будет к пятнице', 1], ['Начальник', 'Задержусь на 10 минут, пробки', 1], ['Начальник', 'Можно перенести созвон на завтра?', 1],

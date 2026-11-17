@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Тарзанка</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="Тарзанка. Держи палец — цепляешься, отпусти — летишь"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -79,24 +79,24 @@
   });
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, t = performance.now() / 1000;
-    var sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#22105A'); sky.addColorStop(1, '#5B3FD0'); c.fillStyle = sky; c.fillRect(0, 0, W, H);
+    var sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#33312E'); sky.addColorStop(1, '#9E7054'); c.fillStyle = sky; c.fillRect(0, 0, W, H);
     c.fillStyle = 'rgba(18,6,48,.5)';
     for (var i = 0; i < 12; i++) { var bx = ((i * 97 - cam * 0.3) % (W + 120) + W + 120) % (W + 120) - 60, bh = 80 + (i * 53 % 140); c.fillRect(bx, H - 50 * S - bh * S, 50 * S, bh * S); }
     c.save(); c.translate(-cam, 0);
     anchors.forEach(function (a) { c.strokeStyle = hook && hook.a === a ? '#3DF5B0' : '#FFD84D'; c.lineWidth = 4 * S; c.beginPath(); c.arc(a.x, a.y, 8 * S, 0, 7); c.stroke(); });
     if (me) {
       c.strokeStyle = 'rgba(61,245,176,.25)'; c.lineWidth = 6 * S; c.beginPath(); trail.forEach(function (p, k) { c[k ? 'lineTo' : 'moveTo'](p.x, p.y); }); c.stroke();
-      if (hook) { c.strokeStyle = '#F4F1FF'; c.lineWidth = 2.5 * S; c.beginPath(); c.moveTo(hook.a.x, hook.a.y); c.lineTo(me.x, me.y); c.stroke(); }
+      if (hook) { c.strokeStyle = '#FAF7F2'; c.lineWidth = 2.5 * S; c.beginPath(); c.moveTo(hook.a.x, hook.a.y); c.lineTo(me.x, me.y); c.stroke(); }
       if (!dead) {
         c.fillStyle = '#FF6B4A'; c.beginPath(); c.moveTo(me.x - 6 * S, me.y - 4 * S); c.lineTo(me.x - 22 * S - me.vx * 0.02, me.y - 10 * S - me.vy * 0.02); c.lineTo(me.x - 4 * S, me.y + 2 * S); c.fill();
         c.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; c.beginPath(); c.arc(me.x, me.y, 11 * S, 0, 7); c.fill();
-        c.fillStyle = '#120630'; c.beginPath(); c.arc(me.x + 4 * S, me.y - 2 * S, 2.2 * S, 0, 7); c.fill();
+        c.fillStyle = '#292724'; c.beginPath(); c.arc(me.x + 4 * S, me.y - 2 * S, 2.2 * S, 0, 7); c.fill();
       }
     }
     fx.forEach(function (p) { c.globalAlpha = Math.min(1, p.life * 2); c.fillStyle = '#FFD84D'; c.fillRect(p.x - 3, p.y - 3, 6, 6); }); c.globalAlpha = 1;
     c.restore();
     var ly = H - 50 * S; c.fillStyle = '#FF6B4A'; c.fillRect(0, ly, W, H - ly);
-    c.fillStyle = '#FF9A6B'; c.beginPath(); c.moveTo(0, ly); for (var x = 0; x <= W; x += 10) c.lineTo(x, ly - 6 * S * Math.sin(x * 0.05 + t * 3 + cam * 0.05)); c.lineTo(W, H); c.lineTo(0, H); c.fill();
+    c.fillStyle = '#F5AD7A'; c.beginPath(); c.moveTo(0, ly); for (var x = 0; x <= W; x += 10) c.lineTo(x, ly - 6 * S * Math.sin(x * 0.05 + t * 3 + cam * 0.05)); c.lineTo(W, H); c.lineTo(0, H); c.fill();
   }
   canvas.addEventListener('pointerdown', function () { holding = true; if (hook) hook.auto = false; });
   window.addEventListener('pointerup', function () { holding = false; if (hook) { hook = null; } });

@@ -3,29 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Кроты</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
-.stage{background:#22105A}
+.stage{background:#33312E}
 .field{--size:340px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:var(--size);flex:none}
 .hole{position:relative;aspect-ratio:1;border:0;padding:0;background:none;cursor:pointer;touch-action:manipulation;overflow:hidden;border-radius:0 0 40% 40%}
-.hole::after{content:"";position:absolute;left:4%;right:4%;bottom:6%;height:30%;border-radius:50%;background:#140734;border:3px solid #4B2FB8;box-sizing:border-box}
-.mole{position:absolute;left:18%;right:18%;bottom:12%;height:70%;border-radius:45% 45% 20% 20%;background:#FF9A6B;transform:translateY(105%);transition:transform .12s ease-out;z-index:1}
-.mole::before,.mole::after{content:"";position:absolute;top:28%;width:12%;height:12%;border-radius:50%;background:#120630}
+.hole::after{content:"";position:absolute;left:4%;right:4%;bottom:6%;height:30%;border-radius:50%;background:#22211F;border:3px solid #8A6750;box-sizing:border-box}
+.mole{position:absolute;left:18%;right:18%;bottom:12%;height:70%;border-radius:45% 45% 20% 20%;background:#F5AD7A;transform:translateY(105%);transition:transform .12s ease-out;z-index:1}
+.mole::before,.mole::after{content:"";position:absolute;top:28%;width:12%;height:12%;border-radius:50%;background:#292724}
 .mole::before{left:28%}.mole::after{right:28%}
 .mole i{position:absolute;left:38%;right:38%;top:46%;height:14%;border-radius:50%;background:#FF6B4A}
 .hole.up .mole{transform:translateY(0)}
 .hole.gold .mole{background:#FFD84D}
-.hole.bomb .mole{background:#120630;border:3px solid #B9A8F0;box-sizing:border-box;border-radius:50%;left:22%;right:22%;height:56%}
+.hole.bomb .mole{background:#292724;border:3px solid #C7C0B7;box-sizing:border-box;border-radius:50%;left:22%;right:22%;height:56%}
 .hole.bomb .mole::before,.hole.bomb .mole::after{display:none}
 .hole.bomb .mole i{left:44%;right:auto;width:12%;top:-14%;height:22%;border-radius:2px;background:#FF6B4A}
 .hole.hit .mole{background:#3DF5B0;transform:translateY(30%) scaleY(.8)}
-.hole::before{content:"";position:absolute;inset:auto 0 0;height:21%;background:#22105A;z-index:2}
+.hole::before{content:"";position:absolute;inset:auto 0 0;height:21%;background:#33312E;z-index:2}
 .status{margin:0;min-height:1.5em;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--lilac);text-align:center}
 .status.bad{color:var(--coral)}.status.good{color:var(--mint)}
 </style>
@@ -38,7 +38,7 @@
     <p class="status" id="status">Жми на кротов, бомбы не трогай</p>
   </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';

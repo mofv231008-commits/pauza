@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · На глаз</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 
 </style>
@@ -18,7 +18,7 @@
 <div class="stage" id="stage">
 <canvas id="game" aria-label="На глаз. Выполняй задания без подсказок"></canvas>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -80,10 +80,10 @@
   });
   function draw() {
     var c = view.ctx, W = view.W, H = view.H, t = task;
-    c.fillStyle = '#22105A'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#33312E'; c.fillRect(0, 0, W, H);
     if (!t || !shell.running && phase !== 'result') { return; }
-    c.textAlign = 'center'; c.fillStyle = '#F4F1FF'; c.font = '800 ' + Math.round(22 * S) + 'px Unbounded, Arial Black, sans-serif'; c.fillText(title(), W / 2, 130 * S);
-    c.fillStyle = '#B9A8F0'; c.font = '500 ' + Math.round(14 * S) + 'px Onest, sans-serif'; c.fillText(phase === 'task' ? hint() : 'нажми, чтобы продолжить', W / 2, 156 * S);
+    c.textAlign = 'center'; c.fillStyle = '#FAF7F2'; c.font = '800 ' + Math.round(22 * S) + 'px Unbounded, Arial Black, sans-serif'; c.fillText(title(), W / 2, 130 * S);
+    c.fillStyle = '#C7C0B7'; c.font = '500 ' + Math.round(14 * S) + 'px Onest, sans-serif'; c.fillText(phase === 'task' ? hint() : 'нажми, чтобы продолжить', W / 2, 156 * S);
     var cx = W / 2, cy = H * 0.52;
     c.lineCap = 'round';
     if (t.k === 'time') {
@@ -92,18 +92,18 @@
       c.fillText(phase === 'result' || el < 1 ? el.toFixed(2).replace('.', ',') : '?,??', cx, cy);
     } else if (t.k === 'angle') {
       var L = 130 * S, ox = cx - 60 * S, oy = cy + 60 * S;
-      c.strokeStyle = '#B9A8F0'; c.lineWidth = 5; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ox + L * 1.3, oy); c.stroke();
+      c.strokeStyle = '#C7C0B7'; c.lineWidth = 5; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ox + L * 1.3, oy); c.stroke();
       var a = -t.a * Math.PI / 180; c.strokeStyle = '#3DF5B0'; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ox + Math.cos(a) * L, oy + Math.sin(a) * L); c.stroke();
       c.strokeStyle = '#FFD84D'; c.lineWidth = 3; c.beginPath(); c.arc(ox, oy, 40 * S, 0, a, true); c.stroke();
       if (phase === 'result') { var g = -t.goal * Math.PI / 180; c.strokeStyle = 'rgba(255,107,74,.8)'; c.setLineDash([6, 6]); c.beginPath(); c.moveTo(ox, oy); c.lineTo(ox + Math.cos(g) * L, oy + Math.sin(g) * L); c.stroke(); c.setLineDash([]); }
     } else if (t.k === 'mid') {
-      c.strokeStyle = '#F4F1FF'; c.lineWidth = 6; c.beginPath(); c.moveTo(t.x1, t.y1); c.lineTo(t.x2, t.y2); c.stroke();
+      c.strokeStyle = '#FAF7F2'; c.lineWidth = 6; c.beginPath(); c.moveTo(t.x1, t.y1); c.lineTo(t.x2, t.y2); c.stroke();
       if (t.mark) { c.fillStyle = '#3DF5B0'; c.beginPath(); c.arc(t.mark.x, t.mark.y, 8, 0, 7); c.fill(); }
       if (phase === 'result') { c.fillStyle = '#FF6B4A'; c.beginPath(); c.arc((t.x1 + t.x2) / 2, (t.y1 + t.y2) / 2, 6, 0, 7); c.fill(); }
     } else if (t.k === 'frac') {
       var bw = W - 60 * S, bh = 56 * S, bx = 30 * S, by = cy - bh / 2;
-      c.fillStyle = '#140734'; c.fillRect(bx, by, bw, bh); c.fillStyle = '#FF8AD8'; c.fillRect(bx, by, bw * t.v, bh);
-      c.strokeStyle = '#F4F1FF'; c.lineWidth = 3; c.strokeRect(bx, by, bw, bh);
+      c.fillStyle = '#22211F'; c.fillRect(bx, by, bw, bh); c.fillStyle = '#FF8AD8'; c.fillRect(bx, by, bw * t.v, bh);
+      c.strokeStyle = '#FAF7F2'; c.lineWidth = 3; c.strokeRect(bx, by, bw, bh);
       if (phase === 'result') { var gx = bx + bw * t.n / t.d; c.strokeStyle = '#FFD84D'; c.lineWidth = 4; c.beginPath(); c.moveTo(gx, by - 12); c.lineTo(gx, by + bh + 12); c.stroke(); }
     } else if (t.k === 'circle') {
       c.strokeStyle = '#3DF5B0'; c.lineWidth = 5; c.beginPath(); drawPts.forEach(function (p, i) { c[i ? 'lineTo' : 'moveTo'](p.x, p.y); }); c.stroke();
@@ -115,7 +115,7 @@
     }
     if (phase === 'result' && res) {
       c.fillStyle = res.p >= 80 ? '#3DF5B0' : res.p >= 40 ? '#FFD84D' : '#FF6B4A'; c.font = '800 ' + Math.round(40 * S) + 'px Unbounded, Arial Black, sans-serif'; c.fillText('+' + res.p, cx, H - 150 * S);
-      c.fillStyle = '#B9A8F0'; c.font = '500 ' + Math.round(15 * S) + 'px Onest, sans-serif'; c.fillText(res.txt, cx, H - 118 * S);
+      c.fillStyle = '#C7C0B7'; c.font = '500 ' + Math.round(15 * S) + 'px Onest, sans-serif'; c.fillText(res.txt, cx, H - 118 * S);
     }
   }
   function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }

@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Вниз</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Вниз. Держи палец слева или справа, чтобы катить шарик"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -84,8 +84,8 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H, r = BR();
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(185,168,240,0.05)'; for (var x = 0; x < W; x += 28) ctx.fillRect(x, 0, 1, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(199,192,183,0.05)'; for (var x = 0; x < W; x += 28) ctx.fillRect(x, 0, 1, H);
     if (!ball) return;
     ctx.fillStyle = '#FF6B4A';
     for (x = 0; x < W; x += 16) { ctx.beginPath(); ctx.moveTo(x, top()); ctx.lineTo(x + 8, top() + 12); ctx.lineTo(x + 16, top()); ctx.fill(); }
@@ -95,7 +95,7 @@
       if (p.spiky) for (var sx = p.x + 2; sx < p.x + p.w - 10; sx += 12) { ctx.beginPath(); ctx.moveTo(sx, p.y); ctx.lineTo(sx + 5, p.y - 8); ctx.lineTo(sx + 10, p.y); ctx.fill(); }
     });
     if (!dead) {
-      ctx.fillStyle = P.gold() ? '#FFD84D' : '#F4F1FF'; ctx.beginPath(); ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = P.gold() ? '#FFD84D' : '#FAF7F2'; ctx.beginPath(); ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = 'rgba(18,6,48,0.2)'; ctx.beginPath(); ctx.arc(ball.x + r * 0.3, ball.y + r * 0.3, r * 0.5, 0, Math.PI * 2); ctx.fill();
     }
   }

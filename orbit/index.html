@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Орбита</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#0E0526}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#1D1C1A}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Орбита. Нажимай, чтобы сменить орбиту"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -89,14 +89,14 @@
   }
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H, c = C(), b = B();
-    ctx.fillStyle = '#0E0526'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#F4F1FF'; ctx.globalAlpha = 0.45;
+    ctx.fillStyle = '#1D1C1A'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#FAF7F2'; ctx.globalAlpha = 0.45;
     bg.forEach(function (s) { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); });
     ctx.globalAlpha = 1;
-    ORB.forEach(function (r, i) { ctx.strokeStyle = i === lane ? 'rgba(61,245,176,.35)' : 'rgba(185,168,240,.18)'; ctx.lineWidth = 2; ctx.setLineDash([4, 8]); ctx.beginPath(); ctx.arc(c.x, c.y, r * b, 0, Math.PI * 2); ctx.stroke(); });
+    ORB.forEach(function (r, i) { ctx.strokeStyle = i === lane ? 'rgba(61,245,176,.35)' : 'rgba(199,192,183,.18)'; ctx.lineWidth = 2; ctx.setLineDash([4, 8]); ctx.beginPath(); ctx.arc(c.x, c.y, r * b, 0, Math.PI * 2); ctx.stroke(); });
     ctx.setLineDash([]);
     var g = ctx.createRadialGradient(c.x - b * 0.03, c.y - b * 0.03, b * 0.01, c.x, c.y, b * 0.11);
-    g.addColorStop(0, '#6FD3FF'); g.addColorStop(1, '#3B1E8C');
+    g.addColorStop(0, '#6FD3FF'); g.addColorStop(1, '#45413C');
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, b * 0.1, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = 'rgba(255,138,216,.6)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(c.x, c.y, b * 0.15, b * 0.035, -0.3, 0, Math.PI * 2); ctx.stroke();
     obj.forEach(function (o) {
@@ -117,7 +117,7 @@
     if (!dead) {
       var me = posOf(ang, rad);
       ctx.save(); ctx.translate(me.x, me.y); ctx.rotate(ang + Math.PI / 2);
-      ctx.fillStyle = '#B9A8F0'; ctx.fillRect(-b * 0.035, -b * 0.008, b * 0.07, b * 0.016);
+      ctx.fillStyle = '#C7C0B7'; ctx.fillRect(-b * 0.035, -b * 0.008, b * 0.07, b * 0.016);
       ctx.fillStyle = P.gold() ? '#FFD84D' : '#3DF5B0'; ctx.beginPath(); ctx.roundRect(-b * 0.014, -b * 0.016, b * 0.028, b * 0.032, 4); ctx.fill();
       ctx.restore();
     }

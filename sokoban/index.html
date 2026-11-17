@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Ящики</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
-.stage{background:#140734}
+.stage{background:#22211F}
 .tools{position:absolute;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:12px;z-index:1}
 .tools button{min-width:130px;min-height:48px;border:0;border-radius:16px;background:var(--road);color:var(--paper);font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer;touch-action:manipulation}
 .stage[data-state="start"] .tools,.stage[data-state="over"] .tools{visibility:hidden}
@@ -20,7 +20,7 @@
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Ящики. Смахивай, чтобы ходить и толкать ящики"></canvas>
 <div class="tools"><button type="button" id="undo">↶ Ход назад</button><button type="button" id="again">Заново</button></div></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -102,13 +102,13 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!lv) return;
     var c = lv.c;
     for (var i = 0; i < c * lv.r; i++) {
       var x = i % c, y = (i - x) / c, X = ox + x * cs, Y = oy + y * cs;
-      if (lv.g[i]) { ctx.fillStyle = '#3B1E8C'; ctx.beginPath(); ctx.roundRect(X + 1, Y + 1, cs - 2, cs - 2, 5); ctx.fill(); }
-      else { ctx.fillStyle = '#22105A'; ctx.fillRect(X, Y, cs, cs); }
+      if (lv.g[i]) { ctx.fillStyle = '#45413C'; ctx.beginPath(); ctx.roundRect(X + 1, Y + 1, cs - 2, cs - 2, 5); ctx.fill(); }
+      else { ctx.fillStyle = '#33312E'; ctx.fillRect(X, Y, cs, cs); }
     }
     lv.goals.forEach(function (gi) { var x = gi % c, y = (gi - x) / c; ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(ox + (x + 0.5) * cs, oy + (y + 0.5) * cs, cs * 0.22, 0, Math.PI * 2); ctx.stroke(); });
     boxes.forEach(function (b) {
@@ -119,8 +119,8 @@
     });
     var mx = me % c, my = (me - mx) / c, cx = ox + (mx + 0.5) * cs, cy = oy + (my + 0.5) * cs;
     ctx.fillStyle = P.gold() ? '#FFD84D' : '#6FD3FF'; ctx.beginPath(); ctx.arc(cx, cy, cs * 0.36, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(cx - cs * 0.12, cy - cs * 0.06, cs * 0.06, 0, Math.PI * 2); ctx.arc(cx + cs * 0.12, cy - cs * 0.06, cs * 0.06, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(244,241,255,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#292724'; ctx.beginPath(); ctx.arc(cx - cs * 0.12, cy - cs * 0.06, cs * 0.06, 0, Math.PI * 2); ctx.arc(cx + cs * 0.12, cy - cs * 0.06, cs * 0.06, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(250,247,242,.7)'; ctx.font = '600 13px Onest, system-ui, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('Уровень ' + (solved + 1) + ' · шагов ' + moves, W / 2, oy - 10);
     if (phase === 'won') { ctx.fillStyle = '#3DF5B0'; ctx.font = '800 24px Unbounded, "Arial Black", sans-serif'; ctx.fillText('Решено!', W / 2, oy + cs * lv.r / 2); }
   }

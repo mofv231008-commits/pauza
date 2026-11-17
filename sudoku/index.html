@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Судоку</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .stage{background:var(--shoulder)}
 .play{gap:14px}
 .board{--size:340px;display:grid;grid-template-columns:repeat(6,1fr);width:var(--size);height:var(--size);flex:none;border-radius:14px;overflow:hidden;background:var(--night);gap:2px;padding:2px}
 .c{border:0;padding:0;background:var(--road);color:var(--mint);font-family:var(--font-display);font-weight:600;font-size:calc(var(--size) / 10);cursor:pointer;touch-action:manipulation}
-.c.given{color:var(--paper);background:#2E167A}
-.c.same{background:#4B2FB8}
+.c.given{color:var(--paper);background:#7A756E}
+.c.same{background:#8A6750}
 .c.sel{background:#5A3FD0;box-shadow:inset 0 0 0 3px var(--sun)}
 .c.bad{color:var(--coral)}
 .c.col2{margin-right:3px}.c.row1{margin-bottom:3px}
@@ -34,7 +34,7 @@
     <div class="pad" id="pad"></div>
   </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';

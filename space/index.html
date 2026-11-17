@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Звездолёт</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
-.stage{background:#0B0420}
+.stage{background:#201F1D}
 .heart{display:inline-block;width:12px;height:12px;background:var(--coral);transform:rotate(45deg);border-radius:2px 0 2px 2px;position:relative;margin-right:4px}
 .heart::before,.heart::after{content:"";position:absolute;width:12px;height:12px;border-radius:50%;background:var(--coral)}
 .heart::before{left:-6px;top:0}
@@ -24,7 +24,7 @@
   <canvas id="game" aria-label="Звездолёт. Веди пальцем по экрану, корабль стреляет сам"></canvas>
 </div>
 
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -114,7 +114,7 @@
     lives--; invuln = 1.6; flash = 1;
     shell.setSide(sideHtml());
     P.haptic('crash');
-    burst(ship.x, ship.y, '#F4F1FF', 18);
+    burst(ship.x, ship.y, '#FAF7F2', 18);
     if (lives <= 0) {
       dead = true;
       burst(ship.x, ship.y, '#FF6B4A', 30);
@@ -217,7 +217,7 @@
     if (dead) return;
     if (invuln > 0 && Math.floor(invuln * 12) % 2 === 0) return;
     var flick = 0.6 + Math.random() * 0.4;
-    ctx.fillStyle = g ? '#FF9A6B' : '#FF6B4A';
+    ctx.fillStyle = g ? '#F5AD7A' : '#FF6B4A';
     ctx.beginPath(); ctx.moveTo(x - s * 0.18, y + s * 0.42); ctx.lineTo(x, y + s * (0.6 + 0.35 * flick)); ctx.lineTo(x + s * 0.18, y + s * 0.42); ctx.closePath(); ctx.fill();
     ctx.fillStyle = g ? '#FFD84D' : '#3DF5B0';
     ctx.beginPath();
@@ -230,10 +230,10 @@
     ctx.lineTo(x - s * 0.78, y + s * 0.45);
     ctx.lineTo(x - s * 0.28, y - s * 0.1);
     ctx.closePath(); ctx.fill();
-    ctx.fillStyle = g ? '#FF9A6B' : '#2FD99B';
+    ctx.fillStyle = g ? '#F5AD7A' : '#2FD99B';
     ctx.beginPath(); ctx.moveTo(x + s * 0.28, y - s * 0.1); ctx.lineTo(x + s * 0.78, y + s * 0.45); ctx.lineTo(x + s * 0.24, y + s * 0.34); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(x - s * 0.28, y - s * 0.1); ctx.lineTo(x - s * 0.78, y + s * 0.45); ctx.lineTo(x - s * 0.24, y + s * 0.34); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#120630';
+    ctx.fillStyle = '#292724';
     ctx.beginPath(); ctx.ellipse(x, y - s * 0.12, s * 0.11, s * 0.22, 0, 0, Math.PI * 2); ctx.fill();
     if (shield) {
       ctx.strokeStyle = 'rgba(111,211,255,0.85)'; ctx.lineWidth = 3;
@@ -244,36 +244,36 @@
     var r = e.r, x = e.x, y = e.y;
     ctx.save(); ctx.translate(x, y);
     if (e.type === 'drone') {
-      ctx.fillStyle = e.hit > 0 ? '#F4F1FF' : '#FF6B4A';
+      ctx.fillStyle = e.hit > 0 ? '#FAF7F2' : '#FF6B4A';
       ctx.beginPath(); ctx.moveTo(0, r); ctx.lineTo(r, 0); ctx.lineTo(0, -r * 0.8); ctx.lineTo(-r, 0); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#120630'; ctx.beginPath(); ctx.arc(0, r * 0.05, r * 0.28, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#292724'; ctx.beginPath(); ctx.arc(0, r * 0.05, r * 0.28, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.arc(0, r * 0.12, r * 0.12, 0, Math.PI * 2); ctx.fill();
     } else if (e.type === 'zig') {
       ctx.rotate(Math.sin(e.ph * 6) * 0.25);
-      ctx.fillStyle = e.hit > 0 ? '#F4F1FF' : '#FF8AD8';
+      ctx.fillStyle = e.hit > 0 ? '#FAF7F2' : '#FF8AD8';
       ctx.beginPath(); ctx.moveTo(0, r); ctx.lineTo(r, -r * 0.7); ctx.lineTo(0, -r * 0.3); ctx.lineTo(-r, -r * 0.7); ctx.closePath(); ctx.fill();
     } else {
-      ctx.fillStyle = e.hit > 0 ? '#F4F1FF' : '#FFD84D';
+      ctx.fillStyle = e.hit > 0 ? '#FAF7F2' : '#FFD84D';
       ctx.beginPath();
       for (var k = 0; k < 6; k++) { var a = Math.PI / 6 + k * Math.PI / 3; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
       ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#120630'; ctx.fillRect(-r * 0.18, r * 0.2, r * 0.36, r * 0.75);
+      ctx.fillStyle = '#292724'; ctx.fillRect(-r * 0.18, r * 0.2, r * 0.36, r * 0.75);
       ctx.fillStyle = 'rgba(18,6,48,0.55)'; ctx.fillRect(-r * 0.7, -r * 1.35, r * 1.4, 4);
       ctx.fillStyle = '#3DF5B0'; ctx.fillRect(-r * 0.7, -r * 1.35, r * 1.4 * e.hp / e.max, 4);
     }
     ctx.restore();
   }
   function draw() {
-    ctx.fillStyle = '#0B0420'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#201F1D'; ctx.fillRect(0, 0, W, H);
     stars.forEach(function (s) {
-      ctx.globalAlpha = 0.25 + s.z * 0.6; ctx.fillStyle = '#F4F1FF';
+      ctx.globalAlpha = 0.25 + s.z * 0.6; ctx.fillStyle = '#FAF7F2';
       ctx.fillRect(s.x * W, s.y * H, s.z * 2, s.z * 2 + (shell.running ? s.z * 6 : 0));
     });
     ctx.globalAlpha = 1;
     drops.forEach(function (d) {
       ctx.fillStyle = d.kind === 'double' ? '#3DF5B0' : '#6FD3FF';
       ctx.beginPath(); ctx.arc(d.x, d.y, 13, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#120630'; ctx.font = '800 13px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#292724'; ctx.font = '800 13px Unbounded, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(d.kind === 'double' ? '×2' : 'Щ', d.x, d.y + 1);
     });
     enemies.forEach(drawEnemy);

@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Покер на костях</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .stage{background:var(--shoulder)}
 .yz{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;padding:78px 12px 12px}
 .yz-dice{display:flex;justify-content:center;gap:8px}
-.die{width:54px;height:54px;border-radius:12px;background:#F4F1FF;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:7px;border:0;cursor:pointer;transition:transform .15s}
-.die i{border-radius:50%;margin:2px}.die i.p{background:#120630}
+.die{width:54px;height:54px;border-radius:12px;background:#FAF7F2;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:7px;border:0;cursor:pointer;transition:transform .15s}
+.die i{border-radius:50%;margin:2px}.die i.p{background:#292724}
 .die.held{background:var(--sun);transform:translateY(-6px)}
 .die.roll{animation:rl .35s}
 @keyframes rl{30%{transform:rotate(20deg) scale(.9)}70%{transform:rotate(-12deg)}}
@@ -40,7 +40,7 @@
   <div class="yz-list" id="list"></div>
 </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';

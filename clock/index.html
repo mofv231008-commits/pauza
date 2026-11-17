@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Который час</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 .stage{background:var(--shoulder)}
 .play{gap:20px}
@@ -29,7 +29,7 @@
     <div class="opts" id="opts"></div>
   </div>
 </div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -51,13 +51,13 @@
   opts.addEventListener('click', function (e) { var t = e.target.closest('button'); if (t) pick(Number(t.dataset.i)); });
   function fmt(h, m) { return h + ':' + (m < 10 ? '0' : '') + m; }
   function draw(h, m, nums) {
-    var s = '<circle r="104" fill="#F4F1FF"/><circle r="98" fill="none" stroke="#3B1E8C" stroke-width="3"/>';
-    for (var k = 0; k < 60; k++) { var a = k * Math.PI / 30, big = k % 5 === 0, r1 = big ? 82 : 88; s += '<line x1="' + (Math.sin(a) * r1).toFixed(1) + '" y1="' + (-Math.cos(a) * r1).toFixed(1) + '" x2="' + (Math.sin(a) * 94).toFixed(1) + '" y2="' + (-Math.cos(a) * 94).toFixed(1) + '" stroke="#3B1E8C" stroke-width="' + (big ? 3.5 : 1.2) + '"/>'; }
-    if (nums) for (k = 1; k <= 12; k++) { var b2 = k * Math.PI / 6; s += '<text x="' + (Math.sin(b2) * 68).toFixed(1) + '" y="' + (-Math.cos(b2) * 68 + 7).toFixed(1) + '" text-anchor="middle" font-size="19" font-weight="700" fill="#22105A" font-family="Onest, system-ui, sans-serif">' + k + '</text>'; }
+    var s = '<circle r="104" fill="#FAF7F2"/><circle r="98" fill="none" stroke="#45413C" stroke-width="3"/>';
+    for (var k = 0; k < 60; k++) { var a = k * Math.PI / 30, big = k % 5 === 0, r1 = big ? 82 : 88; s += '<line x1="' + (Math.sin(a) * r1).toFixed(1) + '" y1="' + (-Math.cos(a) * r1).toFixed(1) + '" x2="' + (Math.sin(a) * 94).toFixed(1) + '" y2="' + (-Math.cos(a) * 94).toFixed(1) + '" stroke="#45413C" stroke-width="' + (big ? 3.5 : 1.2) + '"/>'; }
+    if (nums) for (k = 1; k <= 12; k++) { var b2 = k * Math.PI / 6; s += '<text x="' + (Math.sin(b2) * 68).toFixed(1) + '" y="' + (-Math.cos(b2) * 68 + 7).toFixed(1) + '" text-anchor="middle" font-size="19" font-weight="700" fill="#33312E" font-family="Onest, system-ui, sans-serif">' + k + '</text>'; }
     var ha = ((h % 12) + m / 60) * 30, ma = m * 6;
-    s += '<line x1="0" y1="10" x2="0" y2="-50" stroke="#120630" stroke-width="8" stroke-linecap="round" transform="rotate(' + ha + ')"/>';
+    s += '<line x1="0" y1="10" x2="0" y2="-50" stroke="#292724" stroke-width="8" stroke-linecap="round" transform="rotate(' + ha + ')"/>';
     s += '<line x1="0" y1="14" x2="0" y2="-82" stroke="#FF6B4A" stroke-width="4.5" stroke-linecap="round" transform="rotate(' + ma + ')"/>';
-    s += '<circle r="6" fill="#120630"/>';
+    s += '<circle r="6" fill="#292724"/>';
     dial.innerHTML = s;
   }
   function next() {

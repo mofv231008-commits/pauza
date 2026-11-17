@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Плитки</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#F4F1FF}.stage .score{color:var(--ink);text-shadow:none}.stage .best{color:#3B1E8C}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#FAF7F2}.stage .score{color:var(--ink);text-shadow:none}.stage .best{color:#45413C}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Плитки. Жми на тёмные плитки снизу вверх"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -81,7 +81,7 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H, h = rowH(), cw = W / COLS;
-    ctx.fillStyle = '#F4F1FF'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#FAF7F2'; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = 'rgba(59,30,140,0.12)';
     for (var c = 1; c < COLS; c++) ctx.fillRect(c * cw - 0.5, 0, 1, H);
     if (!rows) return;
@@ -89,7 +89,7 @@
       var y = rowY(i);
       if (y > H || y + h < 0) return;
       var failed = r === failRow && flashT > 0 && Math.floor(flashT * 8) % 2 === 0;
-      ctx.fillStyle = r.done ? 'rgba(59,30,140,0.18)' : (failed ? '#FF6B4A' : '#22105A');
+      ctx.fillStyle = r.done ? 'rgba(59,30,140,0.18)' : (failed ? '#FF6B4A' : '#33312E');
       ctx.beginPath(); ctx.roundRect(r.col * cw + 3, y + 3, cw - 6, h - 6, 10); ctx.fill();
       if (!r.done && i === rows.findIndex(function (x) { return !x.done; }) && shell.state === 'running') {
         ctx.fillStyle = '#3DF5B0'; ctx.fillRect(r.col * cw + cw * 0.3, y + h - 14, cw * 0.4, 4);

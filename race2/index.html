@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Наперегонки</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
-<style>.stage{background:#140734}</style>
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
+<style>.stage{background:#22211F}</style>
 </head>
 <body>
 <div class="stage" id="stage"><canvas id="game" aria-label="Наперегонки. Каждый нажимает на свою половину, чтобы прыгнуть"></canvas></div>
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
@@ -71,18 +71,18 @@
   });
   function draw() {
     var ctx = view.ctx, W = view.W, H = view.H;
-    ctx.fillStyle = '#140734'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#22211F'; ctx.fillRect(0, 0, W, H);
     if (!R.length) return;
     [0, 1].forEach(function (i) {
       var L = lane(i), r = R[i], gy = L.bot - 16, col = i === 0 ? (P.gold() ? '#FFD84D' : '#3DF5B0') : '#FF6B4A', lh = LH(), feet = W * 0.25;
-      ctx.fillStyle = i === 0 ? '#1B0D4A' : '#24103F'; ctx.fillRect(0, L.top, W, L.bot - L.top);
-      ctx.fillStyle = '#3B1E8C'; ctx.fillRect(0, gy, W, L.bot - gy);
-      ctx.fillStyle = 'rgba(185,168,240,.25)'; for (var m = -((r.d * 0.5) % 40); m < W; m += 40) ctx.fillRect(m, gy + 6, 20, 2);
-      var fx = goal - r.d + feet; if (fx < W + 20) { for (var k = 0; k < 6; k++) { ctx.fillStyle = k % 2 ? '#120630' : '#F4F1FF'; ctx.fillRect(fx, L.top + k * (gy - L.top) / 6, 10, (gy - L.top) / 6); } }
+      ctx.fillStyle = i === 0 ? '#4A4743' : '#3F3C39'; ctx.fillRect(0, L.top, W, L.bot - L.top);
+      ctx.fillStyle = '#45413C'; ctx.fillRect(0, gy, W, L.bot - gy);
+      ctx.fillStyle = 'rgba(199,192,183,.25)'; for (var m = -((r.d * 0.5) % 40); m < W; m += 40) ctx.fillRect(m, gy + 6, 20, 2);
+      var fx = goal - r.d + feet; if (fx < W + 20) { for (var k = 0; k < 6; k++) { ctx.fillStyle = k % 2 ? '#292724' : '#FAF7F2'; ctx.fillRect(fx, L.top + k * (gy - L.top) / 6, 10, (gy - L.top) / 6); } }
       obs.forEach(function (o) {
         var ox = o.x - r.d + feet; if (ox > W || ox + o.w < 0) return;
         if (o.kind === 'box') { ctx.fillStyle = '#FFD84D'; ctx.beginPath(); ctx.roundRect(ox, gy - lh * 0.14, o.w, lh * 0.14, 4); ctx.fill(); }
-        else { ctx.fillStyle = '#0B0420'; ctx.fillRect(ox, gy, o.w, L.bot - gy); }
+        else { ctx.fillStyle = '#201F1D'; ctx.fillRect(ox, gy, o.w, L.bot - gy); }
       });
       var s = Math.min(lh * 0.12, 34), y = gy + r.y, wob = r.y === 0 ? Math.sin(r.d * 0.06) * 2 : 0;
       ctx.globalAlpha = r.slow > 0 && Math.floor(r.slow * 10) % 2 ? 0.45 : 1;
@@ -90,8 +90,8 @@
       ctx.beginPath(); ctx.arc(feet, y - s * 1.9 + wob, s * 0.4, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(feet - s * 0.2, y - s * 0.35); ctx.lineTo(feet - s * 0.35 + wob * 3, y); ctx.moveTo(feet + s * 0.2, y - s * 0.35); ctx.lineTo(feet + s * 0.35 - wob * 3, y); ctx.stroke();
       ctx.globalAlpha = 1;
-      ctx.fillStyle = 'rgba(244,241,255,.15)'; ctx.fillRect(12, L.top + 8, W - 24, 5); ctx.fillStyle = col; ctx.fillRect(12, L.top + 8, (W - 24) * Math.min(1, r.d / goal), 5);
-      ctx.fillStyle = 'rgba(244,241,255,.6)'; ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(i === 0 ? 'зелёные — жми сюда' : 'красные — жми сюда', W - 12, L.top + 28);
+      ctx.fillStyle = 'rgba(250,247,242,.15)'; ctx.fillRect(12, L.top + 8, W - 24, 5); ctx.fillStyle = col; ctx.fillRect(12, L.top + 8, (W - 24) * Math.min(1, r.d / goal), 5);
+      ctx.fillStyle = 'rgba(250,247,242,.6)'; ctx.font = '600 12px Onest, system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(i === 0 ? 'зелёные — жми сюда' : 'красные — жми сюда', W - 12, L.top + 28);
     });
   }
   canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); var r = canvas.getBoundingClientRect(); jump(e.clientY - r.top > TOP + (view.H - TOP) / 2 ? 0 : 1); });

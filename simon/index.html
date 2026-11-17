@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#140734">
+<meta name="theme-color" content="#22211F">
 <meta name="color-scheme" content="dark">
 <title>Пауза · Повтори</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="../shared/pauza.css?v=6">
+<link rel="stylesheet" href="../shared/pauza.css?v=7">
 <style>
 /* Четыре большие плитки 2×2. Тусклые в покое, яркие в момент вспышки. */
 .stage{background:var(--shoulder)}
@@ -26,7 +26,7 @@
 .status{margin:0;min-height:1.5em;font-family:var(--font-display);font-weight:600;font-size:17px;color:var(--lilac);text-align:center}
 .status.go{color:var(--mint)}
 .dots{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:320px;min-height:10px}
-.dots i{display:block;width:10px;height:10px;border-radius:50%;background:rgba(185,168,240,.25)}
+.dots i{display:block;width:10px;height:10px;border-radius:50%;background:rgba(199,192,183,.25)}
 .dots i.on{background:var(--mint)}
 </style>
 </head>
@@ -35,16 +35,16 @@
   <div class="play">
     <p class="status" id="status">Смотри и запоминай</p>
     <div class="pads" id="pads">
-      <button class="pad" type="button" data-k="0" id="pad-0" aria-label="Зелёная плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#120630"/></svg></button>
-      <button class="pad" type="button" data-k="1" id="pad-1" aria-label="Красная плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="2.5" width="15" height="15" rx="3" fill="#120630"/></svg></button>
-      <button class="pad" type="button" data-k="2" id="pad-2" aria-label="Жёлтая плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2 L18.5 17 H1.5 Z" fill="#120630"/></svg></button>
-      <button class="pad" type="button" data-k="3" id="pad-3" aria-label="Голубая плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.5 L18.5 10 L10 18.5 L1.5 10 Z" fill="#120630"/></svg></button>
+      <button class="pad" type="button" data-k="0" id="pad-0" aria-label="Зелёная плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#292724"/></svg></button>
+      <button class="pad" type="button" data-k="1" id="pad-1" aria-label="Красная плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="2.5" width="15" height="15" rx="3" fill="#292724"/></svg></button>
+      <button class="pad" type="button" data-k="2" id="pad-2" aria-label="Жёлтая плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2 L18.5 17 H1.5 Z" fill="#292724"/></svg></button>
+      <button class="pad" type="button" data-k="3" id="pad-3" aria-label="Голубая плитка"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.5 L18.5 10 L10 18.5 L1.5 10 Z" fill="#292724"/></svg></button>
     </div>
     <div class="dots" id="dots" aria-hidden="true"></div>
   </div>
 </div>
 
-<script src="../shared/pauza.js?v=6"></script>
+<script src="../shared/pauza.js?v=7"></script>
 <script>
 (function () {
   'use strict';
