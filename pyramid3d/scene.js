@@ -7,21 +7,30 @@
     const ctx = canvas.getContext('2d');
     const backdrop = document.createElement('canvas');
     const bg = backdrop.getContext('2d');
+    const foreground = document.createElement('canvas');
+    const fg = foreground.getContext('2d');
     let w = 1, h = 1, pixelRatio = 1, scale = 1, offsetY = 0;
-    let camera = .71, target = camera, dirty = true;
-    let sine = 0, cosine = 0;
+    const orbit = { yaw: 0, pitch: .71 };
+    const camera = { ...orbit };
+    let overhead = false, dirty = true;
+    let sine = 0, cosine = 0, side = 0, front = 1;
+    let eyeX = 0, eyeZ = 0, hasForeground = false;
     const distance = 6.4;
 
     function project(x, y, z) {
-      const depth = distance - y * sine - z * cosine;
-      return { x: w / 2 + scale * x / depth, y: offsetY + scale * (z * sine - y * cosine) / depth,
+      const along = x * side + z * front;
+      const across = x * front - z * side;
+      const depth = distance - y * sine - along * cosine;
+      return { x: w / 2 + scale * across / depth, y: offsetY + scale * (along * sine - y * cosine) / depth,
         k: scale / depth };
     }
 
     function unproject(x, y) {
       const ky = (y - offsetY) / scale;
       const t = (distance * sine - radius) / (sine + ky * cosine);
-      return { x: t * (x - w / 2) / scale, z: distance * cosine + t * (-cosine + ky * sine) };
+      const across = t * (x - w / 2) / scale;
+      const along = distance * cosine + t * (-cosine + ky * sine);
+      return { x: across * front + along * side, z: along * front - across * side };
     }
 
     function polygon(context, corners, color) {
@@ -59,20 +68,37 @@
       polygon(context, corners, color);
     }
 
-    function rail(x0, z0, x1, z1) {
+    function rail(x0, z0, x1, z1, near) {
       const upper = board(x0, z0, x1, z1, .069);
       const lower = board(x0, z0, x1, z1, -.15);
-      polygon(bg, [upper[3], upper[2], lower[2], lower[3]], '#483039');
-      polygon(bg, [upper[0], upper[3], lower[3], lower[0]], '#624043');
-      polygon(bg, [upper[1], upper[2], lower[2], lower[1]], '#392531');
-      polygon(bg, upper, '#8f5a48');
-      stroke(bg, upper[0], upper[1], '#e1a174', 1);
-      stroke(bg, upper[3], upper[2], '#bb805c', 1);
+      const faces = [
+        { side: [0, 1], visible: eyeZ < z0, color: '#543038' },
+        { side: [1, 2], visible: eyeX > x1, color: '#392531' },
+        { side: [2, 3], visible: eyeZ > z1, color: '#483039' },
+        { side: [3, 0], visible: eyeX < x0, color: '#624043' }
+      ];
+      // A near cushion is between the camera and every ball, so it must mask their silhouettes.
+      const layers = near ? [bg, fg] : [bg];
+      hasForeground ||= near;
+      for (const layer of layers) {
+        for (const { side: [a, b], visible, color } of faces) {
+          if (visible) polygon(layer, [upper[a], upper[b], lower[b], lower[a]], color);
+        }
+        polygon(layer, upper, '#8f5a48');
+        stroke(layer, upper[0], upper[1], '#e1a174', 1);
+        stroke(layer, upper[3], upper[2], '#bb805c', 1);
+      }
     }
 
     function drawBackdrop() {
-      sine = Math.sin(camera);
-      cosine = Math.cos(camera);
+      sine = Math.sin(camera.pitch);
+      cosine = Math.cos(camera.pitch);
+      side = Math.sin(camera.yaw);
+      front = Math.cos(camera.yaw);
+      eyeX = distance * cosine * side;
+      eyeZ = distance * cosine * front;
+      fg.clearRect(0, 0, w, h);
+      hasForeground = false;
       scale = distance;
       offsetY = 0;
       const extents = board(-1.22, -2.18, 1.22, 2.18, .069)
@@ -96,7 +122,8 @@
       }
       polygon(bg, board(-1.24, -2.25, 1.25, 2.34, -.25), '#120e19aa');
       polygon(bg, board(-1.14, -2.14, 1.14, 2.14, -.10), '#32222b');
-      const felt = bg.createLinearGradient(0, project(0, 0, -length).y, 0, project(0, 0, length).y);
+      const far = project(0, 0, -length), near = project(0, 0, length);
+      const felt = bg.createLinearGradient(far.x, far.y, near.x, near.y);
       felt.addColorStop(0, '#184943');
       felt.addColorStop(.45, '#327c64');
       felt.addColorStop(1, '#1d5350');
@@ -109,14 +136,16 @@
 
       for (const side of [-1, 1]) {
         const x0 = side < 0 ? -1.17 : 1, x1 = side < 0 ? -1 : 1.17;
-        rail(x0, -1.89, x1, -.10);
-        rail(x0, .10, x1, 1.89);
+        const near = side * eyeX > width;
+        rail(x0, -1.89, x1, -.10, near);
+        rail(x0, .10, x1, 1.89, near);
         for (const z of [-1.51, -.99, -.5, .5, .99, 1.51]) {
           disc(bg, side * 1.08, z, .019, .070, '#f4c789');
+          if (near) disc(fg, side * 1.08, z, .019, .070, '#f4c789');
         }
       }
-      rail(-.90, -2.17, .90, -2);
-      rail(-.90, 2, .90, 2.17);
+      rail(-.90, -2.17, .90, -2, eyeZ < -length);
+      rail(-.90, 2, .90, 2.17, eyeZ > length);
       for (const { x, z } of pockets) {
         const size = z === 0 ? .091 : .102;
         disc(bg, x, z, size, .011, '#543c3e');
@@ -130,10 +159,11 @@
       w = Math.max(1, bounds.width);
       h = Math.max(1, bounds.height);
       pixelRatio = Math.min(root.devicePixelRatio || 1, 2);
-      canvas.width = backdrop.width = Math.round(w * pixelRatio);
-      canvas.height = backdrop.height = Math.round(h * pixelRatio);
+      canvas.width = backdrop.width = foreground.width = Math.round(w * pixelRatio);
+      canvas.height = backdrop.height = foreground.height = Math.round(h * pixelRatio);
       ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       bg.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      fg.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       drawBackdrop();
       dirty = true;
     }
@@ -193,8 +223,14 @@
     }
 
     function draw(balls, cue, direction, power, canAim, selecting, dt, moving) {
-      if (Math.abs(camera - target) > .001) {
-        camera += (target - camera) * Math.min(1, dt * 14);
+      const pitchTarget = overhead ? Math.PI / 2 : orbit.pitch;
+      const yawTarget = overhead ? Math.PI / 2 : orbit.yaw;
+      const yawDelta = Math.atan2(Math.sin(yawTarget - camera.yaw), Math.cos(yawTarget - camera.yaw));
+      const pitchDelta = pitchTarget - camera.pitch;
+      if (Math.abs(yawDelta) > .001 || Math.abs(pitchDelta) > .001) {
+        const easing = Math.min(1, dt * 17);
+        camera.yaw += Math.abs(yawDelta) < .004 ? yawDelta : yawDelta * easing;
+        camera.pitch += Math.abs(pitchDelta) < .004 ? pitchDelta : pitchDelta * easing;
         drawBackdrop();
         dirty = true;
       }
@@ -202,15 +238,21 @@
       dirty = false;
       ctx.drawImage(backdrop, 0, 0, w, h);
       if (canAim && !selecting) drawAim(cue, direction, balls, power);
-      const visible = balls.filter(b => !b.pocketed).sort((a, b) => a.z - b.z);
+      const visible = balls.filter(b => !b.pocketed)
+        .sort((a, b) => (a.x - b.x) * side + (a.z - b.z) * front);
       for (const ball of visible) drawBall(ball, cue, selecting);
+      if (hasForeground) ctx.drawImage(foreground, 0, 0, w, h);
     }
 
     fit();
     if (root.ResizeObserver) new ResizeObserver(fit).observe(canvas.parentElement);
     root.addEventListener('resize', fit);
     return { draw, project, unproject, invalidate() { dirty = true; },
-      setOverhead(on) { target = on ? Math.PI / 2 : .71; } };
+      setOverhead(on) { overhead = on; },
+      orbit(dx, dy) {
+        orbit.yaw += dx * .009;
+        orbit.pitch = Math.max(.46, Math.min(1.2, orbit.pitch - dy * .005));
+      } };
   }
 
   root.PyramidScene = { create };

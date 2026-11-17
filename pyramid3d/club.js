@@ -5,20 +5,24 @@
   const physics = window.PyramidPhysics;
   const byId = id => document.getElementById(id);
   const canvas = byId('table');
-  const camera = byId('camera'), select = byId('select'), shoot = byId('shoot'), power = byId('power');
+  const camera = byId('camera'), orbit = byId('orbit'), select = byId('select');
+  const shoot = byId('shoot'), power = byId('power');
+  const aimHint = 'Прицелься на столе';
+  const cameraHint = 'Веди по столу, чтобы повернуть камеру';
   const scene = window.PyramidScene.create(canvas);
-  const shotLimit = 12, target = 8, timeStep = 1 / 240;
+  const target = 8, timeStep = 1 / 240;
   const units = ['шар', 'шара', 'шаров'];
   let balls = physics.rack(), cue = balls[0], direction = { x: 0, z: -1 };
-  let shots = 0, score = 0, fouls = 0, carry = 0, shot = null;
-  let selecting = false, overhead = false, pointer = null;
+  let score = 0, fouls = 0, carry = 0, shot = null;
+  let selecting = false, overhead = false, orbiting = false, pointer = null;
+  let status = aimHint;
 
   const shell = P.shell({
     id: 'pyramid3d',
     title: 'Русский бильярд 3D',
-    tagline: 'Забей 8 шаров за 12 ударов.',
+    tagline: 'Забей 8 шаров в своём темпе.',
     startLabel: 'К столу',
-    rulesHtml: '<p>Тренировка по мотивам свободной пирамиды. Коснись стола или веди пальцем для прицела. Выставь силу и нажми «Удар». После соударения засчитывается любой шар в лузе, даже биток. Удар без касания другого шара — фол. Меняй биток и ракурс кнопками под столом.</p>',
+    rulesHtml: '<p>Тренировка по мотивам свободной пирамиды. Коснись стола или веди пальцем для прицела. Выставь силу и нажми «Удар». После соударения засчитывается любой шар в лузе, даже биток. Удар без касания другого шара — фол. Кнопка «Камера» позволяет поворачивать стол пальцем. Для точного прицела включи вид сверху.</p>',
     kbdHint: 'На клавиатуре: ← → прицел, Enter удар.',
     unit: n => P.plural(n, units),
     onReset: reset,
@@ -30,31 +34,38 @@
     balls = physics.rack();
     cue = balls[0];
     direction = { x: 0, z: -1 };
-    score = shots = fouls = carry = 0;
+    score = fouls = carry = 0;
     shot = null;
-    selecting = false;
+    selecting = orbiting = false;
     pointer = null;
     power.value = '70';
     updatePower();
     shell.setScore(0);
-    setStatus('Прицелься на столе');
+    setStatus(aimHint);
     update();
   }
 
   function setStatus(message) {
-    byId('status').textContent = message;
+    status = message;
+    refreshStatus();
+  }
+
+  function refreshStatus() {
+    byId('status').textContent = orbiting ? cameraHint : status;
   }
 
   function update() {
     const playable = shell.running;
     const ready = playable && !shot;
-    shoot.disabled = !ready || selecting;
-    select.disabled = !ready;
-    power.disabled = !ready;
+    shoot.disabled = !ready || selecting || orbiting;
+    select.disabled = !ready || orbiting;
+    power.disabled = !ready || orbiting;
     camera.disabled = !playable;
+    orbit.disabled = !playable || overhead;
+    orbit.setAttribute('aria-pressed', String(orbiting));
     select.setAttribute('aria-pressed', String(selecting));
-    const left = shotLimit - shots;
-    shell.setSide('Ударов: ' + left, left <= 3);
+    canvas.dataset.orbit = String(orbiting);
+    shell.setSide('Цель: ' + target);
     scene.invalidate();
   }
 
@@ -64,11 +75,10 @@
   }
 
   function startShot() {
-    if (!shell.running || shot || selecting || shots >= shotLimit) return;
+    if (!shell.running || shot || selecting || orbiting) return;
     const speed = .82 + Number(power.value) * .063;
     cue.vx = direction.x * speed;
     cue.vz = direction.z * speed;
-    shots++;
     carry = 0;
     shot = { contact: false, potted: [] };
     pointer = null;
@@ -92,12 +102,12 @@
       setStatus('Фол: биток не коснулся другого шара');
     }
 
-    if (score >= target || shots === shotLimit) {
+    if (score >= target) {
       update();
       shell.end({
         score,
-        eyebrow: score >= target ? 'Пирамида взята' : 'Удары закончились',
-        stats: 'Ударов: ' + shots + ' · Фолов: ' + fouls,
+        eyebrow: 'Пирамида взята',
+        stats: 'Фолов: ' + fouls,
         phrase: 'В «Русском бильярде 3D» я забил ' + score + ' ' + P.plural(score, units) + '. Сыграешь?'
       });
       return;
@@ -142,41 +152,70 @@
   }
 
   canvas.addEventListener('pointerdown', event => {
-    if (!shell.running || shot || pointer !== null) return;
+    if (!shell.running || (shot && !orbiting) || pointer || event.button !== 0) return;
     event.preventDefault();
     const point = tablePoint(event);
     if (selecting) {
       chooseAt(point);
       return;
     }
-    pointer = event.pointerId;
-    canvas.setPointerCapture(pointer);
-    aimAt(point);
+    pointer = { id: event.pointerId, point };
+    canvas.setPointerCapture(pointer.id);
+    if (!orbiting) aimAt(point);
   });
   canvas.addEventListener('pointermove', event => {
-    if (pointer === event.pointerId && shell.running && !shot) aimAt(tablePoint(event));
+    if (pointer?.id !== event.pointerId || !shell.running) return;
+    const point = tablePoint(event);
+    if (orbiting) scene.orbit(point.x - pointer.point.x, point.y - pointer.point.y);
+    else if (!shot) aimAt(point);
+    pointer.point = point;
   });
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
     canvas.addEventListener(type, event => {
-      if (pointer === event.pointerId) pointer = null;
+      if (pointer?.id === event.pointerId) pointer = null;
     });
   }
 
   camera.addEventListener('click', () => {
     overhead = !overhead;
+    orbiting = false;
+    pointer = null;
     camera.textContent = overhead ? 'Вид в 3D' : 'Вид сверху';
     camera.setAttribute('aria-pressed', String(overhead));
     scene.setOverhead(overhead);
+    refreshStatus();
+    update();
+  });
+  orbit.addEventListener('click', () => {
+    orbiting = !orbiting;
+    pointer = null;
+    if (selecting) {
+      selecting = false;
+      setStatus(aimHint);
+    } else {
+      refreshStatus();
+    }
+    if (orbiting) canvas.focus({ preventScroll: true });
+    update();
   });
   select.addEventListener('click', () => {
     selecting = !selecting;
-    setStatus(selecting ? 'Коснись шара, который станет битком' : 'Прицелься на столе');
+    setStatus(selecting ? 'Коснись шара, который станет битком' : aimHint);
     update();
   });
   power.addEventListener('input', updatePower);
   shoot.addEventListener('click', startShot);
   window.addEventListener('keydown', event => {
-    if (!shell.running || shot || selecting || /^(BUTTON|INPUT|A)$/.test(event.target.tagName)) return;
+    if (!shell.running || selecting || /^(BUTTON|INPUT|A)$/.test(event.target.tagName)) return;
+    if (orbiting) {
+      const arrows = { ArrowLeft: [-12, 0], ArrowRight: [12, 0], ArrowUp: [0, -12], ArrowDown: [0, 12] };
+      if (arrows[event.code]) {
+        event.preventDefault();
+        scene.orbit(...arrows[event.code]);
+      }
+      return;
+    }
+    if (shot) return;
     if (event.code === 'Enter' && !event.repeat) {
       event.preventDefault();
       startShot();
@@ -200,6 +239,6 @@
       }
       if (balls.every(ball => Math.hypot(ball.vx, ball.vz) < .023)) settleShot();
     }
-    scene.draw(balls, cue, direction, Number(power.value), shell.running && !shot, selecting, dt, Boolean(shot && shell.running));
+    scene.draw(balls, cue, direction, Number(power.value), shell.running && !shot && !orbiting, selecting, dt, Boolean(shot && shell.running));
   });
 })();

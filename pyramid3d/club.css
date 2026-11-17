@@ -31,7 +31,7 @@
   gap: 8px;
   align-items: center;
 }
-.club-tools { grid-template-columns: 1fr 1fr; }
+.club-tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .club-shot { grid-template-columns: auto minmax(36px, 1fr) auto; }
 .club-shot label {
   font-size: 12px;
@@ -67,3 +67,14 @@
 .club[data-state="over"] .club-console { visibility: hidden; }
 
 .club canvas:focus-visible { outline: 1px solid #f4c78966; outline-offset: -2px; }
+
+.club canvas[data-orbit="true"] { cursor: grab; }
+.club canvas[data-orbit="true"]:active { cursor: grabbing; }
+
+@media (orientation: landscape) and (max-height: 550px) {
+  .stage.club { width: min(100%, 860px); }
+  .club-layout { grid-template: minmax(0, 1fr) / minmax(0, 1fr) minmax(210px, 30%); }
+  .club-console { align-content: center; border-top: 0; border-left: 1px solid #f4c78938; }
+  .club-shot, .club-tools { gap: 5px; }
+  .club-console button { padding-inline: 4px; }
+}

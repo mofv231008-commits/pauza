@@ -4,6 +4,9 @@
   const width = 1;
   const length = 2;
   const radius = .049;
+  const clearance = radius + .008;
+  const cushionX = width - clearance;
+  const cushionZ = length - clearance;
   const pockets = [
     { x: -width, z: -length }, { x: width, z: -length },
     { x: -width, z: 0 }, { x: width, z: 0 },
@@ -73,7 +76,7 @@
 
     for (const ball of live) {
       const inPocket = pockets.some(pocket => {
-        const mouth = pocket.z === 0 ? .068 : .082;
+        const mouth = pocket.z === 0 ? .076 : .094;
         return (ball.x - pocket.x) ** 2 + (ball.z - pocket.z) ** 2 < mouth ** 2;
       });
       if (inPocket) {
@@ -82,8 +85,8 @@
         onPocket(ball);
         continue;
       }
-      rail(ball, 'x', width - radius, 'vx');
-      rail(ball, 'z', length - radius, 'vz');
+      rail(ball, 'x', cushionX, 'vx');
+      rail(ball, 'z', cushionZ, 'vz');
     }
   }
 
@@ -101,8 +104,8 @@
   }
 
   function aimLine(cue, direction, balls) {
-    const rayX = direction.x > 0 ? width : -width;
-    const rayZ = direction.z > 0 ? length : -length;
+    const rayX = direction.x > 0 ? cushionX : -cushionX;
+    const rayZ = direction.z > 0 ? cushionZ : -cushionZ;
     const toX = direction.x ? (rayX - cue.x) / direction.x : Infinity;
     const toZ = direction.z ? (rayZ - cue.z) / direction.z : Infinity;
     let distance = Math.min(toX, toZ);
