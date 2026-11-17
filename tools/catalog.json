@@ -1,6 +1,10 @@
 {
  "sections": [
   {
+   "id": "3d",
+   "title": "3D-игры"
+  },
+  {
    "id": "horror",
    "title": "Хорроры на минуту"
   },
@@ -38,6 +42,20 @@
   }
  ],
  "games": [
+  {
+   "id": "pyramid3d",
+   "title": "Русский бильярд 3D",
+   "into": "Русский бильярд 3D",
+   "about": "Свободная пирамида: 8 шаров за 12 ударов",
+   "section": "3d",
+   "icon": "🎱",
+   "unit": [
+    "шар",
+    "шара",
+    "шаров"
+   ],
+   "art": "<img src=\"pyramid3d/cover.webp\" alt=\"\" width=\"480\" height=\"300\" loading=\"lazy\">"
+  },
   {
    "id": "waterjug",
    "title": "Перелей",

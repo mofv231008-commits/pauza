@@ -138,6 +138,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
 }
 .card:active{transform:translateY(1px)}
 .art{display:block;width:100%;aspect-ratio:16/10;background:var(--road)}
+.art img{display:block;width:100%;height:100%;object-fit:cover}
 .art svg{display:block;width:100%;height:100%}
 .card-body{display:flex;flex-direction:column;gap:2px;padding:9px 11px 11px}
 .card-title{font-family:var(--font-display);font-weight:600;font-size:14px;line-height:1.2}

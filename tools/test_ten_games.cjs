@@ -37,8 +37,13 @@ for(const id of ['waterjug','onestroke','morse','binary','weighing','tightrope',
  if(timed){g.step(59);assert.equal(g.result,undefined);g.step(1);assert(g.result);}
  g.reset();assert.equal(g.shell.score,0);console.log('PASS',id);
 }
-const cat=JSON.parse(fs.readFileSync('tools/catalog.json'));assert.equal(cat.games.length,187);assert.equal(new Set(cat.games.map(x=>x.id)).size,187);for(const g of cat.games)assert(fs.existsSync(g.id+'/index.html'));
-console.log('PASS catalog: 187 unique ids with game pages');
+const catalog = JSON.parse(fs.readFileSync('tools/catalog.json'));
+const manifest = JSON.parse(fs.readFileSync('games.json'));
+const catalogIds = catalog.games.map(game => game.id);
+assert.equal(new Set(catalogIds).size, catalogIds.length);
+assert.deepEqual(manifest.map(game => game[0]).sort(), catalogIds.slice().sort());
+for (const id of catalogIds) assert(fs.existsSync(id + '/index.html'));
+console.log('PASS catalog: ' + catalogIds.length + ' unique games in the manifest');
 
 // Physics should behave alike on slow and fast devices; rendering must reuse the scene.
 const falls=[];

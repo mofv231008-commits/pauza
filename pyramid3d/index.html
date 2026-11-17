@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#16141e">
+  <meta name="color-scheme" content="dark">
+  <title>Пауза · Русский бильярд 3D</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="../shared/pauza.css?v=6">
+  <link rel="stylesheet" href="club.css?v=1">
+</head>
+<body>
+  <main class="stage club">
+    <div class="club-layout">
+      <div class="club-table">
+        <canvas id="table" tabindex="0" aria-label="Бильярдный стол. Коснись стола или веди пальцем, чтобы прицелиться."></canvas>
+      </div>
+      <div class="club-console">
+        <p id="status" role="status">Прицелься на столе</p>
+        <div class="club-tools">
+          <button type="button" id="camera" aria-pressed="false">Вид сверху</button>
+          <button type="button" id="select" aria-pressed="false">Выбрать биток</button>
+        </div>
+        <div class="club-shot">
+          <label for="power">Сила <output id="power-value" for="power">70%</output></label>
+          <input id="power" type="range" min="15" max="100" value="70">
+          <button type="button" id="shoot">Удар</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="../shared/pauza.js?v=6"></script>
+  <script src="physics.js?v=1"></script>
+  <script src="scene.js?v=1"></script>
+  <script src="club.js?v=1"></script>
+</body>
+</html>
