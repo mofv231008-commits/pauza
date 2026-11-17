@@ -8,19 +8,20 @@
   <title>Пауза · Русский бильярд 3D</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="../shared/pauza.css?v=6">
-  <link rel="stylesheet" href="club.css?v=2">
+  <link rel="stylesheet" href="club.css?v=3">
 </head>
 <body>
   <main class="stage club">
     <div class="club-layout">
       <div class="club-table">
-        <canvas id="table" tabindex="0" aria-label="Бильярдный стол. Коснись стола или веди пальцем, чтобы прицелиться."></canvas>
+        <canvas id="table" tabindex="0" aria-label="Бильярдный стол. Касание — прицел, свайп в 3D — поворот камеры."></canvas>
       </div>
       <div class="club-console">
-        <p id="status" role="status">Прицелься на столе</p>
+        <p id="status" role="status"></p>
         <div class="club-tools">
           <button type="button" id="camera" aria-pressed="false">Вид сверху</button>
-          <button type="button" id="orbit" aria-pressed="false">Камера</button>
+          <button type="button" id="rotate-left" class="club-rotate" aria-label="Повернуть камеру влево" title="Повернуть камеру влево">↶</button>
+          <button type="button" id="rotate-right" class="club-rotate" aria-label="Повернуть камеру вправо" title="Повернуть камеру вправо">↷</button>
           <button type="button" id="select" aria-label="Выбрать биток" aria-pressed="false">Биток</button>
         </div>
         <div class="club-shot">
@@ -32,8 +33,8 @@
     </div>
   </main>
   <script src="../shared/pauza.js?v=6"></script>
-  <script src="physics.js?v=2"></script>
-  <script src="scene.js?v=2"></script>
-  <script src="club.js?v=2"></script>
+  <script src="physics.js?v=3"></script>
+  <script src="scene.js?v=3"></script>
+  <script src="club.js?v=3"></script>
 </body>
 </html>

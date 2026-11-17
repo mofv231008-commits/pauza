@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
 
-  const { width, length, radius, pockets } = root.PyramidPhysics;
+  const { width, length, radius, faceX, faceZ, pockets } = root.PyramidPhysics;
 
   function create(canvas) {
     const ctx = canvas.getContext('2d');
@@ -14,7 +14,7 @@
     const camera = { ...orbit };
     let overhead = false, dirty = true;
     let sine = 0, cosine = 0, side = 0, front = 1;
-    let eyeX = 0, eyeZ = 0, hasForeground = false;
+    let eyeX = 0, eyeZ = 0;
     const distance = 6.4;
 
     function project(x, y, z) {
@@ -77,16 +77,28 @@
         { side: [2, 3], visible: eyeZ > z1, color: '#483039' },
         { side: [3, 0], visible: eyeX < x0, color: '#624043' }
       ];
-      // A near cushion is between the camera and every ball, so it must mask their silhouettes.
-      const layers = near ? [bg, fg] : [bg];
-      hasForeground ||= near;
-      for (const layer of layers) {
-        for (const { side: [a, b], visible, color } of faces) {
-          if (visible) polygon(layer, [upper[a], upper[b], lower[b], lower[a]], color);
-        }
+      for (const { side: [a, b], visible, color } of faces) {
+        if (!visible) continue;
+        const face = [upper[a], upper[b], lower[b], lower[a]];
+        polygon(bg, face, color);
+        if (near) polygon(fg, face, color);
+      }
+      for (const layer of [bg, fg]) {
         polygon(layer, upper, '#8f5a48');
         stroke(layer, upper[0], upper[1], '#e1a174', 1);
         stroke(layer, upper[3], upper[2], '#bb805c', 1);
+      }
+    }
+
+    function rubber(x1, z1, x2, z2, dx, dz, near) {
+      const outside = [[x1, .069, z1], [x2, .069, z2]];
+      const inside = [[x1 + dx, .041, z1 + dz], [x2 + dx, .041, z2 + dz]];
+      const lip = [outside[0], outside[1], inside[1], inside[0]];
+      const face = [inside[0], inside[1], [x2 + dx, 0, z2 + dz], [x1 + dx, 0, z1 + dz]];
+      if (!near) polygon(bg, face, '#123e34');
+      for (const layer of [bg, fg]) {
+        polygon(layer, lip, near ? '#294f43' : '#427365');
+        stroke(layer, inside[0], inside[1], '#6b9e79', 1);
       }
     }
 
@@ -98,7 +110,6 @@
       eyeX = distance * cosine * side;
       eyeZ = distance * cosine * front;
       fg.clearRect(0, 0, w, h);
-      hasForeground = false;
       scale = distance;
       offsetY = 0;
       const extents = board(-1.22, -2.18, 1.22, 2.18, .069)
@@ -128,29 +139,32 @@
       felt.addColorStop(.45, '#327c64');
       felt.addColorStop(1, '#1d5350');
       polygon(bg, board(-width, -length, width, length, 0), felt);
-      polygon(bg, board(-1, -2, -.952, 2, .002), '#216652');
-      polygon(bg, board(.952, -2, 1, 2, .002), '#174640');
       stroke(bg, [-.87, .004, .99], [.87, .004, .99], '#d1dfac37', 1);
       disc(bg, 0, -1, .017, 0, '#d1dfaca0');
       disc(bg, 0, 1, .017, 0, '#d1dfaca0');
 
       for (const side of [-1, 1]) {
         const x0 = side < 0 ? -1.17 : 1, x1 = side < 0 ? -1 : 1.17;
-        const near = side * eyeX > width;
+        const near = side * eyeX > faceX;
         rail(x0, -1.89, x1, -.10, near);
         rail(x0, .10, x1, 1.89, near);
+        rubber(side * width, -1.89, side * width, -.10, side * (faceX - width), 0, near);
+        rubber(side * width, .10, side * width, 1.89, side * (faceX - width), 0, near);
         for (const z of [-1.51, -.99, -.5, .5, .99, 1.51]) {
           disc(bg, side * 1.08, z, .019, .070, '#f4c789');
-          if (near) disc(fg, side * 1.08, z, .019, .070, '#f4c789');
+          disc(fg, side * 1.08, z, .019, .070, '#f4c789');
         }
       }
       rail(-.90, -2.17, .90, -2, eyeZ < -length);
       rail(-.90, 2, .90, 2.17, eyeZ > length);
-      for (const { x, z } of pockets) {
-        const size = z === 0 ? .091 : .102;
-        disc(bg, x, z, size, .011, '#543c3e');
-        disc(bg, x, z, size * .82, .013, '#100f19');
-        disc(bg, x, z, size * .59, .014, '#08070d');
+      rubber(-.90, -length, .90, -length, 0, length - faceZ, eyeZ < -faceZ);
+      rubber(-.90, length, .90, length, 0, faceZ - length, eyeZ > faceZ);
+      for (const { x, z, mouth } of pockets) {
+        for (const layer of [bg, fg]) {
+          disc(layer, x, z, mouth * 1.17, .011, '#543c3e');
+          disc(layer, x, z, mouth, .013, '#100f19');
+          disc(layer, x, z, mouth * .72, .014, '#08070d');
+        }
       }
     }
 
@@ -170,10 +184,10 @@
 
     function drawBall(ball, cue, selecting) {
       const point = project(ball.x, radius, ball.z);
-      const shadow = project(ball.x + .015, 0, ball.z + .012);
+      const shadow = project(ball.x, 0, ball.z);
       const size = radius * point.k;
       ctx.beginPath();
-      ctx.ellipse(shadow.x, shadow.y, size * 1.12, size * Math.max(.42, sine), 0, 0, Math.PI * 2);
+      ctx.ellipse(shadow.x, shadow.y, size * .94, size * Math.max(.30, sine * .86), 0, 0, Math.PI * 2);
       ctx.fillStyle = '#0b2524a8';
       ctx.fill();
       const gold = ball.id === 0;
@@ -196,7 +210,7 @@
       }
       if (ball === cue || selecting) {
         ctx.beginPath();
-        ctx.arc(point.x, point.y, size + 2.3, 0, Math.PI * 2);
+        ctx.arc(point.x, point.y, Math.max(.5, size - .75), 0, Math.PI * 2);
         ctx.strokeStyle = ball === cue ? '#ffd48e' : '#c7eada89';
         ctx.lineWidth = 1.25;
         ctx.stroke();
@@ -241,7 +255,7 @@
       const visible = balls.filter(b => !b.pocketed)
         .sort((a, b) => (a.x - b.x) * side + (a.z - b.z) * front);
       for (const ball of visible) drawBall(ball, cue, selecting);
-      if (hasForeground) ctx.drawImage(foreground, 0, 0, w, h);
+      ctx.drawImage(foreground, 0, 0, w, h);
     }
 
     fit();

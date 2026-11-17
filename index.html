@@ -12,7 +12,8 @@
 (function () {
   var known = ["pyramid3d", "waterjug", "onestroke", "morse", "binary", "weighing", "tightrope", "boiler", "rpsread", "riskdice", "chomp", "space", "race", "flight", "snake", "bounce", "tower", "reaction", "2048", "match3", "fifteen", "mines", "pairs", "simon", "shade", "arrows", "word", "math", "tetris", "runner", "jumper", "moles", "tiles", "knives", "stick", "schulte", "sudoku", "hangman", "slice", "hoops", "pong", "hockey", "balloons", "catch", "aim", "colors", "sort", "lines", "frog", "ski", "fall", "zigzag", "maze", "golf", "bubbles", "ten", "flood", "lights", "gomoku", "connect4", "reversi", "battleship", "bulls", "nonogram", "game24", "anagram", "wordsearch", "capitals", "stress", "diff", "digits", "missing", "stroop", "dots", "pattern", "shells", "tug", "duel", "typing", "voices", "cat", "wrongchat", "grandma", "asteroids", "copter", "lander", "hexagon", "orbit", "pinball", "billiards", "bowling", "darts", "penalty", "keepy", "wire", "neon", "glutton", "archery", "walls", "sokoban", "pipes", "jigsaw", "flow", "parking", "hanoi", "mahjong", "solitaire", "merge", "checkers", "corners", "tictactoe", "dotsboxes", "nim", "morris", "odd", "mirror", "compare", "twins", "clock", "rotate", "cubes", "nback", "multiply", "flags", "proverbs", "antonyms", "chain", "spelling", "roman", "elements", "hockey2", "pong2", "race2", "spamattack", "missile", "helix", "tank", "xonix", "paint", "tron", "defense", "dodge", "traffic", "lumber", "rope", "fishing", "burger", "rhythm", "estimate", "blocks10", "binairo", "knight", "queens", "pegs", "durak", "dominoes", "mancala", "blackjack", "yahtzee", "ladders", "path", "order", "dobble", "unread", "quiz", "truefalse", "riddles", "emojikino", "synonyms", "typer", "subwords", "currency", "dates", "spamfilter", "fractions", "equation", "primes", "sequence", "change", "sumo", "snap", "math2", "battery", "nightshift", "deadfrequency", "lastlift", "ritualseal", "impostorroom"];
   var wanted = window.Pauza.startParam();
-  if (wanted && known.indexOf(wanted) !== -1) location.replace(wanted + '/' + location.hash);
+  var versioned = {"pyramid3d": "pyramid3d/?v=3"};
+  if (wanted && known.indexOf(wanted) !== -1) location.replace((versioned[wanted] || wanted + '/') + location.hash);
 })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -121,9 +122,9 @@ body.gold .hub-head .mark i{background:var(--sun)}
   <section class="group" aria-labelledby="g-new">
     <div class="group-head"><h2 class="group-title" id="g-new">Новые игры</h2><span class="group-count">10</span></div>
     <ul class="cards">
-      <li><a class="card" href="pyramid3d/" data-id="pyramid3d">
+      <li><a class="card" href="pyramid3d/?v=3" data-id="pyramid3d">
         <span class="art"><img src="pyramid3d/cover.webp" alt="" width="480" height="300" loading="lazy"></span>
-        <span class="card-body"><span class="card-title">Русский бильярд 3D</span><span class="card-desc">Свободная пирамида: забей 8 шаров</span><span class="card-best" hidden></span></span>
+        <span class="card-body"><span class="card-title">Русский бильярд 3D</span><span class="card-desc">Русская пирамида со свободной камерой</span><span class="card-best" hidden></span></span>
       </a></li>
       <li><a class="card" href="waterjug/" data-id="waterjug">
         <span class="art"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="160" height="90" fill="#170A3E"/><path d="M28 25h36v43q0 8-8 8H36q-8 0-8-8zM92 39h30v29q0 8-8 8h-14q-8 0-8-8z" fill="#2E177A" stroke="#B9A8F0" stroke-width="3"/><path d="M30 49h32v20q0 5-6 5H36q-6 0-6-5zM94 58h26v11q0 5-6 5h-14q-6 0-6-5z" fill="#3DF5B0"/><path d="M67 20q23-15 35 8m-9-2 10 3 1-10" fill="none" stroke="#FFD84D" stroke-width="3"/><path d="M35 36h9m-9 9h6m60 1h8" stroke="#B9A8F0" stroke-width="2"/></svg></span>
@@ -200,9 +201,9 @@ body.gold .hub-head .mark i{background:var(--sun)}
   <section class="group" aria-labelledby="g-3d">
     <div class="group-head"><h2 class="group-title" id="g-3d">3D-игры</h2><span class="group-count">1</span></div>
     <ul class="cards">
-      <li><a class="card" href="pyramid3d/" data-id="pyramid3d">
+      <li><a class="card" href="pyramid3d/?v=3" data-id="pyramid3d">
         <span class="art"><img src="pyramid3d/cover.webp" alt="" width="480" height="300" loading="lazy"></span>
-        <span class="card-body"><span class="card-title">Русский бильярд 3D</span><span class="card-desc">Свободная пирамида: забей 8 шаров</span><span class="card-best" hidden></span></span>
+        <span class="card-body"><span class="card-title">Русский бильярд 3D</span><span class="card-desc">Русская пирамида со свободной камерой</span><span class="card-best" hidden></span></span>
       </a></li>
     </ul>
   </section>
@@ -1908,7 +1909,9 @@ body.gold .hub-head .mark i{background:var(--sun)}
     line.hidden = false;
   });
   document.getElementById('random').addEventListener('click', function () {
-    location.href = P.pick(GAMES) + '/';
+    var picked = P.pick(GAMES);
+    var versioned = {"pyramid3d": "pyramid3d/?v=3"};
+    location.href = versioned[picked] || picked + '/';
   });
 
   /* ---------- Поддержка звёздами ---------- */

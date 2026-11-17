@@ -4,14 +4,16 @@
   const width = 1;
   const length = 2;
   const radius = .049;
-  const clearance = radius + .008;
-  const cushionX = width - clearance;
-  const cushionZ = length - clearance;
-  const pockets = [
-    { x: -width, z: -length }, { x: width, z: -length },
-    { x: -width, z: 0 }, { x: width, z: 0 },
-    { x: -width, z: length }, { x: width, z: length }
-  ];
+  const cushionInset = .051;
+  const faceX = width - cushionInset;
+  const faceZ = length - cushionInset;
+  const cushionX = faceX - radius - .006;
+  const cushionZ = faceZ - radius - .006;
+  const pockets = [-1, 1].flatMap(side => [
+    { x: side * faceX, z: -faceZ, mouth: .094 },
+    { x: side * faceX, z: 0, mouth: .076 },
+    { x: side * faceX, z: faceZ, mouth: .094 }
+  ]);
 
   function ball(id, x, z) {
     return { id, x, z, vx: 0, vz: 0, pocketed: false };
@@ -75,10 +77,8 @@
     }
 
     for (const ball of live) {
-      const inPocket = pockets.some(pocket => {
-        const mouth = pocket.z === 0 ? .076 : .094;
-        return (ball.x - pocket.x) ** 2 + (ball.z - pocket.z) ** 2 < mouth ** 2;
-      });
+      const inPocket = pockets.some(({ x, z, mouth }) =>
+        (ball.x - x) ** 2 + (ball.z - z) ** 2 < mouth ** 2);
       if (inPocket) {
         ball.pocketed = true;
         ball.vx = ball.vz = 0;
@@ -122,5 +122,5 @@
     return { x: cue.x + direction.x * distance, z: cue.z + direction.z * distance };
   }
 
-  root.PyramidPhysics = { width, length, radius, pockets, rack, advance, respot, aimLine };
+  root.PyramidPhysics = { width, length, radius, faceX, faceZ, pockets, rack, advance, respot, aimLine };
 })(globalThis);

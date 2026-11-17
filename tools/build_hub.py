@@ -2,7 +2,8 @@
 
 Запуск: python3 tools/build_hub.py
 В каталоге у каждой игры: id (папка), title, into (винительный падеж для «Сыграем в …»),
-about (короткое описание), section, icon (эмодзи для бота), unit (подпись рекорда), art (SVG карточки), new.
+about (короткое описание), section, icon (эмодзи для бота), unit (подпись рекорда), art (изображение карточки),
+revision (необязательная версия ссылки).
 """
 import json, pathlib, html
 
@@ -14,12 +15,21 @@ assert len(by_id) == len(games), 'повторяется id'
 for g in games:
     assert (ROOT / g['id'] / 'index.html').exists(), 'нет папки игры ' + g['id']
 
+def game_path(game):
+    path = game['id'] + '/'
+    if 'revision' in game:
+        path += '?v=' + str(int(game['revision']))
+    return path
+
+
+versioned_paths = {g['id']: game_path(g) for g in games if 'revision' in g}
+
 STAR = '<svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>'
 
 
 def card(g):
     art = g['art'].replace('\n', '\n          ')
-    return f'''      <li><a class="card" href="{g['id']}/" data-id="{g['id']}">
+    return f'''      <li><a class="card" href="{game_path(g)}" data-id="{g['id']}">
         <span class="art">{art}</span>
         <span class="card-body"><span class="card-title">{html.escape(g['title'])}</span><span class="card-desc">{html.escape(g['about'])}</span><span class="card-best" hidden></span></span>
       </a></li>'''
@@ -89,7 +99,8 @@ TEMPLATE = r'''<!doctype html>
 (function () {
   var known = %%KNOWN%%;
   var wanted = window.Pauza.startParam();
-  if (wanted && known.indexOf(wanted) !== -1) location.replace(wanted + '/' + location.hash);
+  var versioned = %%VERSIONED%%;
+  if (wanted && known.indexOf(wanted) !== -1) location.replace((versioned[wanted] || wanted + '/') + location.hash);
 })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -231,7 +242,9 @@ body.gold .hub-head .mark i{background:var(--sun)}
     line.hidden = false;
   });
   document.getElementById('random').addEventListener('click', function () {
-    location.href = P.pick(GAMES) + '/';
+    var picked = P.pick(GAMES);
+    var versioned = %%VERSIONED%%;
+    location.href = versioned[picked] || picked + '/';
   });
 
   /* ---------- Поддержка звёздами ---------- */
@@ -306,6 +319,7 @@ body.gold .hub-head .mark i{background:var(--sun)}
 
 page = (TEMPLATE
         .replace('%%KNOWN%%', json.dumps([g['id'] for g in games], ensure_ascii=False))
+        .replace('%%VERSIONED%%', json.dumps(versioned_paths, ensure_ascii=False))
         .replace('%%UNITS%%', json.dumps(units, ensure_ascii=False))
         .replace('%%COUNT%%', str(len(games)) + ' ' + ('игра' if len(games) % 10 == 1 and len(games) % 100 != 11 else 'игры' if 2 <= len(games) % 10 <= 4 and not 12 <= len(games) % 100 <= 14 else 'игр'))
         .replace('%%ROWS%%', '\n\n'.join(rows))

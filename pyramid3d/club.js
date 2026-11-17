@@ -5,29 +5,30 @@
   const physics = window.PyramidPhysics;
   const byId = id => document.getElementById(id);
   const canvas = byId('table');
-  const camera = byId('camera'), orbit = byId('orbit'), select = byId('select');
+  const camera = byId('camera'), select = byId('select');
+  const rotateLeft = byId('rotate-left'), rotateRight = byId('rotate-right');
+  const status = byId('status');
   const shoot = byId('shoot'), power = byId('power');
-  const aimHint = 'Прицелься на столе';
-  const cameraHint = 'Веди по столу, чтобы повернуть камеру';
+  const hasTouchEvents = 'ontouchstart' in window;
   const scene = window.PyramidScene.create(canvas);
-  const target = 8, timeStep = 1 / 240;
+  const timeStep = 1 / 240;
+  const dragThreshold = 7;
   const units = ['шар', 'шара', 'шаров'];
   let balls = physics.rack(), cue = balls[0], direction = { x: 0, z: -1 };
   let score = 0, fouls = 0, carry = 0, shot = null;
-  let selecting = false, overhead = false, orbiting = false, pointer = null;
-  let status = aimHint;
+  let selecting = false, overhead = false, gesture = null;
 
   const shell = P.shell({
     id: 'pyramid3d',
     title: 'Русский бильярд 3D',
-    tagline: 'Забей 8 шаров в своём темпе.',
+    tagline: 'Свободная партия',
     startLabel: 'К столу',
-    rulesHtml: '<p>Тренировка по мотивам свободной пирамиды. Коснись стола или веди пальцем для прицела. Выставь силу и нажми «Удар». После соударения засчитывается любой шар в лузе, даже биток. Удар без касания другого шара — фол. Кнопка «Камера» позволяет поворачивать стол пальцем. Для точного прицела включи вид сверху.</p>',
+    rulesHtml: '<p>Коснись стола для прицела. В 3D веди пальцем по столу, чтобы повернуть камеру. Выставь силу и нажми «Удар». После соударения засчитывается любой шар, даже биток. Партия закончится, когда на столе останется только биток или не останется шаров.</p>',
     kbdHint: 'На клавиатуре: ← → прицел, Enter удар.',
     unit: n => P.plural(n, units),
     onReset: reset,
     onRun: () => { update(); canvas.focus({ preventScroll: true }); },
-    onPause: () => { pointer = null; update(); }
+    onPause: () => { gesture = null; update(); }
   });
 
   function reset() {
@@ -36,36 +37,25 @@
     direction = { x: 0, z: -1 };
     score = fouls = carry = 0;
     shot = null;
-    selecting = orbiting = false;
-    pointer = null;
+    selecting = false;
+    gesture = null;
     power.value = '70';
     updatePower();
     shell.setScore(0);
-    setStatus(aimHint);
+    status.textContent = '';
     update();
-  }
-
-  function setStatus(message) {
-    status = message;
-    refreshStatus();
-  }
-
-  function refreshStatus() {
-    byId('status').textContent = orbiting ? cameraHint : status;
   }
 
   function update() {
     const playable = shell.running;
     const ready = playable && !shot;
-    shoot.disabled = !ready || selecting || orbiting;
-    select.disabled = !ready || orbiting;
-    power.disabled = !ready || orbiting;
+    shoot.disabled = !ready || selecting;
+    select.disabled = !ready;
+    power.disabled = !ready;
     camera.disabled = !playable;
-    orbit.disabled = !playable || overhead;
-    orbit.setAttribute('aria-pressed', String(orbiting));
+    rotateLeft.disabled = rotateRight.disabled = !playable || overhead;
     select.setAttribute('aria-pressed', String(selecting));
-    canvas.dataset.orbit = String(orbiting);
-    shell.setSide('Цель: ' + target);
+    canvas.dataset.view = overhead ? 'top' : '3d';
     scene.invalidate();
   }
 
@@ -75,14 +65,14 @@
   }
 
   function startShot() {
-    if (!shell.running || shot || selecting || orbiting) return;
+    if (!shell.running || shot || selecting) return;
     const speed = .82 + Number(power.value) * .063;
     cue.vx = direction.x * speed;
     cue.vz = direction.z * speed;
     carry = 0;
     shot = { contact: false, potted: [] };
-    pointer = null;
-    setStatus('Шары в движении');
+    gesture = null;
+    status.textContent = 'Шары в движении';
     P.haptic('tap');
     update();
   }
@@ -94,26 +84,27 @@
     if (contact) {
       score += potted.length;
       shell.setScore(score);
-      setStatus(potted.length ? 'В лузе: +' + potted.length : 'Стол готов к следующему удару');
+      status.textContent = potted.length ? 'В лузе: +' + potted.length : 'Стол готов к следующему удару';
       if (potted.length) P.haptic('win');
     } else {
       fouls++;
       for (const ball of potted) physics.respot(ball, balls);
-      setStatus('Фол: биток не коснулся другого шара');
+      status.textContent = 'Фол: биток не коснулся другого шара';
     }
 
-    if (score >= target) {
+    const remaining = balls.filter(ball => !ball.pocketed);
+    if (remaining.length <= 1) {
       update();
       shell.end({
         score,
-        eyebrow: 'Пирамида взята',
+        eyebrow: 'Партия сыграна',
         stats: 'Фолов: ' + fouls,
         phrase: 'В «Русском бильярде 3D» я забил ' + score + ' ' + P.plural(score, units) + '. Сыграешь?'
       });
       return;
     }
 
-    if (cue.pocketed) cue = balls.find(ball => !ball.pocketed);
+    if (cue.pocketed) cue = remaining[0];
     const toCenter = Math.hypot(cue.x, cue.z);
     if (toCenter > physics.radius) direction = { x: -cue.x / toCenter, z: -cue.z / toCenter };
     update();
@@ -147,72 +138,96 @@
     if (!best) return;
     cue = best;
     selecting = false;
-    setStatus('Биток выбран. Прицелься.');
+    status.textContent = 'Биток выбран';
     update();
   }
 
-  canvas.addEventListener('pointerdown', event => {
-    if (!shell.running || (shot && !orbiting) || pointer || event.button !== 0) return;
-    event.preventDefault();
-    const point = tablePoint(event);
-    if (selecting) {
-      chooseAt(point);
-      return;
+  function beginGesture(id, point) {
+    gesture = { id, start: point, last: point, dragged: false };
+    if (overhead && !shot && !selecting) aimAt(point);
+  }
+
+  function moveGesture(point) {
+    if (!gesture.dragged && Math.hypot(point.x - gesture.start.x, point.y - gesture.start.y) < dragThreshold) return;
+    gesture.dragged = true;
+    if (!overhead) {
+      scene.orbit(point.x - gesture.last.x, point.y - gesture.last.y);
+    } else if (!shot && !selecting) {
+      aimAt(point);
     }
-    pointer = { id: event.pointerId, point };
-    canvas.setPointerCapture(pointer.id);
-    if (!orbiting) aimAt(point);
+    gesture.last = point;
+  }
+
+  function finishGesture(point) {
+    if (!shot) {
+      if (selecting && !gesture.dragged) chooseAt(point);
+      else if (!selecting && (!gesture.dragged || overhead)) aimAt(point);
+    }
+    gesture = null;
+  }
+
+  canvas.addEventListener('pointerdown', event => {
+    if (!shell.running || gesture || event.button !== 0 ||
+      (hasTouchEvents && event.pointerType === 'touch')) return;
+    event.preventDefault();
+    beginGesture(event.pointerId, tablePoint(event));
+    canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener('pointermove', event => {
-    if (pointer?.id !== event.pointerId || !shell.running) return;
-    const point = tablePoint(event);
-    if (orbiting) scene.orbit(point.x - pointer.point.x, point.y - pointer.point.y);
-    else if (!shot) aimAt(point);
-    pointer.point = point;
+    if (gesture?.id === event.pointerId) moveGesture(tablePoint(event));
   });
-  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+  canvas.addEventListener('pointerup', event => {
+    if (gesture?.id === event.pointerId) finishGesture(tablePoint(event));
+  });
+  for (const type of ['pointercancel', 'lostpointercapture']) {
     canvas.addEventListener(type, event => {
-      if (pointer?.id === event.pointerId) pointer = null;
+      if (gesture?.id === event.pointerId) gesture = null;
     });
+  }
+
+  // Keeping touch gestures on the canvas also prevents the WebView from taking a drag as page scrolling.
+  if (hasTouchEvents) {
+    canvas.addEventListener('touchstart', event => {
+      if (!shell.running) return;
+      event.preventDefault();
+      if (gesture) return;
+      const touch = event.changedTouches[0];
+      beginGesture('touch-' + touch.identifier, tablePoint(touch));
+    }, { passive: false });
+    for (const type of ['touchmove', 'touchend', 'touchcancel']) {
+      canvas.addEventListener(type, event => {
+        const touch = Array.from(event.changedTouches).find(item => gesture?.id === 'touch-' + item.identifier);
+        if (!touch) return;
+        event.preventDefault();
+        if (type === 'touchmove') moveGesture(tablePoint(touch));
+        else if (type === 'touchend') finishGesture(tablePoint(touch));
+        else gesture = null;
+      }, { passive: false });
+    }
   }
 
   camera.addEventListener('click', () => {
     overhead = !overhead;
-    orbiting = false;
-    pointer = null;
+    gesture = null;
     camera.textContent = overhead ? 'Вид в 3D' : 'Вид сверху';
     camera.setAttribute('aria-pressed', String(overhead));
     scene.setOverhead(overhead);
-    refreshStatus();
     update();
   });
-  orbit.addEventListener('click', () => {
-    orbiting = !orbiting;
-    pointer = null;
-    if (selecting) {
-      selecting = false;
-      setStatus(aimHint);
-    } else {
-      refreshStatus();
-    }
-    if (orbiting) canvas.focus({ preventScroll: true });
-    update();
-  });
+  rotateLeft.addEventListener('click', () => scene.orbit(-55, 0));
+  rotateRight.addEventListener('click', () => scene.orbit(55, 0));
   select.addEventListener('click', () => {
     selecting = !selecting;
-    setStatus(selecting ? 'Коснись шара, который станет битком' : aimHint);
+    status.textContent = selecting ? 'Коснись шара, который станет битком' : '';
     update();
   });
   power.addEventListener('input', updatePower);
   shoot.addEventListener('click', startShot);
   window.addEventListener('keydown', event => {
     if (!shell.running || selecting || /^(BUTTON|INPUT|A)$/.test(event.target.tagName)) return;
-    if (orbiting) {
-      const arrows = { ArrowLeft: [-12, 0], ArrowRight: [12, 0], ArrowUp: [0, -12], ArrowDown: [0, 12] };
-      if (arrows[event.code]) {
-        event.preventDefault();
-        scene.orbit(...arrows[event.code]);
-      }
+    if (!overhead && event.shiftKey && /^Arrow(Left|Right)$/.test(event.code)) {
+      event.preventDefault();
+      scene.orbit(event.code === 'ArrowLeft' ? -12 : 12, 0);
       return;
     }
     if (shot) return;
@@ -239,6 +254,6 @@
       }
       if (balls.every(ball => Math.hypot(ball.vx, ball.vz) < .023)) settleShot();
     }
-    scene.draw(balls, cue, direction, Number(power.value), shell.running && !shot && !orbiting, selecting, dt, Boolean(shot && shell.running));
+    scene.draw(balls, cue, direction, Number(power.value), shell.running && !shot && !gesture?.dragged, selecting, dt, Boolean(shot && shell.running));
   });
 })();
